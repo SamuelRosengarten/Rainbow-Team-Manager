@@ -1,0 +1,6651 @@
+[
+  {
+    "id": "ai-clubhouse-def-church-denial",
+    "origin": "suggested",
+    "title": "Basement breach denial",
+    "mapId": "clubhouse",
+    "site": "B Church / Arsenal Room",
+    "side": "defend",
+    "type": "denial",
+    "difficulty": 2,
+    "summary": "Deny the hard breach on Church. Bandit denies the main wall, Jäger and Azami add utility around it, Mira covers the approach and Smoke saves their gadget for the plant.",
+    "timing": "Reinforce in prep; deny the breach from about 1:30; save the plant denial for the last 40 seconds.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "anti-breach"
+    ],
+    "slots": [
+      {
+        "key": "deny",
+        "operatorId": "bandit",
+        "role": "anchor",
+        "alternatives": [
+          "kaid"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce the main wall into Church first.",
+          "Put your Shock Wire on the main Church wall.",
+          "Wait for the breach charge, then deny it; don't peek the breacher.",
+          "Fall back into Church once the wall is open."
+        ]
+      },
+      {
+        "key": "ads",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System covering the Church wall and the main door.",
+          "Help reinforce the walls of Arsenal Room.",
+          "Hold Arsenal Room with an angle on the door between the rooms.",
+          "Rotate to Church if the attack commits there."
+        ]
+      },
+      {
+        "key": "plant",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Set up in Arsenal Room near the default plant spots.",
+          "Save your Remote Gas Grenade for the last 40 seconds.",
+          "Deny the plant from cover; don't peek the breach.",
+          "If the defuser goes down, stop it with your gadget."
+        ]
+      },
+      {
+        "key": "build",
+        "operatorId": "azami",
+        "role": "support",
+        "alternatives": [
+          "castle",
+          "thunderbird"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Kiba Barrier to close holes and hatches above Church and Arsenal Room.",
+          "Build cover in the middle of the site.",
+          "Help reinforce the remaining walls.",
+          "Hold the door between Church and Arsenal Room."
+        ]
+      },
+      {
+        "key": "window",
+        "operatorId": "mira",
+        "role": "support",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Call the breach team's positions to the team.",
+          "Hold Church from a safe angle behind the wall.",
+          "Trade attackers who push into Church."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce and set utility",
+        "timing": "Prep phase",
+        "slots": [
+          "deny",
+          "ads",
+          "plant",
+          "build",
+          "window"
+        ],
+        "description": "Reinforce both rooms, starting with the main Church wall. Place gadgets before the round starts.",
+        "utility": "Shock Wire, Active Defense System, Kiba Barrier, Black Mirror",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Early hold",
+        "timing": "0:00–1:30",
+        "slots": [
+          "window",
+          "ads"
+        ],
+        "description": "Watch the approach through cameras and Mira. Don't give away positions early.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Deny the breach",
+        "timing": "1:30–2:20",
+        "slots": [
+          "deny",
+          "ads",
+          "build"
+        ],
+        "description": "Bandit denies the breach charge; Jäger stops flashes and grenades; Azami reseals any new hole.",
+        "utility": "Shock Wire",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Deny the plant",
+        "timing": "Last 40 s",
+        "slots": [
+          "plant",
+          "deny",
+          "ads"
+        ],
+        "description": "Smoke uses their gadget on the plant spots; everyone else plays cover and trades.",
+        "utility": "Remote Gas Grenade",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Retake if planted",
+        "timing": "After plant",
+        "slots": [
+          "plant",
+          "ads",
+          "window"
+        ],
+        "description": "Retake together from two angles; Smoke denies the defuser.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "utility",
+        "slotKey": "deny",
+        "x": 38,
+        "y": 44,
+        "label": "Bandit: main wall",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "ads",
+        "x": 44,
+        "y": 36,
+        "label": "Jäger gadget",
+        "stepId": "step1"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "plant",
+        "x": 63,
+        "y": 33,
+        "label": "Smoke anchors Arsenal Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "utility",
+        "slotKey": "build",
+        "x": 50,
+        "y": 21,
+        "label": "Azami seals hole",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "window",
+        "x": 30,
+        "y": 43,
+        "label": "Mira on wall",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "deny",
+        "x": 33,
+        "y": 30,
+        "label": "Bandit falls back",
+        "stepId": "step3"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "window",
+        "x": 29,
+        "y": 38,
+        "label": "Mira holds Church",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "rotate",
+        "slotKey": "ads",
+        "points": [
+          [
+            60,
+            36
+          ],
+          [
+            50,
+            31
+          ],
+          [
+            42,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p2",
+        "kind": "rotate",
+        "slotKey": "deny",
+        "points": [
+          [
+            38,
+            40
+          ],
+          [
+            34,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "plant",
+        "points": [
+          [
+            66,
+            38
+          ],
+          [
+            60,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-clubhouse-def-church-roam",
+    "origin": "suggested",
+    "title": "Basement deep roam",
+    "mapId": "clubhouse",
+    "site": "B Church / Arsenal Room",
+    "side": "defend",
+    "type": "roam",
+    "difficulty": 3,
+    "summary": "Two roamers (Caveira and Vigil) delay far from Church and Arsenal Room while Smoke, Kaid and Mute hold the site with utility. Win time, not every fight.",
+    "timing": "Roamers out at 0:00, roamers start falling back at 1:45, anchors never leave the site.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "roam"
+    ],
+    "slots": [
+      {
+        "key": "roam",
+        "operatorId": "caveira",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "oryx",
+          "ela"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Leave the site at the start of the round and go far.",
+          "Use your Silent Step to roam silently and interrogate a lone attacker.",
+          "Make noise on one side, then move to the other.",
+          "Flank the plant late."
+        ]
+      },
+      {
+        "key": "roam2",
+        "operatorId": "vigil",
+        "role": "roamer",
+        "alternatives": [
+          "caveira",
+          "ela",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam on the opposite side from Caveira.",
+          "Use your ERC-7 to stay hidden from drones while roaming.",
+          "Take one fight, then reposition.",
+          "Fall back toward Arsenal Room after 1:45."
+        ]
+      },
+      {
+        "key": "anchor",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor Church.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Call when attackers reach the site.",
+          "Deny the plant."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "kaid",
+        "role": "anchor",
+        "alternatives": [
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor Arsenal Room.",
+          "Use your Rtila Electroclaw on the main wall and hatch to deny the breach.",
+          "Hold a crossfire with Smoke.",
+          "Retake with the roamers if they plant."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "mute",
+        "role": "support",
+        "alternatives": [
+          "mozzie",
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your GC90 Signal Disruptor to deny drones and breaches on site.",
+          "Reinforce the main walls.",
+          "Play between Church and Arsenal Room.",
+          "Trade the anchors."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "sup"
+        ],
+        "description": "Anchors reinforce and set utility; roamers leave the site early.",
+        "utility": "GC90 Signal Disruptor",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Roam and delay",
+        "timing": "0:00–1:45",
+        "slots": [
+          "roam",
+          "roam2"
+        ],
+        "description": "Roamers take fights far from the site and waste the attackers' time.",
+        "utility": "Silent Step, ERC-7",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Fall back",
+        "timing": "1:45–2:15",
+        "slots": [
+          "roam",
+          "roam2",
+          "sup"
+        ],
+        "description": "Roamers fall back or set up flanks; Mute keeps the walls denied.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Hold and flank",
+        "timing": "Late round",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "roam"
+        ],
+        "description": "Anchors deny the plant while a roamer flanks.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 12,
+        "y": 16,
+        "label": "Caveira far roam",
+        "stepId": "step2"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "roam2",
+        "x": 88,
+        "y": 16,
+        "label": "Vigil far roam",
+        "stepId": "step2"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 34,
+        "y": 32,
+        "label": "Smoke anchors Church",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 66,
+        "y": 32,
+        "label": "Kaid anchors Arsenal Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 50,
+        "y": 40,
+        "label": "Mute gadget",
+        "stepId": "step1"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            28
+          ],
+          [
+            16,
+            22
+          ],
+          [
+            12,
+            16
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam2",
+        "points": [
+          [
+            70,
+            28
+          ],
+          [
+            84,
+            22
+          ],
+          [
+            88,
+            16
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            12,
+            16
+          ],
+          [
+            12,
+            46
+          ],
+          [
+            28,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p4",
+        "kind": "rotate",
+        "slotKey": "roam2",
+        "points": [
+          [
+            88,
+            16
+          ],
+          [
+            86,
+            34
+          ],
+          [
+            72,
+            34
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-clubhouse-atk-cctv-execute",
+    "origin": "suggested",
+    "title": "CCTV wall take",
+    "mapId": "clubhouse",
+    "site": "2F CCTV Room / Cash Room",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Thermite opens the main wall into CCTV Room after Twitch clears the anti-breach utility. Buck pressures Cash Room from above while Dokkaebi keeps the anchors in view and Zofia cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into CCTV Room with your first drone.",
+          "Wait for Twitch to call the wall clear.",
+          "Open the main CCTV Room wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "twitch",
+        "role": "support",
+        "alternatives": [
+          "thatcher",
+          "iq",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the CCTV Room wall together with Thermite.",
+          "Use your RSD Model 1 Shock Drone to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "dokkaebi",
+        "role": "intel",
+        "alternatives": [
+          "lion",
+          "jackal",
+          "iana"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Cash Room early and call where the anchors play.",
+          "Use your Logic Bomb to find or expose defenders before the push.",
+          "Watch the rotation from Cash Room into CCTV Room during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "buck",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ram",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Cash Room early.",
+          "Use your Skeleton Key to open lines and the floor above Cash Room.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "zofia",
+        "role": "support",
+        "alternatives": [
+          "sledge",
+          "ash",
+          "buck"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the CCTV Room wall with Thermite.",
+          "Use your KS79 Lifeline to open lines and concuss anchors.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone CCTV Room and Cash Room. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Cash Room. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Buck opens the floor above Cash Room and pressures the anchors.",
+        "utility": "Skeleton Key",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Twitch clears the wall utility, then Thermite opens the CCTV Room wall.",
+        "utility": "RSD Model 1 Shock Drone, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear CCTV Room and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Twitch clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Cash Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Buck",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Buck above Cash Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Zofia flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "Dokkaebi post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-clubhouse-atk-church-execute",
+    "origin": "suggested",
+    "title": "Church wall execute",
+    "mapId": "clubhouse",
+    "site": "B Church / Arsenal Room",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Thermite opens the main wall into Church after Thatcher clears the anti-breach utility. Sledge pressures Arsenal Room from above while IQ keeps the anchors in view and Nomad cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Church with your first drone.",
+          "Wait for Thatcher to call the wall clear.",
+          "Open the main Church wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Church wall together with Thermite.",
+          "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iq",
+        "role": "intel",
+        "alternatives": [
+          "twitch",
+          "thatcher"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Arsenal Room early and call where the anchors play.",
+          "Use your Electronics Detector to find or expose defenders before the push.",
+          "Watch the rotation from Arsenal Room into Church during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ram",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Arsenal Room early.",
+          "Use your Tactical Breaching Hammer to open lines and the floor above Arsenal Room.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "nomad",
+        "role": "support",
+        "alternatives": [
+          "gridlock",
+          "jackal"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Church wall with Thermite.",
+          "Use your Airjab Launcher on the flank routes behind the team.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Church and Arsenal Room. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Arsenal Room. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Sledge opens the floor above Arsenal Room and pressures the anchors.",
+        "utility": "Tactical Breaching Hammer",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Thatcher clears the wall utility, then Thermite opens the Church wall.",
+        "utility": "EG MK0-EMP Grenade, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Church and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Thatcher clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Arsenal Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Sledge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Sledge above Arsenal Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Nomad flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "IQ post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-oregon-def-basement-denial",
+    "origin": "suggested",
+    "title": "Basement denial",
+    "mapId": "oregon",
+    "site": "B Laundry Room / Supply Room",
+    "side": "defend",
+    "type": "denial",
+    "difficulty": 2,
+    "summary": "Deny the hard breach on Laundry Room. Bandit denies the main wall, Jäger and Azami add utility around it, Mute covers the approach and Smoke saves their gadget for the plant.",
+    "timing": "Reinforce in prep; deny the breach from about 1:30; save the plant denial for the last 40 seconds.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "anti-breach"
+    ],
+    "slots": [
+      {
+        "key": "deny",
+        "operatorId": "bandit",
+        "role": "anchor",
+        "alternatives": [
+          "kaid"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce the main wall into Laundry Room first.",
+          "Put your Shock Wire on the main Laundry Room wall.",
+          "Wait for the breach charge, then deny it; don't peek the breacher.",
+          "Fall back into Laundry Room once the wall is open."
+        ]
+      },
+      {
+        "key": "ads",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System covering the Laundry Room wall and the main door.",
+          "Help reinforce the walls of Supply Room.",
+          "Hold Supply Room with an angle on the door between the rooms.",
+          "Rotate to Laundry Room if the attack commits there."
+        ]
+      },
+      {
+        "key": "plant",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Set up in Supply Room near the default plant spots.",
+          "Save your Remote Gas Grenade for the last 40 seconds.",
+          "Deny the plant from cover; don't peek the breach.",
+          "If the defuser goes down, stop it with your gadget."
+        ]
+      },
+      {
+        "key": "build",
+        "operatorId": "azami",
+        "role": "support",
+        "alternatives": [
+          "castle",
+          "thunderbird"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Kiba Barrier to close holes and hatches above Laundry Room and Supply Room.",
+          "Build cover in the middle of the site.",
+          "Help reinforce the remaining walls.",
+          "Hold the door between Laundry Room and Supply Room."
+        ]
+      },
+      {
+        "key": "window",
+        "operatorId": "mute",
+        "role": "support",
+        "alternatives": [
+          "mozzie",
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your GC90 Signal Disruptor on the main walls and doors to stop drones and breach charges.",
+          "Call the breach team's positions to the team.",
+          "Hold Laundry Room from a safe angle behind the wall.",
+          "Trade attackers who push into Laundry Room."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce and set utility",
+        "timing": "Prep phase",
+        "slots": [
+          "deny",
+          "ads",
+          "plant",
+          "build",
+          "window"
+        ],
+        "description": "Reinforce both rooms, starting with the main Laundry Room wall. Place gadgets before the round starts.",
+        "utility": "Shock Wire, Active Defense System, Kiba Barrier, GC90 Signal Disruptor",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Early hold",
+        "timing": "0:00–1:30",
+        "slots": [
+          "window",
+          "ads"
+        ],
+        "description": "Watch the approach through cameras and Mute. Don't give away positions early.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Deny the breach",
+        "timing": "1:30–2:20",
+        "slots": [
+          "deny",
+          "ads",
+          "build"
+        ],
+        "description": "Bandit denies the breach charge; Jäger stops flashes and grenades; Azami reseals any new hole.",
+        "utility": "Shock Wire",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Deny the plant",
+        "timing": "Last 40 s",
+        "slots": [
+          "plant",
+          "deny",
+          "ads"
+        ],
+        "description": "Smoke uses their gadget on the plant spots; everyone else plays cover and trades.",
+        "utility": "Remote Gas Grenade",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Retake if planted",
+        "timing": "After plant",
+        "slots": [
+          "plant",
+          "ads",
+          "window"
+        ],
+        "description": "Retake together from two angles; Smoke denies the defuser.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "utility",
+        "slotKey": "deny",
+        "x": 38,
+        "y": 44,
+        "label": "Bandit: main wall",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "ads",
+        "x": 44,
+        "y": 36,
+        "label": "Jäger gadget",
+        "stepId": "step1"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "plant",
+        "x": 63,
+        "y": 33,
+        "label": "Smoke anchors Supply Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "utility",
+        "slotKey": "build",
+        "x": 50,
+        "y": 21,
+        "label": "Azami seals hole",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "window",
+        "x": 30,
+        "y": 43,
+        "label": "Mute on wall",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "deny",
+        "x": 33,
+        "y": 30,
+        "label": "Bandit falls back",
+        "stepId": "step3"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "window",
+        "x": 29,
+        "y": 38,
+        "label": "Mute holds Laundry Room",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "rotate",
+        "slotKey": "ads",
+        "points": [
+          [
+            60,
+            36
+          ],
+          [
+            50,
+            31
+          ],
+          [
+            42,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p2",
+        "kind": "rotate",
+        "slotKey": "deny",
+        "points": [
+          [
+            38,
+            40
+          ],
+          [
+            34,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "plant",
+        "points": [
+          [
+            66,
+            38
+          ],
+          [
+            60,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-oregon-def-basement-hold",
+    "origin": "suggested",
+    "title": "Blue stairs hold",
+    "mapId": "oregon",
+    "site": "B Laundry Room / Supply Room",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "Hold Laundry Room and Supply Room with crossfires. Smoke and Mute anchor, Valkyrie and Jäger feed information, Vigil delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Laundry Room with an angle on the main entry.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Don't swing; let the attack come to you.",
+          "Trade Mute if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "mute",
+        "role": "anchor",
+        "alternatives": [
+          "mozzie",
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Supply Room.",
+          "Use your GC90 Signal Disruptor on the main walls and doors to stop drones and breach charges.",
+          "Hold a crossfire with Smoke.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Active Defense System around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "vigil",
+        "role": "roamer",
+        "alternatives": [
+          "caveira",
+          "ela",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your ERC-7 to stay hidden from drones while roaming.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Vigil delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Laundry Room and Supply Room. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Vigil hits from behind while Mute denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Smoke holds Laundry Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Mute holds Supply Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Jäger second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Vigil roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-oregon-def-basement-roam",
+    "origin": "suggested",
+    "title": "Deep roam",
+    "mapId": "oregon",
+    "site": "B Laundry Room / Supply Room",
+    "side": "defend",
+    "type": "roam",
+    "difficulty": 3,
+    "summary": "Two roamers (Vigil and Caveira) delay far from Laundry Room and Supply Room while Mute, Bandit and Smoke hold the site with utility. Win time, not every fight.",
+    "timing": "Roamers out at 0:00, roamers start falling back at 1:45, anchors never leave the site.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "roam"
+    ],
+    "slots": [
+      {
+        "key": "roam",
+        "operatorId": "vigil",
+        "role": "roamer",
+        "alternatives": [
+          "caveira",
+          "ela",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Leave the site at the start of the round and go far.",
+          "Use your ERC-7 to stay hidden from drones while roaming.",
+          "Make noise on one side, then move to the other.",
+          "Flank the plant late."
+        ]
+      },
+      {
+        "key": "roam2",
+        "operatorId": "caveira",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "oryx",
+          "ela"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam on the opposite side from Vigil.",
+          "Use your Silent Step to roam silently and interrogate a lone attacker.",
+          "Take one fight, then reposition.",
+          "Fall back toward Supply Room after 1:45."
+        ]
+      },
+      {
+        "key": "anchor",
+        "operatorId": "mute",
+        "role": "anchor",
+        "alternatives": [
+          "mozzie",
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor Laundry Room.",
+          "Use your GC90 Signal Disruptor on the main walls and doors to stop drones and breach charges.",
+          "Call when attackers reach the site.",
+          "Deny the plant."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "bandit",
+        "role": "anchor",
+        "alternatives": [
+          "kaid"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor Supply Room.",
+          "Use your Shock Wire on the main wall right after the breach charge goes down.",
+          "Hold a crossfire with Mute.",
+          "Retake with the roamers if they plant."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "smoke",
+        "role": "support",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Reinforce the main walls.",
+          "Play between Laundry Room and Supply Room.",
+          "Trade the anchors."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "sup"
+        ],
+        "description": "Anchors reinforce and set utility; roamers leave the site early.",
+        "utility": "Remote Gas Grenade",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Roam and delay",
+        "timing": "0:00–1:45",
+        "slots": [
+          "roam",
+          "roam2"
+        ],
+        "description": "Roamers take fights far from the site and waste the attackers' time.",
+        "utility": "ERC-7, Silent Step",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Fall back",
+        "timing": "1:45–2:15",
+        "slots": [
+          "roam",
+          "roam2",
+          "sup"
+        ],
+        "description": "Roamers fall back or set up flanks; Smoke keeps the walls denied.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Hold and flank",
+        "timing": "Late round",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "roam"
+        ],
+        "description": "Anchors deny the plant while a roamer flanks.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 12,
+        "y": 16,
+        "label": "Vigil far roam",
+        "stepId": "step2"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "roam2",
+        "x": 88,
+        "y": 16,
+        "label": "Caveira far roam",
+        "stepId": "step2"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 34,
+        "y": 32,
+        "label": "Mute anchors Laundry Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 66,
+        "y": 32,
+        "label": "Bandit anchors Supply Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 50,
+        "y": 40,
+        "label": "Smoke gadget",
+        "stepId": "step1"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            28
+          ],
+          [
+            16,
+            22
+          ],
+          [
+            12,
+            16
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam2",
+        "points": [
+          [
+            70,
+            28
+          ],
+          [
+            84,
+            22
+          ],
+          [
+            88,
+            16
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            12,
+            16
+          ],
+          [
+            12,
+            46
+          ],
+          [
+            28,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p4",
+        "kind": "rotate",
+        "slotKey": "roam2",
+        "points": [
+          [
+            88,
+            16
+          ],
+          [
+            86,
+            34
+          ],
+          [
+            72,
+            34
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-oregon-atk-basement-vertical",
+    "origin": "suggested",
+    "title": "Kitchen vertical onto basement",
+    "mapId": "oregon",
+    "site": "B Laundry Room / Supply Room",
+    "side": "attack",
+    "type": "vertical",
+    "difficulty": 3,
+    "summary": "Play from the floor above. Buck and Sledge open the floor over Laundry Room and Supply Room, Hibana opens a reinforced hatch, Thatcher clears utility and Iana scouts the anchors.",
+    "timing": "Take the floor above by 1:00, open the floor by 2:00, drop and plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "vertical"
+    ],
+    "slots": [
+      {
+        "key": "soft",
+        "operatorId": "buck",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ram",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the room above Laundry Room early with Sledge.",
+          "Open the floor above Laundry Room with your Skeleton Key.",
+          "Shoot anchors through the holes; don't drop alone.",
+          "Drop with the team once the anchors are low."
+        ]
+      },
+      {
+        "key": "soft2",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ram",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the room above Supply Room.",
+          "Use your Tactical Breaching Hammer to open lines over Supply Room.",
+          "Deny the default plant spots from above.",
+          "Cover the drop for the team."
+        ]
+      },
+      {
+        "key": "hard",
+        "operatorId": "hibana",
+        "role": "hard-breacher",
+        "alternatives": [
+          "thermite",
+          "ace",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Find the reinforced hatch above the site with a drone.",
+          "Open it with your X-KAIROS Launcher once Thatcher clears it.",
+          "Drop through the hatch or hold it as a second angle.",
+          "Plant from the hatch side if the site is clear."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Stay with Hibana on the floor above.",
+          "Use your EG MK0-EMP Grenade to clear utility on the hatch.",
+          "Help clear the floor above of roamers.",
+          "Trade Buck and Sledge when they drop."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iana",
+        "role": "intel",
+        "alternatives": [
+          "dokkaebi",
+          "lion",
+          "zero"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Scout the site with your Gemini Replicator and drones.",
+          "Call where the anchors stand so the soft breachers know which holes to open.",
+          "Watch the stairs to the floor above for flanks.",
+          "Call the plant and hold post-plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Take the floor above",
+        "timing": "0:00–1:00",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup"
+        ],
+        "description": "Clear the rooms above Laundry Room and Supply Room. Kill roamers who hold the floor above.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Find the anchors",
+        "timing": "1:00–1:30",
+        "slots": [
+          "intel"
+        ],
+        "description": "Iana scouts the site and calls the anchors' spots.",
+        "utility": "Gemini Replicator",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open the floor",
+        "timing": "1:30–2:00",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup"
+        ],
+        "description": "Open soft floors above Laundry Room and Supply Room; Thatcher clears the hatch so Hibana can open it.",
+        "utility": "Skeleton Key, Tactical Breaching Hammer, X-KAIROS Launcher",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Drop and plant",
+        "timing": "2:00–2:40",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup",
+          "intel"
+        ],
+        "description": "Drop together through the holes and hatch, trade quickly and plant.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "soft2"
+        ],
+        "description": "Play the plant from above through the holes you opened.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 22,
+        "label": "Floor: Buck",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "breach",
+        "slotKey": "soft2",
+        "x": 62,
+        "y": 22,
+        "label": "Floor: Sledge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 50,
+        "y": 20,
+        "label": "Hatch: Hibana",
+        "stepId": "step3"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 10,
+        "label": "Buck above Laundry Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft2",
+        "x": 62,
+        "y": 10,
+        "label": "Sledge above Supply Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 50,
+        "y": 32,
+        "label": "Scout site",
+        "stepId": "step2"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 32,
+        "label": "Plant",
+        "stepId": "step4"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            10,
+            30
+          ],
+          [
+            30,
+            10
+          ],
+          [
+            38,
+            10
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "soft2",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            30
+          ],
+          [
+            70,
+            10
+          ],
+          [
+            62,
+            10
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            50,
+            63
+          ],
+          [
+            94,
+            24
+          ],
+          [
+            60,
+            8
+          ],
+          [
+            50,
+            14
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            20,
+            62
+          ],
+          [
+            12,
+            48
+          ],
+          [
+            30,
+            36
+          ],
+          [
+            48,
+            32
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            38,
+            12
+          ],
+          [
+            38,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-bank-atk-lockers-execute",
+    "origin": "suggested",
+    "title": "Lockers wall split",
+    "mapId": "bank",
+    "site": "B Lockers / CCTV Room",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Thermite opens the main wall into Lockers after Thatcher clears the anti-breach utility. Buck pressures CCTV Room from above while Twitch keeps the anchors in view and Ash cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Lockers with your first drone.",
+          "Wait for Thatcher to call the wall clear.",
+          "Open the main Lockers wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Lockers wall together with Thermite.",
+          "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "twitch",
+        "role": "intel",
+        "alternatives": [
+          "thatcher",
+          "iq",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone CCTV Room early and call where the anchors play.",
+          "Use your RSD Model 1 Shock Drone to find or expose defenders before the push.",
+          "Watch the rotation from CCTV Room into Lockers during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "buck",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ram",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above CCTV Room early.",
+          "Use your Skeleton Key to open lines and the floor above CCTV Room.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "ash",
+        "role": "support",
+        "alternatives": [
+          "zofia",
+          "ram",
+          "buck"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Lockers wall with Thermite.",
+          "Use your M120 CREM Breaching Launcher to open soft walls from range.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Lockers and CCTV Room. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above CCTV Room. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Buck opens the floor above CCTV Room and pressures the anchors.",
+        "utility": "Skeleton Key",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Thatcher clears the wall utility, then Thermite opens the Lockers wall.",
+        "utility": "EG MK0-EMP Grenade, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Lockers and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Thatcher clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone CCTV Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Buck",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Buck above CCTV Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Ash flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "Twitch post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-bank-def-lockers-denial",
+    "origin": "suggested",
+    "title": "Lockers wall denial",
+    "mapId": "bank",
+    "site": "B Lockers / CCTV Room",
+    "side": "defend",
+    "type": "denial",
+    "difficulty": 2,
+    "summary": "Deny the hard breach on Lockers. Kaid denies the main wall, Jäger and Castle add utility around it, Mira covers the approach and Smoke saves their gadget for the plant.",
+    "timing": "Reinforce in prep; deny the breach from about 1:30; save the plant denial for the last 40 seconds.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "anti-breach"
+    ],
+    "slots": [
+      {
+        "key": "deny",
+        "operatorId": "kaid",
+        "role": "anchor",
+        "alternatives": [
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce the main wall into Lockers first.",
+          "Put your Rtila Electroclaw on the main Lockers wall.",
+          "Wait for the breach charge, then deny it; don't peek the breacher.",
+          "Fall back into Lockers once the wall is open."
+        ]
+      },
+      {
+        "key": "ads",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System covering the Lockers wall and the main door.",
+          "Help reinforce the walls of CCTV Room.",
+          "Hold CCTV Room with an angle on the door between the rooms.",
+          "Rotate to Lockers if the attack commits there."
+        ]
+      },
+      {
+        "key": "plant",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Set up in CCTV Room near the default plant spots.",
+          "Save your Remote Gas Grenade for the last 40 seconds.",
+          "Deny the plant from cover; don't peek the breach.",
+          "If the defuser goes down, stop it with your gadget."
+        ]
+      },
+      {
+        "key": "build",
+        "operatorId": "castle",
+        "role": "support",
+        "alternatives": [
+          "azami",
+          "thunderbird"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your UTP1 Armor Panel on the doors that lead into the site.",
+          "Build cover in the middle of the site.",
+          "Help reinforce the remaining walls.",
+          "Hold the door between Lockers and CCTV Room."
+        ]
+      },
+      {
+        "key": "window",
+        "operatorId": "mira",
+        "role": "support",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Call the breach team's positions to the team.",
+          "Hold Lockers from a safe angle behind the wall.",
+          "Trade attackers who push into Lockers."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce and set utility",
+        "timing": "Prep phase",
+        "slots": [
+          "deny",
+          "ads",
+          "plant",
+          "build",
+          "window"
+        ],
+        "description": "Reinforce both rooms, starting with the main Lockers wall. Place gadgets before the round starts.",
+        "utility": "Rtila Electroclaw, Active Defense System, UTP1 Armor Panel, Black Mirror",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Early hold",
+        "timing": "0:00–1:30",
+        "slots": [
+          "window",
+          "ads"
+        ],
+        "description": "Watch the approach through cameras and Mira. Don't give away positions early.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Deny the breach",
+        "timing": "1:30–2:20",
+        "slots": [
+          "deny",
+          "ads",
+          "build"
+        ],
+        "description": "Kaid denies the breach charge; Jäger stops flashes and grenades; Castle reseals any new hole.",
+        "utility": "Rtila Electroclaw",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Deny the plant",
+        "timing": "Last 40 s",
+        "slots": [
+          "plant",
+          "deny",
+          "ads"
+        ],
+        "description": "Smoke uses their gadget on the plant spots; everyone else plays cover and trades.",
+        "utility": "Remote Gas Grenade",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Retake if planted",
+        "timing": "After plant",
+        "slots": [
+          "plant",
+          "ads",
+          "window"
+        ],
+        "description": "Retake together from two angles; Smoke denies the defuser.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "utility",
+        "slotKey": "deny",
+        "x": 38,
+        "y": 44,
+        "label": "Kaid: main wall",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "ads",
+        "x": 44,
+        "y": 36,
+        "label": "Jäger gadget",
+        "stepId": "step1"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "plant",
+        "x": 63,
+        "y": 33,
+        "label": "Smoke anchors CCTV Room",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "utility",
+        "slotKey": "build",
+        "x": 50,
+        "y": 21,
+        "label": "Castle seals hole",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "window",
+        "x": 30,
+        "y": 43,
+        "label": "Mira on wall",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "deny",
+        "x": 33,
+        "y": 30,
+        "label": "Kaid falls back",
+        "stepId": "step3"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "window",
+        "x": 29,
+        "y": 38,
+        "label": "Mira holds Lockers",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "rotate",
+        "slotKey": "ads",
+        "points": [
+          [
+            60,
+            36
+          ],
+          [
+            50,
+            31
+          ],
+          [
+            42,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p2",
+        "kind": "rotate",
+        "slotKey": "deny",
+        "points": [
+          [
+            38,
+            40
+          ],
+          [
+            34,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "plant",
+        "points": [
+          [
+            66,
+            38
+          ],
+          [
+            60,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-bank-def-ceo-hold",
+    "origin": "suggested",
+    "title": "CEO crossfire hold",
+    "mapId": "bank",
+    "site": "2F Executive Lounge / CEO Office",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "Hold Executive Lounge and CEO Office with crossfires. Mira and Smoke anchor, Valkyrie and Jäger feed information, Ela delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "top-floor"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "mira",
+        "role": "anchor",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Executive Lounge with an angle on the main entry.",
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Don't swing; let the attack come to you.",
+          "Trade Smoke if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in CEO Office.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Hold a crossfire with Mira.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Active Defense System around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "ela",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your Grzmot Mine on entry doors before taking a fight.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Ela delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Executive Lounge and CEO Office. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Ela hits from behind while Smoke denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Mira holds Executive Lounge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Smoke holds CEO Office",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Jäger second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Ela roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-border-atk-armory-execute",
+    "origin": "suggested",
+    "title": "Archives balcony breach",
+    "mapId": "border",
+    "site": "2F Armory Lockers / Archives",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Hibana opens the main wall into Armory Lockers after Thatcher clears the anti-breach utility. Sledge pressures Archives from above while Jackal keeps the anchors in view and Ying cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "hibana",
+        "role": "hard-breacher",
+        "alternatives": [
+          "thermite",
+          "ace",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Armory Lockers with your first drone.",
+          "Wait for Thatcher to call the wall clear.",
+          "Open the main Armory Lockers wall with your X-KAIROS Launcher.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Armory Lockers wall together with Hibana.",
+          "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Hibana can breach.",
+          "Push in behind Hibana and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jackal",
+        "role": "intel",
+        "alternatives": [
+          "dokkaebi",
+          "nomad",
+          "lion"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Archives early and call where the anchors play.",
+          "Use your Eyenox Model III to find or expose defenders before the push.",
+          "Watch the rotation from Archives into Armory Lockers during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ram",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Archives early.",
+          "Use your Tactical Breaching Hammer to open lines and the floor above Archives.",
+          "Shoot down on anchors while Hibana breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "ying",
+        "role": "support",
+        "alternatives": [
+          "blitz",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Armory Lockers wall with Hibana.",
+          "Use your Candela to flash defenders before entry.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Armory Lockers and Archives. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Archives. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Sledge opens the floor above Archives and pressures the anchors.",
+        "utility": "Tactical Breaching Hammer",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Thatcher clears the wall utility, then Hibana opens the Armory Lockers wall.",
+        "utility": "EG MK0-EMP Grenade, X-KAIROS Launcher",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Armory Lockers and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Hibana",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Thatcher clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Archives",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Sledge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Sledge above Archives",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Ying flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "Jackal post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-border-def-workshop-hold",
+    "origin": "suggested",
+    "title": "Workshop crossfire hold",
+    "mapId": "border",
+    "site": "1F Ventilation Room / Workshop",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "Hold Ventilation Room and Workshop with crossfires. Maestro and Smoke anchor, Valkyrie and Mira feed information, Ela delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "ground-floor"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "maestro",
+        "role": "anchor",
+        "alternatives": [
+          "mira",
+          "echo"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Ventilation Room with an angle on the main entry.",
+          "Use your Evil Eye with a view of the main entry.",
+          "Don't swing; let the attack come to you.",
+          "Trade Smoke if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Workshop.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Hold a crossfire with Maestro.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "mira",
+        "role": "support",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Mirror around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "ela",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your Grzmot Mine on entry doors before taking a fight.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Black Mirror",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Ela delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Ventilation Room and Workshop. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Ela hits from behind while Smoke denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Maestro holds Ventilation Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Smoke holds Workshop",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Mira second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Ela roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-chalet-atk-basement-execute",
+    "origin": "suggested",
+    "title": "Snowmobile wall execute",
+    "mapId": "chalet",
+    "site": "B Wine Cellar / Snowmobile Garage",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Thermite opens the main wall into Wine Cellar after Kali clears the anti-breach utility. Buck pressures Snowmobile Garage from above while Twitch keeps the anchors in view and Montagne cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "basement",
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Wine Cellar with your first drone.",
+          "Wait for Kali to call the wall clear.",
+          "Open the main Wine Cellar wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "kali",
+        "role": "support",
+        "alternatives": [
+          "thatcher",
+          "twitch"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Wine Cellar wall together with Thermite.",
+          "Use your LV Explosive Lance to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "twitch",
+        "role": "intel",
+        "alternatives": [
+          "thatcher",
+          "iq",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Snowmobile Garage early and call where the anchors play.",
+          "Use your RSD Model 1 Shock Drone to find or expose defenders before the push.",
+          "Watch the rotation from Snowmobile Garage into Wine Cellar during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "buck",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ram",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Snowmobile Garage early.",
+          "Use your Skeleton Key to open lines and the floor above Snowmobile Garage.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "montagne",
+        "role": "support",
+        "alternatives": [
+          "blitz",
+          "osa"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Wine Cellar wall with Thermite.",
+          "Use your Le Roc Shield to lead the push and cover the planter.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Wine Cellar and Snowmobile Garage. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Snowmobile Garage. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Buck opens the floor above Snowmobile Garage and pressures the anchors.",
+        "utility": "Skeleton Key",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Kali clears the wall utility, then Thermite opens the Wine Cellar wall.",
+        "utility": "LV Explosive Lance, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Wine Cellar and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Kali clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Snowmobile Garage",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Buck",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Buck above Snowmobile Garage",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Montagne flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "Twitch post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-chalet-def-master-hold",
+    "origin": "suggested",
+    "title": "Master bedroom hold",
+    "mapId": "chalet",
+    "site": "2F Master Bedroom / Office",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "Hold Master Bedroom and Office with crossfires. Mira and Smoke anchor, Valkyrie and Jäger feed information, Oryx delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "top-floor"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "mira",
+        "role": "anchor",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Master Bedroom with an angle on the main entry.",
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Don't swing; let the attack come to you.",
+          "Trade Smoke if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Office.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Hold a crossfire with Mira.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Active Defense System around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "oryx",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "ela"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your Remah Dash to move fast through walls and hatches between fights.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Oryx delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Master Bedroom and Office. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Oryx hits from behind while Smoke denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Mira holds Master Bedroom",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Smoke holds Office",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Jäger second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Oryx roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-kafe-atk-cocktail-vertical",
+    "origin": "suggested",
+    "title": "Roof vertical on Cocktail",
+    "mapId": "kafe-dostoyevsky",
+    "site": "3F Cocktail Lounge / Bar",
+    "side": "attack",
+    "type": "vertical",
+    "difficulty": 3,
+    "summary": "Play from the floor above. Buck and Sledge open the floor over Cocktail Lounge and Bar, Hibana opens a reinforced hatch, Thatcher clears utility and Iana scouts the anchors.",
+    "timing": "Take the floor above by 1:00, open the floor by 2:00, drop and plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "vertical",
+      "top-floor"
+    ],
+    "slots": [
+      {
+        "key": "soft",
+        "operatorId": "buck",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ram",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the room above Cocktail Lounge early with Sledge.",
+          "Open the floor above Cocktail Lounge with your Skeleton Key.",
+          "Shoot anchors through the holes; don't drop alone.",
+          "Drop with the team once the anchors are low."
+        ]
+      },
+      {
+        "key": "soft2",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ram",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the room above Bar.",
+          "Use your Tactical Breaching Hammer to open lines over Bar.",
+          "Deny the default plant spots from above.",
+          "Cover the drop for the team."
+        ]
+      },
+      {
+        "key": "hard",
+        "operatorId": "hibana",
+        "role": "hard-breacher",
+        "alternatives": [
+          "thermite",
+          "ace",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Find the reinforced hatch above the site with a drone.",
+          "Open it with your X-KAIROS Launcher once Thatcher clears it.",
+          "Drop through the hatch or hold it as a second angle.",
+          "Plant from the hatch side if the site is clear."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Stay with Hibana on the floor above.",
+          "Use your EG MK0-EMP Grenade to clear utility on the hatch.",
+          "Help clear the floor above of roamers.",
+          "Trade Buck and Sledge when they drop."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iana",
+        "role": "intel",
+        "alternatives": [
+          "dokkaebi",
+          "lion",
+          "zero"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Scout the site with your Gemini Replicator and drones.",
+          "Call where the anchors stand so the soft breachers know which holes to open.",
+          "Watch the stairs to the floor above for flanks.",
+          "Call the plant and hold post-plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Take the floor above",
+        "timing": "0:00–1:00",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup"
+        ],
+        "description": "Clear the rooms above Cocktail Lounge and Bar. Kill roamers who hold the floor above.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Find the anchors",
+        "timing": "1:00–1:30",
+        "slots": [
+          "intel"
+        ],
+        "description": "Iana scouts the site and calls the anchors' spots.",
+        "utility": "Gemini Replicator",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open the floor",
+        "timing": "1:30–2:00",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup"
+        ],
+        "description": "Open soft floors above Cocktail Lounge and Bar; Thatcher clears the hatch so Hibana can open it.",
+        "utility": "Skeleton Key, Tactical Breaching Hammer, X-KAIROS Launcher",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Drop and plant",
+        "timing": "2:00–2:40",
+        "slots": [
+          "soft",
+          "soft2",
+          "hard",
+          "sup",
+          "intel"
+        ],
+        "description": "Drop together through the holes and hatch, trade quickly and plant.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "soft2"
+        ],
+        "description": "Play the plant from above through the holes you opened.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 22,
+        "label": "Floor: Buck",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "breach",
+        "slotKey": "soft2",
+        "x": 62,
+        "y": 22,
+        "label": "Floor: Sledge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 50,
+        "y": 20,
+        "label": "Hatch: Hibana",
+        "stepId": "step3"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 10,
+        "label": "Buck above Cocktail Lounge",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft2",
+        "x": 62,
+        "y": 10,
+        "label": "Sledge above Bar",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 50,
+        "y": 32,
+        "label": "Scout site",
+        "stepId": "step2"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "soft",
+        "x": 38,
+        "y": 32,
+        "label": "Plant",
+        "stepId": "step4"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            10,
+            30
+          ],
+          [
+            30,
+            10
+          ],
+          [
+            38,
+            10
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "soft2",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            30
+          ],
+          [
+            70,
+            10
+          ],
+          [
+            62,
+            10
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            50,
+            63
+          ],
+          [
+            94,
+            24
+          ],
+          [
+            60,
+            8
+          ],
+          [
+            50,
+            14
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            20,
+            62
+          ],
+          [
+            12,
+            48
+          ],
+          [
+            30,
+            36
+          ],
+          [
+            48,
+            32
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            38,
+            12
+          ],
+          [
+            38,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-kafe-def-kitchen-denial",
+    "origin": "suggested",
+    "title": "Kitchen breach denial",
+    "mapId": "kafe-dostoyevsky",
+    "site": "1F Kitchen Service / Kitchen Cooking",
+    "side": "defend",
+    "type": "denial",
+    "difficulty": 2,
+    "summary": "Deny the hard breach on Kitchen Service. Kaid denies the main wall, Jäger and Azami add utility around it, Mira covers the approach and Smoke saves their gadget for the plant.",
+    "timing": "Reinforce in prep; deny the breach from about 1:30; save the plant denial for the last 40 seconds.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "anti-breach"
+    ],
+    "slots": [
+      {
+        "key": "deny",
+        "operatorId": "kaid",
+        "role": "anchor",
+        "alternatives": [
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce the main wall into Kitchen Service first.",
+          "Put your Rtila Electroclaw on the main Kitchen Service wall.",
+          "Wait for the breach charge, then deny it; don't peek the breacher.",
+          "Fall back into Kitchen Service once the wall is open."
+        ]
+      },
+      {
+        "key": "ads",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System covering the Kitchen Service wall and the main door.",
+          "Help reinforce the walls of Kitchen Cooking.",
+          "Hold Kitchen Cooking with an angle on the door between the rooms.",
+          "Rotate to Kitchen Service if the attack commits there."
+        ]
+      },
+      {
+        "key": "plant",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Set up in Kitchen Cooking near the default plant spots.",
+          "Save your Remote Gas Grenade for the last 40 seconds.",
+          "Deny the plant from cover; don't peek the breach.",
+          "If the defuser goes down, stop it with your gadget."
+        ]
+      },
+      {
+        "key": "build",
+        "operatorId": "azami",
+        "role": "support",
+        "alternatives": [
+          "castle",
+          "thunderbird"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Kiba Barrier to close holes and hatches above Kitchen Service and Kitchen Cooking.",
+          "Build cover in the middle of the site.",
+          "Help reinforce the remaining walls.",
+          "Hold the door between Kitchen Service and Kitchen Cooking."
+        ]
+      },
+      {
+        "key": "window",
+        "operatorId": "mira",
+        "role": "support",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Call the breach team's positions to the team.",
+          "Hold Kitchen Service from a safe angle behind the wall.",
+          "Trade attackers who push into Kitchen Service."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce and set utility",
+        "timing": "Prep phase",
+        "slots": [
+          "deny",
+          "ads",
+          "plant",
+          "build",
+          "window"
+        ],
+        "description": "Reinforce both rooms, starting with the main Kitchen Service wall. Place gadgets before the round starts.",
+        "utility": "Rtila Electroclaw, Active Defense System, Kiba Barrier, Black Mirror",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Early hold",
+        "timing": "0:00–1:30",
+        "slots": [
+          "window",
+          "ads"
+        ],
+        "description": "Watch the approach through cameras and Mira. Don't give away positions early.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Deny the breach",
+        "timing": "1:30–2:20",
+        "slots": [
+          "deny",
+          "ads",
+          "build"
+        ],
+        "description": "Kaid denies the breach charge; Jäger stops flashes and grenades; Azami reseals any new hole.",
+        "utility": "Rtila Electroclaw",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Deny the plant",
+        "timing": "Last 40 s",
+        "slots": [
+          "plant",
+          "deny",
+          "ads"
+        ],
+        "description": "Smoke uses their gadget on the plant spots; everyone else plays cover and trades.",
+        "utility": "Remote Gas Grenade",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Retake if planted",
+        "timing": "After plant",
+        "slots": [
+          "plant",
+          "ads",
+          "window"
+        ],
+        "description": "Retake together from two angles; Smoke denies the defuser.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "utility",
+        "slotKey": "deny",
+        "x": 38,
+        "y": 44,
+        "label": "Kaid: main wall",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "ads",
+        "x": 44,
+        "y": 36,
+        "label": "Jäger gadget",
+        "stepId": "step1"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "plant",
+        "x": 63,
+        "y": 33,
+        "label": "Smoke anchors Kitchen Cooking",
+        "stepId": "step4"
+      },
+      {
+        "id": "m4",
+        "kind": "utility",
+        "slotKey": "build",
+        "x": 50,
+        "y": 21,
+        "label": "Azami seals hole",
+        "stepId": "step1"
+      },
+      {
+        "id": "m5",
+        "kind": "utility",
+        "slotKey": "window",
+        "x": 30,
+        "y": 43,
+        "label": "Mira on wall",
+        "stepId": "step1"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "deny",
+        "x": 33,
+        "y": 30,
+        "label": "Kaid falls back",
+        "stepId": "step3"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "window",
+        "x": 29,
+        "y": 38,
+        "label": "Mira holds Kitchen Service",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "rotate",
+        "slotKey": "ads",
+        "points": [
+          [
+            60,
+            36
+          ],
+          [
+            50,
+            31
+          ],
+          [
+            42,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p2",
+        "kind": "rotate",
+        "slotKey": "deny",
+        "points": [
+          [
+            38,
+            40
+          ],
+          [
+            34,
+            31
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "plant",
+        "points": [
+          [
+            66,
+            38
+          ],
+          [
+            60,
+            30
+          ]
+        ],
+        "stepId": "step4"
+      }
+    ]
+  },
+  {
+    "id": "ai-coastline-atk-hookah-execute",
+    "origin": "suggested",
+    "title": "Hookah wall execute",
+    "mapId": "coastline",
+    "site": "2F Hookah Lounge / Billiards Room",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "Thermite opens the main wall into Hookah Lounge after Thatcher clears the anti-breach utility. Zofia pressures Billiards Room from above while Iana keeps the anchors in view and Dokkaebi cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Hookah Lounge with your first drone.",
+          "Wait for Thatcher to call the wall clear.",
+          "Open the main Hookah Lounge wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Hookah Lounge wall together with Thermite.",
+          "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iana",
+        "role": "intel",
+        "alternatives": [
+          "dokkaebi",
+          "lion",
+          "zero"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Billiards Room early and call where the anchors play.",
+          "Use your Gemini Replicator to find or expose defenders before the push.",
+          "Watch the rotation from Billiards Room into Hookah Lounge during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "zofia",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "ash",
+          "buck"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Billiards Room early.",
+          "Use your KS79 Lifeline to open lines and the floor above Billiards Room.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "dokkaebi",
+        "role": "support",
+        "alternatives": [
+          "lion",
+          "jackal",
+          "iana"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Hookah Lounge wall with Thermite.",
+          "Use your Logic Bomb to expose roamers and hack cameras.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Hookah Lounge and Billiards Room. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Billiards Room. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Zofia opens the floor above Billiards Room and pressures the anchors.",
+        "utility": "KS79 Lifeline",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Thatcher clears the wall utility, then Thermite opens the Hookah Lounge wall.",
+        "utility": "EG MK0-EMP Grenade, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Hookah Lounge and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Thatcher clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Billiards Room",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Zofia",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Zofia above Billiards Room",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Dokkaebi flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "Iana post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-coastline-def-kitchen-hold",
+    "origin": "suggested",
+    "title": "Kitchen crossfire hold",
+    "mapId": "coastline",
+    "site": "1F Kitchen / Service Entrance",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "Hold Kitchen and Service Entrance with crossfires. Mira and Smoke anchor, Valkyrie and Jäger feed information, Oryx delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "ground-floor"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "mira",
+        "role": "anchor",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Kitchen with an angle on the main entry.",
+          "Use your Black Mirror on a reinforced wall that sees the attackers' approach.",
+          "Don't swing; let the attack come to you.",
+          "Trade Smoke if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Service Entrance.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Hold a crossfire with Mira.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Active Defense System around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "oryx",
+        "role": "roamer",
+        "alternatives": [
+          "vigil",
+          "ela"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your Remah Dash to move fast through walls and hatches between fights.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Oryx delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Kitchen and Service Entrance. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Oryx hits from behind while Smoke denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Mira holds Kitchen",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Smoke holds Service Entrance",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Jäger second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Oryx roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ai-any-atk-standard-execute",
+    "origin": "suggested",
+    "title": "Standard hard-breach execute",
+    "mapId": "any",
+    "site": "",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 1,
+    "summary": "Thermite opens the main wall into Site A after Thatcher clears the anti-breach utility. Sledge pressures Site B from above while IQ keeps the anchors in view and Montagne cuts off flanks.",
+    "timing": "Intel by 0:45, map control by 1:30, breach around 1:50, plant before 2:40.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "fundamentals",
+      "hard-breach"
+    ],
+    "slots": [
+      {
+        "key": "hard",
+        "operatorId": "thermite",
+        "role": "hard-breacher",
+        "alternatives": [
+          "ace",
+          "hibana",
+          "maverick"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the main wall into Site A with your first drone.",
+          "Wait for Thatcher to call the wall clear.",
+          "Open the main Site A wall with your Exothermic Charge.",
+          "Hold the breach and trade the first defender who peeks it.",
+          "Cover the planter from the breach."
+        ]
+      },
+      {
+        "key": "sup",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "kali",
+          "twitch",
+          "brava"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the Site A wall together with Thermite.",
+          "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
+          "Call 'wall clear' so Thermite can breach.",
+          "Push in behind Thermite and plant or cover the planter."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iq",
+        "role": "intel",
+        "alternatives": [
+          "twitch",
+          "thatcher"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone Site B early and call where the anchors play.",
+          "Use your Electronics Detector to find or expose defenders before the push.",
+          "Watch the rotation from Site B into Site A during the breach.",
+          "Call the plant, then hold a post-plant crossfire."
+        ]
+      },
+      {
+        "key": "soft",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ram",
+          "zofia"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Take the area above Site B early.",
+          "Use your Tactical Breaching Hammer to open lines and the floor above Site B.",
+          "Shoot down on anchors while Thermite breaches.",
+          "Stop defenders from re-taking the plant from above."
+        ]
+      },
+      {
+        "key": "flex",
+        "operatorId": "montagne",
+        "role": "support",
+        "alternatives": [
+          "blitz",
+          "osa"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Clear the approach to the Site A wall with Thermite.",
+          "Use your Le Roc Shield to lead the push and cover the planter.",
+          "Watch the flank behind the breach team.",
+          "Lurk on the far side to stop late rotations."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and gather intel",
+        "timing": "0:00–0:45",
+        "slots": [
+          "intel",
+          "hard",
+          "sup"
+        ],
+        "description": "Drone Site A and Site B. Find the anchors, roamers and any anti-breach utility on the main wall.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Take map control",
+        "timing": "0:45–1:30",
+        "slots": [
+          "soft",
+          "flex"
+        ],
+        "description": "Clear the area around the main wall and above Site B. Kill or push out roamers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Open vertical",
+        "timing": "1:30–1:50",
+        "slots": [
+          "soft"
+        ],
+        "description": "Sledge opens the floor above Site B and pressures the anchors.",
+        "utility": "Tactical Breaching Hammer",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Clear and breach",
+        "timing": "1:50–2:10",
+        "slots": [
+          "sup",
+          "hard"
+        ],
+        "description": "Thatcher clears the wall utility, then Thermite opens the Site A wall.",
+        "utility": "EG MK0-EMP Grenade, Exothermic Charge",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Execute and plant",
+        "timing": "2:10–2:40",
+        "slots": [
+          "hard",
+          "sup",
+          "intel",
+          "soft",
+          "flex"
+        ],
+        "description": "Trade through the breach, clear Site A and plant where the breach covers the defuser.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step6",
+        "title": "Post-plant",
+        "timing": "2:40 →",
+        "slots": [
+          "intel",
+          "flex",
+          "soft"
+        ],
+        "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "breach",
+        "slotKey": "hard",
+        "x": 38,
+        "y": 44,
+        "label": "Breach: Thermite",
+        "stepId": "step4"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "sup",
+        "x": 33,
+        "y": 47,
+        "label": "Thatcher clears wall",
+        "stepId": "step4"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 64,
+        "y": 34,
+        "label": "Drone Site B",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "breach",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 22,
+        "label": "Vertical: Sledge",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "soft",
+        "x": 66,
+        "y": 11,
+        "label": "Sledge above Site B",
+        "stepId": "step3"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "flex",
+        "x": 15,
+        "y": 40,
+        "label": "Montagne flank watch",
+        "stepId": "step5"
+      },
+      {
+        "id": "m7",
+        "kind": "plant",
+        "slotKey": "hard",
+        "x": 35,
+        "y": 33,
+        "label": "Plant",
+        "stepId": "step5"
+      },
+      {
+        "id": "m8",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 86,
+        "y": 46,
+        "label": "IQ post-plant",
+        "stepId": "step6"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            40,
+            63
+          ],
+          [
+            38,
+            52
+          ],
+          [
+            38,
+            46
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "sup",
+        "points": [
+          [
+            30,
+            63
+          ],
+          [
+            31,
+            52
+          ],
+          [
+            33,
+            48
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "drone",
+        "slotKey": "intel",
+        "points": [
+          [
+            82,
+            60
+          ],
+          [
+            80,
+            47
+          ],
+          [
+            68,
+            36
+          ]
+        ],
+        "stepId": "step1"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "soft",
+        "points": [
+          [
+            70,
+            63
+          ],
+          [
+            90,
+            40
+          ],
+          [
+            88,
+            14
+          ],
+          [
+            68,
+            11
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p5",
+        "kind": "move",
+        "slotKey": "flex",
+        "points": [
+          [
+            22,
+            63
+          ],
+          [
+            14,
+            50
+          ],
+          [
+            15,
+            42
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p6",
+        "kind": "move",
+        "slotKey": "hard",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            37,
+            36
+          ]
+        ],
+        "stepId": "step5"
+      }
+    ]
+  },
+  {
+    "id": "ai-any-def-two-anchor-hold",
+    "origin": "suggested",
+    "title": "Two-anchor site hold",
+    "mapId": "any",
+    "site": "",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 1,
+    "summary": "Hold Site A and Site B with crossfires. Smoke and Mute anchor, Valkyrie and Jäger feed information, Vigil delays outside and comes back late.",
+    "timing": "Information first; roamer back by 1:30; don't swing until the attackers commit.",
+    "notes": "AI-generated starting point. Positions are schematic, not exact map spots. Test it in a custom game and adapt it.",
+    "tags": [
+      "fundamentals"
+    ],
+    "slots": [
+      {
+        "key": "anchor",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "goyo",
+          "tachanka"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Site A with an angle on the main entry.",
+          "Use your Remote Gas Grenade on the plant spots in the last 40 seconds.",
+          "Don't swing; let the attack come to you.",
+          "Trade Mute if they get pushed."
+        ]
+      },
+      {
+        "key": "anchor2",
+        "operatorId": "mute",
+        "role": "anchor",
+        "alternatives": [
+          "mozzie",
+          "bandit"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Anchor in Site B.",
+          "Use your GC90 Signal Disruptor on the main walls and doors to stop drones and breach charges.",
+          "Hold a crossfire with Smoke.",
+          "Deny the plant late."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "echo",
+          "mozzie"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Black Eye to place extra cameras on the attackers' approach.",
+          "Call drones and the direction of the push.",
+          "Play close to the site but not in it.",
+          "Collapse on the plant when called."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "jager",
+        "role": "support",
+        "alternatives": [
+          "wamai"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Active Defense System around the site.",
+          "Reinforce the walls the attackers want to breach.",
+          "Hold a second angle on the main entry.",
+          "Help retake if they plant."
+        ]
+      },
+      {
+        "key": "roam",
+        "operatorId": "vigil",
+        "role": "roamer",
+        "alternatives": [
+          "caveira",
+          "ela",
+          "oryx"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Roam outside the site early and take a fight on your terms.",
+          "Use your ERC-7 to stay hidden from drones while roaming.",
+          "Head back before 1:30 or play a flank.",
+          "Hit the attackers from behind during the plant."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: set up",
+        "timing": "Prep phase",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "cams",
+          "intel"
+        ],
+        "description": "Reinforce, place cameras and utility. Agree on who holds which angle.",
+        "utility": "Black Eye, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Delay outside",
+        "timing": "0:00–1:30",
+        "slots": [
+          "roam",
+          "cams"
+        ],
+        "description": "Vigil delays outside; Valkyrie watches cameras and calls the push.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Hold crossfires",
+        "timing": "1:30–2:30",
+        "slots": [
+          "anchor",
+          "anchor2",
+          "intel"
+        ],
+        "description": "Play crossfires in Site A and Site B. Don't swing alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Flank the plant",
+        "timing": "Late round",
+        "slots": [
+          "roam",
+          "anchor2"
+        ],
+        "description": "Vigil hits from behind while Mute denies the plant.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "anchor",
+        "x": 32,
+        "y": 30,
+        "label": "Smoke holds Site A",
+        "stepId": "step3"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "anchor2",
+        "x": 68,
+        "y": 30,
+        "label": "Mute holds Site B",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "drone",
+        "slotKey": "cams",
+        "x": 72,
+        "y": 22,
+        "label": "Valkyrie cameras",
+        "stepId": "step1"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 46,
+        "y": 38,
+        "label": "Jäger second angle",
+        "stepId": "step3"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "roam",
+        "x": 14,
+        "y": 20,
+        "label": "Vigil roams",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            30,
+            30
+          ],
+          [
+            18,
+            30
+          ],
+          [
+            14,
+            22
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "move",
+        "slotKey": "roam",
+        "points": [
+          [
+            14,
+            22
+          ],
+          [
+            14,
+            48
+          ],
+          [
+            30,
+            50
+          ]
+        ],
+        "stepId": "step4"
+      },
+      {
+        "id": "p3",
+        "kind": "rotate",
+        "slotKey": "intel",
+        "points": [
+          [
+            56,
+            38
+          ],
+          [
+            46,
+            38
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ]
+  },
+  {
+    "id": "ref-r6coaching-clubhouse-cctv-attack",
+    "origin": "reference",
+    "title": "Clubhouse Cash / CCTV attack (R6 Coaching)",
+    "mapId": "clubhouse",
+    "site": "2F CCTV Room / Cash Room",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 2,
+    "summary": "External guide covering attack and defense on this site. Operators and steps are on the source page; add them here in your own words when you adapt it.",
+    "sourceName": "R6 Coaching",
+    "sourceUrl": "https://r6coaching.com/guides/clubhouse/cash-cctv.html",
+    "sourceTitle": "Clubhouse Cash Room / CCTV Room — Attack & Defense Strats",
+    "license": "link-only",
+    "tags": [
+      "external"
+    ],
+    "slots": [],
+    "steps": [],
+    "markers": [],
+    "paths": []
+  },
+  {
+    "id": "ref-r6coaching-clubhouse-cctv-defense",
+    "origin": "reference",
+    "title": "Clubhouse Cash / CCTV defense (R6 Coaching)",
+    "mapId": "clubhouse",
+    "site": "2F CCTV Room / Cash Room",
+    "side": "defend",
+    "type": "hold",
+    "difficulty": 2,
+    "summary": "External guide covering attack and defense on this site. Operators and steps are on the source page; add them here in your own words when you adapt it.",
+    "sourceName": "R6 Coaching",
+    "sourceUrl": "https://r6coaching.com/guides/clubhouse/cash-cctv.html",
+    "sourceTitle": "Clubhouse Cash Room / CCTV Room — Attack & Defense Strats",
+    "license": "link-only",
+    "tags": [
+      "external"
+    ],
+    "slots": [],
+    "steps": [],
+    "markers": [],
+    "paths": []
+  },
+  {
+    "id": "ref-alviran-clubhouse-attack-plans",
+    "origin": "reference",
+    "title": "Clubhouse callouts and attack plans (Alviran)",
+    "mapId": "clubhouse",
+    "site": "",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 1,
+    "summary": "External map guide with callouts, site overview and attack plans. Useful for learning names before adapting a plan.",
+    "sourceName": "Alviran",
+    "sourceUrl": "https://alviran.net/blog/r6-clubhouse-callouts-guide-2026/",
+    "sourceTitle": "R6 Clubhouse Callouts Guide 2026: Map Layout, Sites and Attack Plans",
+    "license": "link-only",
+    "tags": [
+      "external",
+      "callouts"
+    ],
+    "slots": [],
+    "steps": [],
+    "markers": [],
+    "paths": []
+  }
+]

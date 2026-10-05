@@ -1,265 +1,175 @@
-import { useRef, useState } from 'react';
-import TacticEditor from './TacticEditor.jsx';
-import Notice from './Notice.jsx';
-import TacticDiagram from './TacticDiagram.jsx';
+import { useState } from 'react';
+import Icon from './Icon.jsx';
+import QuickTacticsView from './QuickTacticsView.jsx';
+import ReferenceForm from './ReferenceForm.jsx';
+import StrategyDetail from './StrategyDetail.jsx';
+import StrategyEditor from './StrategyEditor.jsx';
+import StrategyLibrary from './StrategyLibrary.jsx';
+import { EmptyState, Skeleton } from './ui.jsx';
+import { normalizeStrategy } from '../lib/strategies.js';
 import { useRoster } from '../state/roster-context.js';
-import { OPERATORS_BY_ID } from '../lib/operators.js';
-import { MAPS_BY_ID } from '../lib/maps.js';
-import { ROLE_LABEL } from '../lib/fit.js';
-import { exportTactics, parseImport, tacticsForTab } from '../lib/tactics.js';
+import { useSessionState } from '../state/useSessionState.js';
 
-const TABS = [
-  { id: 'mine', label: 'My tactics' },
-  { id: 'team', label: 'Team tactics' },
-  { id: 'profile', label: 'By player' },
-];
-
-function download(filename, text) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+/** Library setup from the Plan screen: map, site, side and the rolled lineup. */
+function setupFromPlan(team, lineupPlayers) {
+  const lineup = team.lineup?.side === team.side ? team.lineup.players : {};
+  return {
+    mapId: team.mapId || '',
+    site: team.site || '',
+    side: team.side || 'attack',
+    picks: Array.from({ length: 5 }, (_, i) => ({ player: lineupPlayers[i] ?? null, operatorId: lineup[lineupPlayers[i]] ?? null })),
+    filters: {},
+  };
 }
 
-export default function TacticsView({ profile, tacticsStore }) {
-  const { tactics, saveTactic, deleteTactic, importTactics } = tacticsStore;
-  const [tab, setTab] = useState('team');
+/** "s/abc/edit" -> { mode: 'edit', id: 'abc' } */
+function parseSub(sub) {
+  if (sub === 'quick') return { mode: 'quick' };
+  if (sub === 'new') return { mode: 'new' };
+  const m = /^s\/([^/]+)(\/edit)?$/.exec(sub ?? '');
+  if (m) return { mode: m[2] ? 'edit' : 'view', id: m[1] };
+  return { mode: 'library' };
+}
+
+/**
+ * Tactics: the strategy library (find, adapt, customize) and the original
+ * quick tactics the Plan screen rolls.
+ */
+export default function TacticsView({ profile, sub, navigate, tacticsStore, strategyData, team, updateTeam }) {
   const { players, lineupPlayers } = useRoster();
-  const [viewing, setViewing] = useState(() => players.find((p) => p !== profile) ?? players[0]);
-  const [sideFilter, setSideFilter] = useState('all');
-  const [editing, setEditing] = useState(null);
-  const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
-  const [shown, setShown] = useState(() => new Set());
-  const fileRef = useRef(null);
+  const [setup, setSetup] = useSessionState('r6tp.strategy-setup', () => setupFromPlan(team, lineupPlayers));
+  const [referenceFor, setReferenceFor] = useState(null); // null | 'new' | strategy
+  const { mode, id } = parseSub(sub);
+  const strategy = id ? strategyData.strategies.find((s) => s.id === id) : null;
+  const loading = strategyData.status === 'loading';
 
-  const list = tacticsForTab(tactics, { tab, profile, viewing })
-    .filter((t) => sideFilter === 'all' || t.side === sideFilter)
-    .sort(
-      (a, b) =>
-        a.side.localeCompare(b.side) ||
-        (a.mapId || '').localeCompare(b.mapId || '') ||
-        a.name.localeCompare(b.name),
+  const loadIntoPlan = (s, assigned) => {
+    const players = Object.fromEntries(
+      s.slots.filter((slot) => assigned[slot.key] && slot.operatorId).map((slot) => [assigned[slot.key], slot.operatorId]),
     );
+    updateTeam({
+      side: s.side,
+      ...(s.mapId !== 'any' ? { mapId: s.mapId, site: s.site || '' } : {}),
+      tacticId: null,
+      lineup: { side: s.side, players },
+    });
+    navigate('plan');
+  };
 
-  const canEdit = (t) => t.owner === null || t.owner === profile;
+  const header = (
+    <header className="page__head">
+      <div>
+        <h1 className="page__title">Tactics</h1>
+        <p className="page__sub">Pick your operators, find strategies that fit, adapt them and save your team's version.</p>
+      </div>
+    </header>
+  );
+  const tabs = (
+    <div className="segmented segmented--full" role="group" aria-label="Tactics sections">
+      <button type="button" className="segmented__btn" aria-pressed={mode !== 'quick'} onClick={() => navigate('tactics')}>
+        <Icon name="book" size={16} /> Strategies
+      </button>
+      <button type="button" className="segmented__btn" aria-pressed={mode === 'quick'} onClick={() => navigate('tactics/quick')}>
+        <Icon name="dice" size={16} /> Quick tactics
+      </button>
+    </div>
+  );
 
-  async function run(action, success) {
-    setError('');
-    setInfo('');
-    try {
-      await action();
-      if (success) setInfo(success);
-    } catch (e) {
-      setError(e.message || 'Something went wrong.');
+  let body;
+  if (mode === 'quick') {
+    body = <QuickTacticsView profile={profile} tacticsStore={tacticsStore} />;
+  } else if (mode === 'new') {
+    const blank = normalizeStrategy({
+      title: 'New strategy',
+      origin: 'team',
+      side: setup.side,
+      mapId: setup.mapId || 'any',
+      site: setup.site,
+      owner: profile,
+      slots: setup.picks.filter((p) => p.operatorId).map((p, i) => ({ key: `s${i + 1}`, operatorId: p.operatorId })),
+    });
+    body = (
+      <StrategyEditor
+        key="new"
+        initial={{ ...blank, title: '' }}
+        isNew
+        strategyData={strategyData}
+        onCancel={() => navigate('tactics')}
+        onSaved={(s) => navigate(`tactics/s/${s.id}`)}
+      />
+    );
+  } else if (mode === 'view' || mode === 'edit') {
+    if (!strategy) {
+      body = loading ? (
+        <Skeleton lines={6} />
+      ) : (
+        <EmptyState
+          icon="book"
+          title="Strategy not found"
+          action={
+            <button type="button" className="btn btn--secondary" onClick={() => navigate('tactics')}>
+              Back to strategies
+            </button>
+          }
+        >
+          It may have been deleted or hidden.
+        </EmptyState>
+      );
+    } else if (mode === 'edit' && strategy.origin === 'team' && !strategy.builtin) {
+      body = (
+        <StrategyEditor
+          key={strategy.id}
+          initial={strategy}
+          strategyData={strategyData}
+          onCancel={() => navigate(`tactics/s/${strategy.id}`)}
+          onSaved={(s) => navigate(`tactics/s/${s.id}`)}
+        />
+      );
+    } else {
+      body = (
+        <StrategyDetail
+          key={strategy.id}
+          strategy={strategy}
+          picks={setup.picks}
+          profile={profile}
+          strategyData={strategyData}
+          navigate={(to) => (to === `tactics/s/${strategy.id}/edit` && strategy.origin === 'reference' ? setReferenceFor(strategy) : navigate(to))}
+          onLoadIntoPlan={loadIntoPlan}
+        />
+      );
     }
-  }
-
-  async function onImport(e) {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    const owner = tab === 'mine' ? profile : null;
-    const { tactics: parsed, errors } = parseImport(await file.text(), { owner });
-    if (parsed.length === 0) {
-      setError(errors.join(' ') || 'No tactics found in the file.');
-      return;
-    }
-    const skipped = errors.length ? ` (${errors.length} skipped: ${errors.join(' ')})` : '';
-    await run(() => importTactics(parsed), `Imported ${parsed.length} tactic${parsed.length === 1 ? '' : 's'}${skipped}.`);
-  }
-
-  if (editing) {
-    return (
-      <TacticEditor
-        initial={editing}
-        onCancel={() => setEditing(null)}
-        onSave={async (t) => {
-          await saveTactic(t);
-          setEditing(null);
-          setError('');
-          setInfo(`Saved "${t.name}".`);
-        }}
+  } else {
+    body = (
+      <StrategyLibrary
+        setup={setup}
+        setSetup={setSetup}
+        players={players}
+        onSyncPlan={() => setSetup(setupFromPlan(team, lineupPlayers))}
+        strategyData={strategyData}
+        navigate={navigate}
+        onAddReference={() => setReferenceFor('new')}
       />
     );
   }
 
   return (
-    <section className="page" aria-labelledby="tactics-title">
-      <header className="page__head">
-        <div>
-          <h1 id="tactics-title" className="page__title">Tactics</h1>
-          <p className="page__sub">Your team's strats, with diagrams. Roll one from the Plan screen.</p>
-        </div>
-        <div className="toolbar">
-          <button
-            type="button"
-            className="btn btn--secondary btn--sm"
-            onClick={() =>
-              setEditing({ owner: profile ?? null, shared: true, side: 'attack', mapId: 'any', requiredRoles: [] })
-            }
-          >
-            + New tactic
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => download('tactics.json', exportTactics(list))}
-            disabled={list.length === 0}
-          >
-            Export JSON
-          </button>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
-            Import JSON
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={onImport}
-            aria-label="Import tactics JSON file"
-          />
-        </div>
-      </header>
-
-      <div className="panel">
-        <div className="tabs-row">
-          <div className="segmented" role="group" aria-label="Tactic lists">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                aria-pressed={tab === t.id}
-                className="segmented__btn"
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          {tab === 'profile' && (
-            <label className="inline-field">
-              <span className="visually-hidden">Player</span>
-              <select className="select input--sm" value={viewing} onChange={(e) => setViewing(e.target.value)}>
-                {players.map((p) => (
-                  <option key={p} value={p}>{p === profile ? `${p} (you)` : p}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          <label className="inline-field">
-            <span className="visually-hidden">Side</span>
-            <select className="select input--sm" value={sideFilter} onChange={(e) => setSideFilter(e.target.value)}>
-              <option value="all">Both sides</option>
-              <option value="attack">Attack</option>
-              <option value="defend">Defense</option>
-            </select>
-          </label>
-        </div>
-
-        <Notice onDismiss={() => setError('')}>{error}</Notice>
-        {info && <Notice kind="ok" onDismiss={() => setInfo('')}>{info}</Notice>}
-        {tab === 'mine' && !profile && <Notice kind="info">Pick a profile to see your tactics.</Notice>}
-
-        {list.length === 0 ? (
-          <p className="empty">No tactics here yet.</p>
-        ) : (
-          <ul className="tactic-list">
-            {list.map((t) => (
-              <li key={t.id} className={`tactic-card tactic-card--${t.side}`}>
-                <div className="tactic-card__head">
-                  <h3 className="tactic__name">
-                    {t.name}
-                    {t.example && <span className="tag tag--example">example</span>}
-                    {t.owner && t.shared && <span className="tag tag--shared">shared</span>}
-                  </h3>
-                  <span className="muted tactic__meta">
-                    {t.side === 'attack' ? 'Attack' : 'Defense'} ·{' '}
-                    {t.mapId === 'any' ? 'Any map' : MAPS_BY_ID[t.mapId]?.name ?? t.mapId}
-                    {t.site ? ` · ${t.site}` : ''} · {t.owner ? `by ${t.owner}` : 'team'}
-                  </span>
-                </div>
-                {t.description && <p className="tactic__desc">{t.description}</p>}
-                {t.requiredRoles.length > 0 && (
-                  <ul className="fit__roles" aria-label="Required roles">
-                    {t.requiredRoles.map((r, i) => (
-                      <li key={i} className={`role role--${r}`}>{ROLE_LABEL[r]}</li>
-                    ))}
-                  </ul>
-                )}
-                {shown.has(t.id) && (
-                  <TacticDiagram
-                    tactic={t}
-                    players={lineupPlayers}
-                    operatorsById={OPERATORS_BY_ID}
-                    mapName={MAPS_BY_ID[t.mapId]?.name}
-                    compact
-                  />
-                )}
-                <div className="tactic-card__actions">
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    aria-expanded={shown.has(t.id)}
-                    onClick={() =>
-                      setShown((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(t.id)) next.delete(t.id);
-                        else next.add(t.id);
-                        return next;
-                      })
-                    }
-                  >
-                    {shown.has(t.id) ? 'Hide diagram' : 'Diagram'}
-                    <span className="visually-hidden"> for {t.name}</span>
-                  </button>
-                  {canEdit(t) && (
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(t)}>
-                      Edit<span className="visually-hidden"> {t.name}</span>
-                    </button>
-                  )}
-                  {profile && (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      onClick={() =>
-                        setEditing({
-                          ...t,
-                          id: undefined,
-                          owner: profile,
-                          example: false,
-                          builtin: false,
-                          name: `${t.name.replace(/^\[Example\]\s*/, '')} (copy)`,
-                        })
-                      }
-                    >
-                      Duplicate<span className="visually-hidden"> {t.name}</span>
-                    </button>
-                  )}
-                  {canEdit(t) && (
-                    <button
-                      type="button"
-                      className="btn btn--danger btn--sm"
-                      onClick={() => {
-                        if (window.confirm(`Delete "${t.name}"? Everyone on the team will lose it.`)) {
-                          run(() => deleteTactic(t), `Deleted "${t.name}".`);
-                        }
-                      }}
-                    >
-                      Delete<span className="visually-hidden"> {t.name}</span>
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+    <section className="page" aria-label="Tactics">
+      {(mode === 'library' || mode === 'quick') && header}
+      {(mode === 'library' || mode === 'quick') && tabs}
+      {body}
+      {referenceFor && (
+        <ReferenceForm
+          initial={referenceFor === 'new' ? null : referenceFor}
+          defaults={{ mapId: setup.mapId || 'any', site: setup.site, side: setup.side }}
+          profile={profile}
+          onClose={() => setReferenceFor(null)}
+          onSave={async (s) => {
+            await strategyData.saveStrategy(s);
+            setReferenceFor(null);
+            navigate(`tactics/s/${s.id}`);
+          }}
+        />
+      )}
     </section>
   );
 }

@@ -315,3 +315,82 @@ end $$;
 
 alter table public.match_availability replica identity full;
 alter table public.match_checklist replica identity full;
+
+-- ===========================================================================
+-- Strategy library (added later). Additive only; safe to run again.
+--
+-- Built-in strategies (AI suggestions and linked references) ship in
+-- src/data/strategies.json. This table holds the team's own strategies,
+-- team-added references, and "hidden" markers for built-ins (deleted = true).
+--
+-- Each strategy is one document (`doc`): slots, steps, markers and paths are
+-- saved together so a save can't half-apply. The columns next to it copy the
+-- fields the library filters on, so they can be indexed and queried.
+-- ===========================================================================
+create table if not exists public.strategies (
+  id text primary key check (char_length(id) between 1 and 80),
+  origin text not null default 'team' check (origin in ('team', 'reference', 'suggested')),
+  title text not null check (char_length(btrim(title)) between 1 and 120),
+  map_id text not null default 'any' check (char_length(map_id) <= 40),
+  site text not null default '' check (char_length(site) <= 80),
+  floor text not null default '' check (char_length(floor) <= 20),
+  side text not null check (side in ('attack', 'defend')),
+  type text not null default 'execute' check (char_length(type) <= 20),
+  difficulty int not null default 2 check (difficulty between 1 and 3),
+  operators text[] not null default '{}' check (cardinality(operators) <= 6),
+  tags text[] not null default '{}' check (cardinality(tags) <= 10),
+  source_name text not null default '' check (char_length(source_name) <= 80),
+  source_url text not null default '' check (source_url = '' or source_url ~ '^https://'),
+  owner_profile_id uuid references public.profiles (id) on delete set null,
+  shared boolean not null default true,
+  deleted boolean not null default false,
+  schema_version int not null default 1,
+  doc jsonb not null default '{}'::jsonb check (pg_column_size(doc) <= 200000),
+  updated_by text check (char_length(updated_by) <= 24),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists strategies_map_side_idx on public.strategies (map_id, side);
+create index if not exists strategies_operators_idx on public.strategies using gin (operators);
+
+-- Who plays which slot of a strategy. Kept apart from the strategy itself so
+-- the same strategy works when the roster changes. strategy_id can point at a
+-- built-in strategy, so it has no foreign key.
+create table if not exists public.strategy_assignments (
+  strategy_id text not null check (char_length(strategy_id) between 1 and 80),
+  slot_key text not null check (char_length(slot_key) between 1 and 20),
+  profile_id uuid not null references public.profiles (id) on delete cascade,
+  updated_at timestamptz not null default now(),
+  primary key (strategy_id, slot_key)
+);
+
+alter table public.strategies enable row level security;
+alter table public.strategy_assignments enable row level security;
+
+drop policy if exists "team all strategies" on public.strategies;
+create policy "team all strategies" on public.strategies
+  for all to anon, authenticated using (true) with check (true);
+
+drop policy if exists "team all strategy_assignments" on public.strategy_assignments;
+create policy "team all strategy_assignments" on public.strategy_assignments
+  for all to anon, authenticated using (true) with check (true);
+
+grant select, insert, update, delete on public.strategies, public.strategy_assignments to anon, authenticated;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['strategies', 'strategy_assignments']
+  loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
+
+alter table public.strategy_assignments replica identity full;

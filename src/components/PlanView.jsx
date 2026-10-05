@@ -15,7 +15,7 @@ import { formatLineupText, rerollPlayer, rollLineup } from '../lib/roll.js';
 const describe = (lineup, players) =>
   players.map((p) => `${p}: ${OPERATORS_BY_ID[lineup[p]]?.name ?? 'none'}`).join(', ');
 
-export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics }) {
+export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics, onFindStrategies }) {
   const { lineupPlayers } = useRoster();
   const [error, setError] = useState('');
   const [changed, setChanged] = useState([]);
@@ -72,6 +72,11 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
           <h1 className="page__title">Plan</h1>
           <p className="page__sub">Map, lineup, tactic and bans. Every change is shared with the team live.</p>
         </div>
+        {onFindStrategies && (
+          <button type="button" className="btn btn--secondary btn--sm" onClick={onFindStrategies}>
+            Find strategies for this lineup
+          </button>
+        )}
       </header>
       <div className="plan">
         <div className="plan__col">

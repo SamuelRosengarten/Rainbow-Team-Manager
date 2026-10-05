@@ -459,3 +459,91 @@ export async function setPreference(profileId, operatorId, kind) {
   }
   await run(db().from('preferred_operators').upsert({ profile_id: profileId, operator_id: operatorId, kind }));
 }
+
+// ---------------------------------------------------------------------------
+// Strategy library
+// ---------------------------------------------------------------------------
+
+/**
+ * Saved strategies (team strategies, team-added references, hidden built-ins).
+ * Returns raw documents; the caller validates them. null if the table is missing.
+ */
+export async function fetchStrategies(idByName) {
+  try {
+    const rows = await run(db().from('strategies').select('id, deleted, doc, owner_profile_id, updated_by, updated_at'));
+    const nameById = invert(idByName);
+    return rows.map((r) => ({
+      ...r.doc,
+      id: r.id,
+      deleted: r.deleted,
+      owner: r.owner_profile_id ? nameById[r.owner_profile_id] ?? null : null,
+      updatedBy: r.updated_by ?? null,
+      updatedAt: r.updated_at ?? null,
+    }));
+  } catch (e) {
+    if (isMissingSchema(e)) return null;
+    throw e;
+  }
+}
+
+/** Save a strategy document. Filter columns are copied out of the document. */
+export async function saveStrategy(s, idByName, by) {
+  const { owner, deleted, ...doc } = s;
+  await run(
+    db()
+      .from('strategies')
+      .upsert({
+        id: s.id,
+        origin: s.origin,
+        title: s.title,
+        map_id: s.mapId || 'any',
+        site: s.site || '',
+        floor: s.floor || '',
+        side: s.side,
+        type: s.type,
+        difficulty: s.difficulty,
+        operators: s.slots.map((x) => x.operatorId).filter(Boolean),
+        tags: s.tags,
+        source_name: s.sourceName || '',
+        source_url: s.sourceUrl || '',
+        owner_profile_id: owner ? idByName[owner] ?? null : null,
+        shared: s.shared !== false,
+        deleted: Boolean(deleted),
+        schema_version: s.schemaVersion ?? 1,
+        doc,
+        updated_by: by ?? null,
+        updated_at: new Date().toISOString(),
+      }),
+  );
+}
+
+export async function deleteStrategyRow(id) {
+  await run(db().from('strategies').delete().eq('id', id));
+}
+
+/** @returns {Promise<Array<{strategyId, slotKey, player}> | null>} */
+export async function fetchStrategyAssignments(idByName) {
+  try {
+    const rows = await run(db().from('strategy_assignments').select('strategy_id, slot_key, profile_id'));
+    const nameById = invert(idByName);
+    return rows
+      .filter((r) => nameById[r.profile_id])
+      .map((r) => ({ strategyId: r.strategy_id, slotKey: r.slot_key, player: nameById[r.profile_id] }));
+  } catch (e) {
+    if (isMissingSchema(e)) return null;
+    throw e;
+  }
+}
+
+/** Assign a player (profile id) to a slot, or clear it with null. */
+export async function setStrategyAssignment(strategyId, slotKey, profileId) {
+  if (!profileId) {
+    await run(db().from('strategy_assignments').delete().eq('strategy_id', strategyId).eq('slot_key', slotKey));
+    return;
+  }
+  await run(
+    db()
+      .from('strategy_assignments')
+      .upsert({ strategy_id: strategyId, slot_key: slotKey, profile_id: profileId, updated_at: new Date().toISOString() }),
+  );
+}

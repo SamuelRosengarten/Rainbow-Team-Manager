@@ -15,6 +15,7 @@ import {
 } from './components/Screens.jsx';
 import { useTeamData } from './state/useTeamData.js';
 import { useMatchData } from './state/useMatchData.js';
+import { useStrategyData } from './state/useStrategyData.js';
 import { useOnline } from './state/useOnline.js';
 import { useHashRoute } from './state/useHashRoute.js';
 import { RosterContext } from './state/roster-context.js';
@@ -63,6 +64,7 @@ function TeamApp({ online, onOffline }) {
   const data = useTeamData({ online, profile: storedProfile });
   const ready = data.status === 'ready';
   const matchData = useMatchData({ online, idByName: data.idByName, profile: storedProfile, rosterLoaded: ready });
+  const strategyData = useStrategyData({ online, idByName: data.idByName, profile: storedProfile, rosterLoaded: ready });
   const browserOnline = useOnline();
 
   const rosterValue = useMemo(
@@ -194,9 +196,28 @@ function TeamApp({ online, onOffline }) {
               currentProfile={profile}
               rollOptions={rollOptions}
               tactics={myTactics}
+              onFindStrategies={() => {
+                try {
+                  sessionStorage.removeItem('r6tp.strategy-setup');
+                } catch {
+                  // storage blocked: the library keeps its last setup
+                }
+                navigate('tactics');
+              }}
             />
           )}
-          {view === 'tactics' && <TacticsView key={profile} profile={profile} tacticsStore={data.tacticsStore} />}
+          {view === 'tactics' && (
+            <TacticsView
+              key={profile}
+              profile={profile}
+              sub={sub}
+              navigate={navigate}
+              tacticsStore={data.tacticsStore}
+              strategyData={strategyData}
+              team={data.team}
+              updateTeam={data.updateTeam}
+            />
+          )}
           {view === 'team' && (
             <TeamView
               sub={sub}

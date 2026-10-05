@@ -56,8 +56,25 @@ Ubisoft's Split Fire page doesn't list the ranked pool, so the list is pieced to
 
 Sites are filled in **only** for maps whose current site names I'm confident about: Bank, Border, Chalet, Clubhouse, Coastline, Kafe Dostoyevsky. `attack` and `defend` hold the same four bomb sites. Edit them separately if your team wants different lists per side.
 
-**Left empty on purpose (please fill in):** Calypso Casino, Consulate, Fortress, Kanal, Lair, Nighthaven Labs, Oregon, Outback, Skyscraper, Theme Park, Villa. Villa's sites changed this season (Living Room / Library moved to the basement).
+**Oregon (added for the strategy library, please check):** 2F Kids' Dorms / Dorms Main Hall, 1F Kitchen / Dining Hall, 1F Meeting Hall / Kitchen, B Laundry Room / Supply Room. Written from memory, not checked against the current map.
+
+**Left empty on purpose (please fill in):** Calypso Casino, Consulate, Fortress, Kanal, Lair, Nighthaven Labs, Outback, Skyscraper, Theme Park, Villa. Villa's sites changed this season (Living Room / Library moved to the basement).
 
 ### Map notes
 
 Short starter notes exist only for the six maps above. Every other map shows an "add notes" prompt in the app.
+
+## Strategy library (`src/data/strategies.json`)
+
+**AI suggestions (21):** written from general Siege knowledge by an AI and labelled as such in the app. They are role-based plans (hard-breach execute, vertical, breach denial, site hold, deep roam) applied to real site names. They are **not** verified or pro strategies, and the board positions are schematic. Things to check before relying on one:
+
+- Whether the "main wall", "hatch above" and "floor above" exist the way the plan assumes on that site.
+- Spawn fields are empty on purpose: fill in your team's spawns when you adapt a strategy.
+- Each operator's gadget sentence is generic (e.g. "Use your Evil Eye with a view of the main entry").
+
+**References (3), link only:** the source pages' terms couldn't be checked (the sites were unreachable from the environment that built this), so nothing was copied: only title, URL, map, site and side. Operators were left empty because they couldn't be verified.
+
+- R6 Coaching, "Clubhouse Cash Room / CCTV Room — Attack & Defense Strats" (attack and defense entries)
+- Alviran, "R6 Clubhouse Callouts Guide 2026: Map Layout, Sites and Attack Plans"
+
+Open each link once to confirm it still works and matches the title.
