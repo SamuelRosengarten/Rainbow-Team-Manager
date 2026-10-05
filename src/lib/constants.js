@@ -12,4 +12,5 @@ export const EMPTY_TEAM_STATE = {
   bans: [],
   lineup: null, // { side, players: { [name]: operatorId } }
   tacticId: null,
+  ownedOnly: false,
 };

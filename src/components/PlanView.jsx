@@ -83,6 +83,17 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
             </button>
             <CopyButton getText={shareText} disabled={!lineup} />
           </div>
+          <div className="lineup-foot">
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={Boolean(team.ownedOnly)}
+                onChange={(e) => updateTeam({ ownedOnly: e.target.checked })}
+              />
+              Use owned operators only
+            </label>
+            {team.updatedBy && <span className="muted small">Last change by {team.updatedBy}</span>}
+          </div>
         </section>
 
         <TacticPanel

@@ -1,22 +1,75 @@
 import { useState } from 'react';
 import PlanView from './components/PlanView.jsx';
 import TacticsView from './components/TacticsView.jsx';
-import { useTeamState } from './state/useTeamState.js';
-import { useMapNotes } from './state/useMapNotes.js';
-import { useTactics } from './state/useTactics.js';
+import OperatorsView from './components/OperatorsView.jsx';
+import Notice from './components/Notice.jsx';
+import {
+  ConfigMissingScreen,
+  ErrorScreen,
+  LoadingScreen,
+  PasscodeScreen,
+  ProfilePicker,
+} from './components/Screens.jsx';
+import { useTeamData } from './state/useTeamData.js';
+import { isConfigured } from './lib/api.js';
+import { PLAYERS } from './lib/constants.js';
+import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, storeProfile } from './lib/config.js';
 import { rollableTactics } from './lib/tactics.js';
 
 const VIEWS = [
   { id: 'plan', label: 'Plan' },
   { id: 'tactics', label: 'Tactics' },
+  { id: 'operators', label: 'Operators' },
 ];
 
+const LIVE_LABEL = {
+  live: 'Live',
+  connecting: 'Connecting…',
+  reconnecting: 'Reconnecting…',
+  offline: 'Offline mode',
+};
+
 export default function App() {
+  const [mode, setMode] = useState(isConfigured ? 'online' : 'unconfigured');
+  const [passed, setPassed] = useState(() => !REQUIRE_PASSCODE || passcodePassed());
+
+  if (mode === 'unconfigured') return <ConfigMissingScreen onOffline={() => setMode('offline')} />;
+  if (mode === 'online' && !passed) {
+    return (
+      <PasscodeScreen
+        onPass={() => {
+          markPasscodePassed();
+          setPassed(true);
+        }}
+      />
+    );
+  }
+  return <TeamApp key={mode} online={mode === 'online'} onOffline={() => setMode('offline')} />;
+}
+
+function TeamApp({ online, onOffline }) {
+  const [profile, setProfile] = useState(() => loadProfile(PLAYERS));
+  const [picking, setPicking] = useState(false);
   const [view, setView] = useState('plan');
-  const { state: team, update } = useTeamState();
-  const notes = useMapNotes();
-  const tacticsStore = useTactics();
-  const profile = null;
+  const data = useTeamData({ online, profile });
+
+  if (!profile || picking) {
+    return (
+      <ProfilePicker
+        current={profile}
+        onPick={(name) => {
+          storeProfile(name);
+          setProfile(name);
+          setPicking(false);
+        }}
+        onCancel={profile ? () => setPicking(false) : undefined}
+      />
+    );
+  }
+  if (data.status === 'loading') return <LoadingScreen />;
+  if (data.status === 'error') return <ErrorScreen message={data.loadError} onRetry={data.retry} onOffline={onOffline} />;
+
+  const rollOptions = { prefs: data.prefs, ownedOnly: Boolean(data.team.ownedOnly) };
 
   return (
     <div className="app">
@@ -42,18 +95,54 @@ export default function App() {
             </button>
           ))}
         </nav>
+        <div className="topbar__right">
+          <span className={`live live--${data.live}`} role="status">
+            <span className="live__dot" aria-hidden="true" />
+            {LIVE_LABEL[data.live]}
+          </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm profile-switch"
+            onClick={() => setPicking(true)}
+            aria-label={`Signed in as ${profile}. Switch profile`}
+          >
+            <span className="profile-switch__initial" aria-hidden="true">{profile[0]}</span>
+            {profile}
+          </button>
+        </div>
       </header>
+
+      {data.writeError && (
+        <div className="banner">
+          <Notice onDismiss={data.clearWriteError}>{data.writeError}</Notice>
+        </div>
+      )}
+      {!online && (
+        <div className="banner">
+          <Notice kind="warn">Offline mode: changes stay on this device and are lost on reload.</Notice>
+        </div>
+      )}
+
       <main id="main" className="main">
-        {view === 'plan' ? (
+        {view === 'plan' && (
           <PlanView
-            team={team}
-            updateTeam={update}
-            notes={notes}
+            team={data.team}
+            updateTeam={data.updateTeam}
+            notes={data.notes}
             currentProfile={profile}
-            tactics={rollableTactics(tacticsStore.tactics, profile)}
+            rollOptions={rollOptions}
+            tactics={rollableTactics(data.tacticsStore.tactics, profile)}
           />
-        ) : (
-          <TacticsView profile={profile} tacticsStore={tacticsStore} />
+        )}
+        {view === 'tactics' && <TacticsView key={profile} profile={profile} tacticsStore={data.tacticsStore} />}
+        {view === 'operators' && (
+          <OperatorsView
+            key={profile}
+            profile={profile}
+            prefs={data.prefs}
+            setOwned={data.setOwned}
+            setPreference={data.setPreference}
+          />
         )}
       </main>
     </div>
