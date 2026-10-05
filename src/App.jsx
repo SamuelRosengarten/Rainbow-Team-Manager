@@ -1,8 +1,10 @@
 import PlanView from './components/PlanView.jsx';
 import { useTeamState } from './state/useTeamState.js';
+import { useMapNotes } from './state/useMapNotes.js';
 
 export default function App() {
   const { state: team, update } = useTeamState();
+  const notes = useMapNotes();
   return (
     <div className="app">
       <a className="skip-link" href="#main">Skip to content</a>
@@ -16,7 +18,7 @@ export default function App() {
         </div>
       </header>
       <main id="main" className="main">
-        <PlanView team={team} updateTeam={update} />
+        <PlanView team={team} updateTeam={update} notes={notes} />
       </main>
     </div>
   );

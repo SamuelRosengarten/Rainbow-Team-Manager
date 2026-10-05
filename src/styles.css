@@ -740,3 +740,105 @@ legend {
     grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   }
 }
+
+/* ---------- Maps & sites ---------- */
+.map-current {
+  color: var(--accent);
+}
+.map-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.map-card {
+  width: 100%;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(245, 166, 35, 0.06), transparent 60%),
+    repeating-linear-gradient(45deg, transparent 0 10px, rgba(255, 255, 255, 0.015) 10px 20px),
+    var(--surface-2);
+  cursor: pointer;
+  text-align: left;
+}
+.map-card:hover {
+  border-color: var(--line-strong);
+}
+.map-card[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.map-card__name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.map-card__meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.site-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.site-chip {
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-size: 0.92rem;
+  text-align: left;
+}
+.site-chip[aria-checked='true'] {
+  border-color: var(--accent);
+  background: rgba(245, 166, 35, 0.14);
+  color: #ffd794;
+}
+
+.notes-owner {
+  width: auto;
+  min-width: 160px;
+}
+.notes-text {
+  white-space: pre-wrap;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.add-notes {
+  width: 100%;
+  min-height: 64px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.add-notes:hover {
+  background: rgba(245, 166, 35, 0.06);
+  border-color: var(--accent);
+}
+code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-3);
+}
