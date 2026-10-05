@@ -35,6 +35,15 @@ Roles are a judgement call. Most of the classic operators are well established. 
 | Kapkan | defend | support | Trapper; some teams count him as anchor |
 | Clash | defend | support | Shield; some teams count her as anchor |
 
+## Operator profiles (`src/data/operatorProfiles.json`)
+
+Written from memory, **not** checked against the current season. Ubisoft changes loadouts often, so treat weapons as the most likely to be out of date. Please check:
+
+- **Health / speed** for everyone. Values are 1 to 3 (Siege X health and speed ratings).
+- **Weapons**. Lists hold the main options only; secondary gadgets are left out on purpose.
+- **Marked `"check": true`** (the profile shows a "needs checking" note): Deimos, Striker, Rauora, Solid Snake, Sentry, Skopós, Denari, Noor. Rauora, Solid Snake, Denari and Noor have no weapons listed and only a rough ability description.
+- **Intro videos**: every profile links to a YouTube search. Add a `"video"` URL to pin the exact video.
+
 ## Maps (`src/data/maps.json`)
 
 Ubisoft's Split Fire page doesn't list the ranked pool, so the list is pieced together from several sources:

@@ -12,6 +12,7 @@ export default function TacticEditor({ initial, onSave, onCancel }) {
     mapId: initial.mapId ?? 'any',
     site: initial.site ?? '',
     description: initial.description ?? '',
+    imageUrl: initial.imageUrl ?? '',
     roleCounts: countRoles(initial.requiredRoles ?? []),
     shared: initial.shared ?? true,
   }));
@@ -102,6 +103,25 @@ export default function TacticEditor({ initial, onSave, onCancel }) {
             maxLength={4000}
             placeholder="Who does what, where the breach goes, when to plant…"
           />
+        </label>
+
+        <label className="field">
+          <span className="field__label">Map image link (optional)</span>
+          <input
+            className="input"
+            type="url"
+            inputMode="url"
+            placeholder="https://… screenshot of the site with your setup drawn on it"
+            value={form.imageUrl}
+            onChange={(e) => set({ imageUrl: e.target.value })}
+            maxLength={1000}
+          />
+          <span className="muted small">
+            Shown above the auto-generated diagram. Use any https image link (Imgur, Discord, a strat tool export…).
+          </span>
+          {/^https:\/\/\S+$/i.test(form.imageUrl.trim()) && (
+            <img className="editor__preview" src={form.imageUrl.trim()} alt="Map image preview" />
+          )}
         </label>
 
         <fieldset>

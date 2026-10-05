@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import TacticEditor from './TacticEditor.jsx';
 import Notice from './Notice.jsx';
+import TacticDiagram from './TacticDiagram.jsx';
 import { PLAYERS } from '../lib/constants.js';
+import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { exportTactics, parseImport, tacticsForTab } from '../lib/tactics.js';
@@ -31,6 +33,7 @@ export default function TacticsView({ profile, tacticsStore }) {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const [shown, setShown] = useState(() => new Set());
   const fileRef = useRef(null);
 
   const list = tacticsForTab(tactics, { tab, profile, viewing })
@@ -184,7 +187,32 @@ export default function TacticsView({ profile, tacticsStore }) {
                   ))}
                 </ul>
               )}
+              {shown.has(t.id) && (
+                <TacticDiagram
+                  tactic={t}
+                  players={PLAYERS}
+                  operatorsById={OPERATORS_BY_ID}
+                  mapName={MAPS_BY_ID[t.mapId]?.name}
+                  compact
+                />
+              )}
               <div className="tactic-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  aria-expanded={shown.has(t.id)}
+                  onClick={() =>
+                    setShown((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(t.id)) next.delete(t.id);
+                      else next.add(t.id);
+                      return next;
+                    })
+                  }
+                >
+                  {shown.has(t.id) ? 'Hide diagram' : 'Diagram'}
+                  <span className="visually-hidden"> for {t.name}</span>
+                </button>
                 {canEdit(t) && (
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(t)}>
                     Edit<span className="visually-hidden"> {t.name}</span>

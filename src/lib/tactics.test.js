@@ -94,3 +94,18 @@ describe('import/export', () => {
     expect(parseImport('nope').errors[0]).toMatch(/not valid JSON/);
   });
 });
+
+describe('tactic image links', () => {
+  const base = { name: 'X', side: 'attack' };
+
+  it('keeps https links and round-trips them through export', () => {
+    const t = normalizeTactic({ ...base, imageUrl: ' https://i.imgur.com/a.png ' });
+    expect(t.imageUrl).toBe('https://i.imgur.com/a.png');
+    expect(JSON.parse(exportTactics([t]))[0].imageUrl).toBe('https://i.imgur.com/a.png');
+  });
+
+  it('rejects non-https links', () => {
+    expect(() => normalizeTactic({ ...base, imageUrl: 'javascript:alert(1)' })).toThrow(/https/);
+    expect(normalizeTactic(base).imageUrl).toBe('');
+  });
+});
