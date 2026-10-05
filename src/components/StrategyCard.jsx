@@ -16,7 +16,7 @@ export function OriginBadge({ strategy }) {
 }
 
 /** Stars plus "3/5 operators match" (or "Operators not listed"). */
-export function MatchStars({ match }) {
+export function FitStars({ match }) {
   if (!match.scored) return <span className="match-stars match-stars--none">{match.label}</span>;
   return (
     <span className="match-stars" aria-label={`${match.stars} of 5 stars. ${match.label}`}>
@@ -43,7 +43,7 @@ export default function StrategyCard({ strategy, match, onOpen }) {
           {strategy.site ? ` · ${strategy.site}` : ''} · {strategy.side === 'attack' ? 'Attack' : 'Defense'} ·{' '}
           {STRATEGY_TYPES[strategy.type]} · {DIFFICULTY[strategy.difficulty]}
         </span>
-        <MatchStars match={match} />
+        <FitStars match={match} />
         {match.scored && (
           <span className="strat-card__ops">
             {match.exact.map((e) => (

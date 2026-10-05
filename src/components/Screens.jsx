@@ -11,7 +11,7 @@ function Shell({ title, children, labelledBy = 'screen-title' }) {
             <path d="M16 3 27 8.5v8.5c0 6-4.5 9.5-11 12-6.5-2.5-11-6-11-12V8.5z" fill="none" stroke="currentColor" strokeWidth="2.5" />
             <circle cx="16" cy="16" r="3.5" fill="currentColor" />
           </svg>
-          R6 Team Planner
+          R6 Tactical Command
         </div>
         <h1 id={labelledBy} className="screen__title">{title}</h1>
         {children}

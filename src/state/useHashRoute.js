@@ -1,10 +1,14 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-export const ROUTES = ['home', 'matches', 'plan', 'tactics', 'team'];
+export const ROUTES = ['home', 'build', 'strategies', 'maps', 'operators', 'team', 'plan'];
 
-/** "#/matches/abc" -> { view: 'matches', sub: 'abc' }. Unknown views go home. */
+// Old links keep working: the Tactics screen is now Strategies.
+const ALIASES = { tactics: 'strategies' };
+
+/** "#/strategies/s/abc" -> { view: 'strategies', sub: 's/abc' }. Unknown views go home. */
 export function parseHash(hash) {
-  const [view = '', ...rest] = String(hash ?? '').replace(/^#\/?/, '').split('/');
+  const [first = '', ...rest] = String(hash ?? '').replace(/^#\/?/, '').split('/');
+  const view = ALIASES[first] ?? first;
   return ROUTES.includes(view) ? { view, sub: decodeURIComponent(rest.join('/')) } : { view: 'home', sub: '' };
 }
 

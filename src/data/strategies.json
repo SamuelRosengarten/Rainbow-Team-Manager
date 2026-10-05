@@ -29,7 +29,8 @@
           "Put your Shock Wire on the main Church wall.",
           "Wait for the breach charge, then deny it; don't peek the breacher.",
           "Fall back into Church once the wall is open."
-        ]
+        ],
+        "tacticalRole": "utility-denial"
       },
       {
         "key": "ads",
@@ -44,7 +45,8 @@
           "Help reinforce the walls of Arsenal Room.",
           "Hold Arsenal Room with an angle on the door between the rooms.",
           "Rotate to Church if the attack commits there."
-        ]
+        ],
+        "tacticalRole": "support"
       },
       {
         "key": "plant",
@@ -60,7 +62,8 @@
           "Save your Remote Gas Grenade for the last 40 seconds.",
           "Deny the plant from cover; don't peek the breach.",
           "If the defuser goes down, stop it with your gadget."
-        ]
+        ],
+        "tacticalRole": "anchor"
       },
       {
         "key": "build",
@@ -76,7 +79,8 @@
           "Build cover in the middle of the site.",
           "Help reinforce the remaining walls.",
           "Hold the door between Church and Arsenal Room."
-        ]
+        ],
+        "tacticalRole": "support"
       },
       {
         "key": "window",
@@ -92,7 +96,8 @@
           "Call the breach team's positions to the team.",
           "Hold Church from a safe angle behind the wall.",
           "Trade attackers who push into Church."
-        ]
+        ],
+        "tacticalRole": "anchor"
       }
     ],
     "steps": [
@@ -109,7 +114,15 @@
         ],
         "description": "Reinforce both rooms, starting with the main Church wall. Place gadgets before the round starts.",
         "utility": "Shock Wire, Active Defense System, Kiba Barrier, Black Mirror",
-        "notes": ""
+        "notes": "",
+        "clock": "",
+        "actions": {
+          "deny": "Reinforce the main Church wall first.",
+          "ads": "Place your ADS covering the wall and door.",
+          "build": "Kiba-seal the hatches above both rooms.",
+          "window": "Mira on the wall toward the approach.",
+          "plant": "Help reinforce Arsenal Room."
+        }
       },
       {
         "id": "step2",
@@ -121,7 +134,12 @@
         ],
         "description": "Watch the approach through cameras and Mira. Don't give away positions early.",
         "utility": "",
-        "notes": ""
+        "notes": "",
+        "clock": "2:50",
+        "actions": {
+          "window": "Watch the approach through Mira. Call the drones.",
+          "ads": "Hold Arsenal Room; play off the door."
+        }
       },
       {
         "id": "step3",
@@ -134,7 +152,13 @@
         ],
         "description": "Bandit denies the breach charge; Jäger stops flashes and grenades; Azami reseals any new hole.",
         "utility": "Shock Wire",
-        "notes": ""
+        "notes": "",
+        "clock": "1:30",
+        "actions": {
+          "deny": "Deny the Thermite charge. Don’t peek the breacher.",
+          "ads": "Catch the flashes and grenades.",
+          "build": "Reseal any new hole."
+        }
       },
       {
         "id": "step4",
@@ -147,7 +171,13 @@
         ],
         "description": "Smoke uses their gadget on the plant spots; everyone else plays cover and trades.",
         "utility": "Remote Gas Grenade",
-        "notes": ""
+        "notes": "",
+        "clock": "0:40",
+        "actions": {
+          "plant": "Gas the default plant spots.",
+          "deny": "Play cover from the back of Church.",
+          "ads": "Hold the door between the rooms."
+        }
       },
       {
         "id": "step5",
@@ -160,7 +190,13 @@
         ],
         "description": "Retake together from two angles; Smoke denies the defuser.",
         "utility": "",
-        "notes": ""
+        "notes": "",
+        "clock": "0:20",
+        "actions": {
+          "plant": "Deny the defuser with gas.",
+          "ads": "Retake from Arsenal Room.",
+          "window": "Retake from Church through the wall."
+        }
       }
     ],
     "markers": [
@@ -171,7 +207,8 @@
         "x": 38,
         "y": 44,
         "label": "Bandit: main wall",
-        "stepId": "step3"
+        "stepId": "step3",
+        "gadget": "ability"
       },
       {
         "id": "m2",
@@ -226,6 +263,23 @@
         "y": 38,
         "label": "Mira holds Church",
         "stepId": "step2"
+      },
+      {
+        "id": "m8",
+        "kind": "reinforce",
+        "x": 38,
+        "y": 44,
+        "label": "Reinforce first",
+        "slotKey": "deny",
+        "stepId": "step1"
+      },
+      {
+        "id": "m9",
+        "kind": "camera",
+        "x": 47,
+        "y": 47,
+        "label": "Hallway camera",
+        "stepId": "step1"
       }
     ],
     "paths": [
@@ -279,6 +333,51 @@
             30
           ]
         ],
+        "stepId": "step4"
+      }
+    ],
+    "zones": [
+      {
+        "id": "zD1",
+        "kind": "hold",
+        "x": 27,
+        "y": 19,
+        "w": 22,
+        "h": 24,
+        "label": "Do not give up Church",
+        "stepId": "step3"
+      },
+      {
+        "id": "zD2",
+        "kind": "enemy",
+        "x": 28,
+        "y": 45,
+        "w": 20,
+        "h": 9,
+        "label": "Breach team stacks here",
+        "stepId": "step3"
+      }
+    ],
+    "crossfires": [
+      {
+        "id": "xD1",
+        "a": [
+          29,
+          38
+        ],
+        "b": [
+          63,
+          33
+        ],
+        "slotA": "window",
+        "slotB": "plant",
+        "target": [
+          42,
+          30
+        ],
+        "radius": 4.5,
+        "label": "Church plant",
+        "timing": "After the breach",
         "stepId": "step4"
       }
     ]
@@ -976,7 +1075,9 @@
           "Open the main Church wall with your Exothermic Charge.",
           "Hold the breach and trade the first defender who peeks it.",
           "Cover the planter from the breach."
-        ]
+        ],
+        "defuser": true,
+        "tacticalRole": "hard-breach"
       },
       {
         "key": "sup",
@@ -993,7 +1094,8 @@
           "Use your EG MK0-EMP Grenade to clear Bandit, Kaid or Mute utility on the wall right before the breach.",
           "Call 'wall clear' so Thermite can breach.",
           "Push in behind Thermite and plant or cover the planter."
-        ]
+        ],
+        "tacticalRole": "support"
       },
       {
         "key": "intel",
@@ -1009,7 +1111,8 @@
           "Use your Electronics Detector to find or expose defenders before the push.",
           "Watch the rotation from Arsenal Room into Church during the breach.",
           "Call the plant, then hold a post-plant crossfire."
-        ]
+        ],
+        "tacticalRole": "drone"
       },
       {
         "key": "soft",
@@ -1026,7 +1129,8 @@
           "Use your Tactical Breaching Hammer to open lines and the floor above Arsenal Room.",
           "Shoot down on anchors while Thermite breaches.",
           "Stop defenders from re-taking the plant from above."
-        ]
+        ],
+        "tacticalRole": "entry"
       },
       {
         "key": "flex",
@@ -1042,7 +1146,8 @@
           "Use your Airjab Launcher on the flank routes behind the team.",
           "Watch the flank behind the breach team.",
           "Lurk on the far side to stop late rotations."
-        ]
+        ],
+        "tacticalRole": "flank-watch"
       }
     ],
     "steps": [
@@ -1057,7 +1162,13 @@
         ],
         "description": "Drone Church and Arsenal Room. Find the anchors, roamers and any anti-breach utility on the main wall.",
         "utility": "Drones",
-        "notes": ""
+        "notes": "",
+        "clock": "2:55",
+        "actions": {
+          "intel": "Drone Arsenal Room and find the Bandit or Kaid on the Church wall.",
+          "hard": "Drone the main Church wall from the hallway.",
+          "sup": "Hold your drone at the wall for the breach."
+        }
       },
       {
         "id": "step2",
@@ -1069,7 +1180,12 @@
         ],
         "description": "Clear the area around the main wall and above Arsenal Room. Kill or push out roamers.",
         "utility": "",
-        "notes": ""
+        "notes": "",
+        "clock": "2:15",
+        "actions": {
+          "soft": "Take the floor above Arsenal Room.",
+          "flex": "Clear the west flank, then set Airjab traps."
+        }
       },
       {
         "id": "step3",
@@ -1080,7 +1196,11 @@
         ],
         "description": "Sledge opens the floor above Arsenal Room and pressures the anchors.",
         "utility": "Tactical Breaching Hammer",
-        "notes": ""
+        "notes": "",
+        "clock": "1:30",
+        "actions": {
+          "soft": "Open the floor above Arsenal Room; deny the anchor from above."
+        }
       },
       {
         "id": "step4",
@@ -1092,7 +1212,12 @@
         ],
         "description": "Thatcher clears the wall utility, then Thermite opens the Church wall.",
         "utility": "EG MK0-EMP Grenade, Exothermic Charge",
-        "notes": ""
+        "notes": "",
+        "clock": "1:10",
+        "actions": {
+          "sup": "EMP the Church wall when Thermite is in place.",
+          "hard": "Place the charge right after the EMP and call it."
+        }
       },
       {
         "id": "step5",
@@ -1107,7 +1232,15 @@
         ],
         "description": "Trade through the breach, clear Church and plant where the breach covers the defuser.",
         "utility": "",
-        "notes": ""
+        "notes": "",
+        "clock": "0:50",
+        "actions": {
+          "hard": "Swing Church after the wall opens; plant default.",
+          "sup": "Trade Thermite through the hole.",
+          "intel": "Call the defenders still alive.",
+          "soft": "Pin Arsenal Room from above.",
+          "flex": "Watch the flank. Don’t peek."
+        }
       },
       {
         "id": "step6",
@@ -1120,7 +1253,13 @@
         ],
         "description": "Hold crossfires on the defuser from the breach and from above. Don't all play the same angle.",
         "utility": "",
-        "notes": ""
+        "notes": "",
+        "clock": "0:20",
+        "actions": {
+          "intel": "Hold the plant from the hallway.",
+          "flex": "Stay on flank watch.",
+          "soft": "Deny the defuse from above."
+        }
       }
     ],
     "markers": [
@@ -1131,7 +1270,8 @@
         "x": 38,
         "y": 44,
         "label": "Breach: Thermite",
-        "stepId": "step4"
+        "stepId": "step4",
+        "breachType": "hard"
       },
       {
         "id": "m2",
@@ -1140,7 +1280,8 @@
         "x": 33,
         "y": 47,
         "label": "Thatcher clears wall",
-        "stepId": "step4"
+        "stepId": "step4",
+        "gadget": "ability"
       },
       {
         "id": "m3",
@@ -1158,7 +1299,8 @@
         "x": 66,
         "y": 22,
         "label": "Vertical: Sledge",
-        "stepId": "step3"
+        "stepId": "step3",
+        "breachType": "vertical"
       },
       {
         "id": "m5",
@@ -1195,6 +1337,24 @@
         "y": 46,
         "label": "IQ post-plant",
         "stepId": "step6"
+      },
+      {
+        "id": "m9",
+        "kind": "note",
+        "x": 24,
+        "y": 58,
+        "label": "Wait for the EMP",
+        "slotKey": "hard",
+        "stepId": "step4",
+        "anchorId": "m1"
+      },
+      {
+        "id": "m10",
+        "kind": "enemy",
+        "x": 44,
+        "y": 30,
+        "label": "Anchor likely here",
+        "stepId": "step1"
       }
     ],
     "paths": [
@@ -1317,6 +1477,68 @@
           ]
         ],
         "stepId": "step5"
+      },
+      {
+        "id": "pA1",
+        "kind": "entry",
+        "slotKey": "hard",
+        "stepId": "step5",
+        "points": [
+          [
+            38,
+            46
+          ],
+          [
+            38,
+            38
+          ],
+          [
+            35,
+            34
+          ]
+        ]
+      },
+      {
+        "id": "pA2",
+        "kind": "drone",
+        "slotKey": "intel",
+        "stepId": "step1",
+        "points": [
+          [
+            70,
+            58
+          ],
+          [
+            70,
+            46
+          ],
+          [
+            64,
+            36
+          ]
+        ]
+      }
+    ],
+    "zones": [
+      {
+        "id": "zA1",
+        "kind": "nogo",
+        "x": 6,
+        "y": 23,
+        "w": 19,
+        "h": 20,
+        "label": "Nomad covers this",
+        "stepId": "step5"
+      },
+      {
+        "id": "zA2",
+        "kind": "danger",
+        "x": 51,
+        "y": 25,
+        "w": 22,
+        "h": 18,
+        "label": "Anchor angles",
+        "stepId": "step4"
       }
     ]
   },

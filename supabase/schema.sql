@@ -179,7 +179,7 @@ alter table public.owned_operators replica identity full;
 alter table public.preferred_operators replica identity full;
 
 -- ===========================================================================
--- Roster, matches and match prep (added later).
+-- Roster details and the server-side passcode check (added later).
 -- Additive only: nothing above is renamed or removed. Safe to run again.
 -- ===========================================================================
 
@@ -237,72 +237,27 @@ create table if not exists public.player_details (
   updated_at timestamptz not null default now()
 );
 
-create table if not exists public.matches (
-  id uuid primary key default gen_random_uuid(),
-  opponent text not null check (char_length(btrim(opponent)) between 1 and 80),
-  scheduled_at timestamptz not null,
-  competition text not null default '' check (char_length(competition) <= 80),
-  map_id text not null default '' check (char_length(map_id) <= 40),
-  status text not null default 'scheduled' check (status in ('scheduled', 'completed', 'cancelled')),
-  score_us int check (score_us between 0 and 99),
-  score_them int check (score_them between 0 and 99),
-  notes text not null default '' check (char_length(notes) <= 4000),
-  created_by text check (char_length(created_by) <= 24),
-  updated_by text check (char_length(updated_by) <= 24),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists matches_scheduled_at_idx on public.matches (scheduled_at);
-
--- Who can play each match. One row per player and match.
-create table if not exists public.match_availability (
-  match_id uuid not null references public.matches (id) on delete cascade,
-  profile_id uuid not null references public.profiles (id) on delete cascade,
-  status text not null check (status in ('yes', 'maybe', 'no')),
-  updated_at timestamptz not null default now(),
-  primary key (match_id, profile_id)
-);
-
--- Prep checklist: a row means the item is done.
-create table if not exists public.match_checklist (
-  match_id uuid not null references public.matches (id) on delete cascade,
-  item_id text not null check (char_length(item_id) <= 40),
-  done_by text check (char_length(done_by) <= 24),
-  done_at timestamptz not null default now(),
-  primary key (match_id, item_id)
-);
+-- The app used to schedule matches (tables matches, match_availability and
+-- match_checklist). That feature was removed: the app is now a tactical
+-- planner. Nothing else uses those tables, so new setups don't create them
+-- and existing ones are left as they are (your old data stays). To delete
+-- them for good, run this by hand:
+--
+--   drop table if exists public.match_checklist, public.match_availability, public.matches;
 
 alter table public.player_details enable row level security;
-alter table public.matches enable row level security;
-alter table public.match_availability enable row level security;
-alter table public.match_checklist enable row level security;
 
 drop policy if exists "team all player_details" on public.player_details;
 create policy "team all player_details" on public.player_details
   for all to anon, authenticated using (true) with check (true);
 
-drop policy if exists "team all matches" on public.matches;
-create policy "team all matches" on public.matches
-  for all to anon, authenticated using (true) with check (true);
-
-drop policy if exists "team all match_availability" on public.match_availability;
-create policy "team all match_availability" on public.match_availability
-  for all to anon, authenticated using (true) with check (true);
-
-drop policy if exists "team all match_checklist" on public.match_checklist;
-create policy "team all match_checklist" on public.match_checklist
-  for all to anon, authenticated using (true) with check (true);
-
-grant select, insert, update, delete on
-  public.player_details, public.matches, public.match_availability, public.match_checklist
-  to anon, authenticated;
+grant select, insert, update, delete on public.player_details to anon, authenticated;
 
 do $$
 declare
   t text;
 begin
-  foreach t in array array['profiles', 'player_details', 'matches', 'match_availability', 'match_checklist']
+  foreach t in array array['profiles', 'player_details']
   loop
     if not exists (
       select 1 from pg_publication_tables
@@ -313,8 +268,6 @@ begin
   end loop;
 end $$;
 
-alter table public.match_availability replica identity full;
-alter table public.match_checklist replica identity full;
 
 -- ===========================================================================
 -- Strategy library (added later). Additive only; safe to run again.

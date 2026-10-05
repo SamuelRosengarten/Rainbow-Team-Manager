@@ -17,7 +17,7 @@ export function initials(name = '') {
 }
 
 export function operatorImage(id) {
-  return `${import.meta.env.BASE_URL}operators/${id}.png`;
+  return `${import.meta.env.BASE_URL}operators/${id}.svg`;
 }
 
 const EMPTY_PROFILE = { health: 0, speed: 0, ability: '', abilityText: '', primary: [], secondary: [], tip: '', check: false };
