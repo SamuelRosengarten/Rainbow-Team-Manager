@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
-import { PLAYERS } from '../lib/constants.js';
+import { useRoster } from '../state/roster-context.js';
 import { operatorProfile, operatorVideoUrl } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 
@@ -37,6 +37,7 @@ function List({ title, items }) {
  * loadout, how to play, the team's marks, and a link to the intro video.
  */
 export default function OperatorProfile({ operator, prefs = {}, onClose }) {
+  const { players } = useRoster();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function OperatorProfile({ operator, prefs = {}, onClose }) {
 
   if (!operator) return null;
   const p = operatorProfile(operator.id);
-  const whoMarked = (key) => PLAYERS.filter((name) => prefs[name]?.[key]?.includes(operator.id));
+  const whoMarked = (key) => players.filter((name) => prefs[name]?.[key]?.includes(operator.id));
   const team = [
     { label: 'Owned by', names: whoMarked('owned') },
     { label: 'Favourite of', names: whoMarked('favorites') },

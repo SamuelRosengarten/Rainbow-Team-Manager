@@ -27,6 +27,20 @@ export class ApiError extends Error {
   }
 }
 
+const MISSING_RELATION = ['42P01', 'PGRST205', '42883', 'PGRST202'];
+
+/** True when a call failed because a table or function doesn't exist yet. */
+export function isMissingSchema(error) {
+  const e = error?.cause ?? error;
+  const raw = `${e?.message ?? ''}`.toLowerCase();
+  return (
+    MISSING_RELATION.includes(e?.code) ||
+    raw.includes('could not find the table') ||
+    raw.includes('could not find the function') ||
+    (raw.includes('relation') && raw.includes('does not exist'))
+  );
+}
+
 /** Turn Supabase/fetch errors into a message a teammate can act on. */
 export function friendlyError(error) {
   const raw = `${error?.message ?? ''} ${error?.details ?? ''} ${error?.hint ?? ''}`.toLowerCase();
@@ -39,6 +53,15 @@ export function friendlyError(error) {
     raw.includes('load failed')
   ) {
     return "Can't reach the database. Check your internet connection. If the connection is fine, the Supabase project may be paused (free projects pause after a period of inactivity): restore it from the Supabase dashboard.";
+  }
+  if (raw.includes('profiles') && (raw.includes('row-level security') || code === '42501')) {
+    return 'Adding players needs the latest database setup. Re-run supabase/schema.sql in the Supabase SQL editor.';
+  }
+  if (code === '23505' || raw.includes('duplicate key')) {
+    return 'That name is already taken.';
+  }
+  if (code === '23514' || raw.includes('check constraint')) {
+    return 'The database rejected a value (too long or not allowed). Check the form and try again.';
   }
   if (code === '42P01' || code === 'PGRST205' || raw.includes('does not exist') || raw.includes('could not find the table')) {
     return 'The database tables are missing. Run supabase/schema.sql in the Supabase SQL editor.';
@@ -73,15 +96,169 @@ async function run(promise) {
 // Profiles & passcode
 // ---------------------------------------------------------------------------
 
-/** @returns {Promise<Record<string,string>>} name -> profile id */
+/** @returns {Promise<Array<{id: string, name: string, createdAt: string}>>} oldest first */
 export async function fetchProfiles() {
-  const rows = await run(db().from('profiles').select('id, name'));
-  return Object.fromEntries(rows.map((r) => [r.name, r.id]));
+  const rows = await run(db().from('profiles').select('id, name, created_at').order('created_at').order('name'));
+  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at }));
 }
 
-export async function fetchPasscodeHash() {
+export async function addProfile(name) {
+  const rows = await run(db().from('profiles').insert({ name }).select('id, name, created_at'));
+  const r = rows[0];
+  return { id: r.id, name: r.name, createdAt: r.created_at };
+}
+
+/**
+ * Is a passcode set, and how do we check it?
+ * Newer databases check it on the server (the hash is hidden). Databases that
+ * haven't run the latest schema still expose the hash, so we compare locally.
+ * @returns {Promise<{ set: boolean, mode: 'server' | 'local', hash?: string }>}
+ */
+export async function passcodeStatus() {
+  try {
+    const set = await run(db().rpc('team_passcode_is_set'));
+    return { set: Boolean(set), mode: 'server' };
+  } catch (e) {
+    if (!isMissingSchema(e)) throw e;
+  }
   const rows = await run(db().from('team_settings').select('passcode_hash').eq('id', 1).limit(1));
-  return rows?.[0]?.passcode_hash ?? null;
+  const hash = rows?.[0]?.passcode_hash ?? null;
+  return { set: Boolean(hash), mode: 'local', hash };
+}
+
+export async function checkPasscodeOnServer(attempt) {
+  return Boolean(await run(db().rpc('check_team_passcode', { attempt: attempt.trim() })));
+}
+
+// ---------------------------------------------------------------------------
+// Player details (roster)
+// ---------------------------------------------------------------------------
+
+function playerDetailsFromRow(r) {
+  return {
+    username: r.username ?? '',
+    mainRole: r.main_role ?? '',
+    status: r.status ?? 'starter',
+    availability: r.availability ?? 'available',
+    notes: r.notes ?? '',
+  };
+}
+
+/** @returns {Promise<Record<string, object> | null>} profile id -> details; null if the table is missing */
+export async function fetchPlayerDetails() {
+  try {
+    const rows = await run(db().from('player_details').select('*'));
+    return Object.fromEntries(rows.map((r) => [r.profile_id, playerDetailsFromRow(r)]));
+  } catch (e) {
+    if (isMissingSchema(e)) return null;
+    throw e;
+  }
+}
+
+export async function savePlayerDetails(profileId, d) {
+  await run(
+    db().from('player_details').upsert({
+      profile_id: profileId,
+      username: d.username ?? '',
+      main_role: d.mainRole ?? '',
+      status: d.status ?? 'starter',
+      availability: d.availability ?? 'available',
+      notes: d.notes ?? '',
+      updated_at: new Date().toISOString(),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Matches, availability and prep checklist
+// ---------------------------------------------------------------------------
+
+export function matchFromRow(r) {
+  return {
+    id: r.id,
+    opponent: r.opponent,
+    scheduledAt: r.scheduled_at,
+    competition: r.competition ?? '',
+    mapId: r.map_id ?? '',
+    status: r.status ?? 'scheduled',
+    scoreUs: r.score_us ?? null,
+    scoreThem: r.score_them ?? null,
+    notes: r.notes ?? '',
+    createdBy: r.created_by ?? null,
+    updatedBy: r.updated_by ?? null,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function matchToRow(m, by) {
+  const row = {
+    opponent: m.opponent,
+    scheduled_at: m.scheduledAt,
+    competition: m.competition ?? '',
+    map_id: m.mapId ?? '',
+    status: m.status ?? 'scheduled',
+    score_us: m.scoreUs ?? null,
+    score_them: m.scoreThem ?? null,
+    notes: m.notes ?? '',
+    updated_by: by ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  if (m.id) row.id = m.id;
+  else row.created_by = by ?? null;
+  return row;
+}
+
+/** Latest 200 matches, or null when the tables haven't been created yet. */
+export async function fetchMatchData(idByName) {
+  try {
+    const [matches, availability, checklist] = await Promise.all([
+      run(db().from('matches').select('*').order('scheduled_at', { ascending: false }).limit(200)),
+      run(db().from('match_availability').select('match_id, profile_id, status')),
+      run(db().from('match_checklist').select('match_id, item_id, done_by')),
+    ]);
+    const nameById = invert(idByName);
+    return {
+      matches: matches.map(matchFromRow),
+      availability: availability
+        .filter((r) => nameById[r.profile_id])
+        .map((r) => ({ matchId: r.match_id, player: nameById[r.profile_id], status: r.status })),
+      checklist: checklist.map((r) => ({ matchId: r.match_id, itemId: r.item_id, doneBy: r.done_by })),
+    };
+  } catch (e) {
+    if (isMissingSchema(e)) return null;
+    throw e;
+  }
+}
+
+export async function saveMatch(match, by) {
+  const rows = await run(db().from('matches').upsert(matchToRow(match, by)).select('*'));
+  return matchFromRow(rows[0]);
+}
+
+export async function deleteMatch(id) {
+  await run(db().from('matches').delete().eq('id', id));
+}
+
+/** status: 'yes' | 'maybe' | 'no' | null (clear). */
+export async function setAvailability(matchId, profileId, status) {
+  if (!status) {
+    await run(db().from('match_availability').delete().eq('match_id', matchId).eq('profile_id', profileId));
+    return;
+  }
+  await run(
+    db()
+      .from('match_availability')
+      .upsert({ match_id: matchId, profile_id: profileId, status, updated_at: new Date().toISOString() }),
+  );
+}
+
+export async function setChecklistItem(matchId, itemId, done, by) {
+  if (done) {
+    await run(db().from('match_checklist').upsert({ match_id: matchId, item_id: itemId, done_by: by ?? null }));
+  } else {
+    await run(db().from('match_checklist').delete().eq('match_id', matchId).eq('item_id', itemId));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +275,7 @@ export function teamStateFromRow(row) {
     tacticId: row?.tactic_id ?? null,
     ownedOnly: Boolean(row?.owned_only),
     updatedBy: row?.updated_by ?? null,
+    updatedAt: row?.updated_at ?? null,
   };
 }
 
@@ -160,6 +338,7 @@ function tacticFromRow(row, nameById) {
     shared: row.shared,
     example: row.example,
     deleted: row.deleted,
+    updatedAt: row.updated_at ?? null,
     owner: row.owner_profile_id ? nameById[row.owner_profile_id] ?? null : null,
   };
 }
@@ -212,12 +391,13 @@ export async function deleteTacticRow(id) {
 
 /** @returns {Promise<Array<{owner: string|null, mapId: string, notes: string}>>} */
 export async function fetchMapNotes(idByName) {
-  const rows = await run(db().from('map_notes').select('owner_profile_id, map_id, notes'));
+  const rows = await run(db().from('map_notes').select('owner_profile_id, map_id, notes, updated_at'));
   const nameById = invert(idByName);
   return rows.map((r) => ({
     owner: r.owner_profile_id ? nameById[r.owner_profile_id] ?? null : null,
     mapId: r.map_id,
     notes: r.notes ?? '',
+    updatedAt: r.updated_at ?? null,
   }));
 }
 

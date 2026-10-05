@@ -2,7 +2,8 @@ import { useState } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
 import Notice from './Notice.jsx';
 import OperatorProfile from './OperatorProfile.jsx';
-import { PLAYERS, SIDES } from '../lib/constants.js';
+import { SIDES } from '../lib/constants.js';
+import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 
@@ -11,6 +12,7 @@ import { ROLE_LABEL } from '../lib/fit.js';
  * Everyone can look at anyone's lists; only your own are editable.
  */
 export default function OperatorsView({ profile, prefs, setOwned, setPreference }) {
+  const { players } = useRoster();
   const [viewing, setViewing] = useState(profile);
   const [side, setSide] = useState('attack');
   const [filter, setFilter] = useState('');
@@ -27,13 +29,13 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
   return (
     <section className="panel" aria-labelledby="ops-title">
       <div className="panel__head">
-        <h1 id="ops-title" className="panel__title">
+        <h2 id="ops-title" className="panel__title">
           {mine ? 'My operators' : `${viewing}'s operators`}
-        </h1>
+        </h2>
         <label className="inline-field">
           <span className="visually-hidden">Whose operators</span>
           <select className="select input--sm" value={viewing} onChange={(e) => setViewing(e.target.value)}>
-            {PLAYERS.map((n) => (
+            {players.map((n) => (
               <option key={n} value={n}>{n === profile ? `${n} (you)` : n}</option>
             ))}
           </select>
