@@ -298,11 +298,10 @@ export function createStrategy(raw) {
 }
 
 /**
- * Move a schematic strategy onto the real floor plan. Positions keep their
- * numbers but were placed on the schematic, so they will need moving: the
- * caller says so to the person.
+ * Mark a strategy's positions as placed on the real floor plan (once the
+ * person has moved them there). Positions themselves don't change.
  */
-export const toFloorLayout = (s) => ({ ...s, layout: 'floor', boardImageUrl: '' });
+export const toFloorLayout = (s) => ({ ...s, layout: 'floor' });
 
 /** Operators a strategy is written for (in slot order). */
 export const strategyOperators = (s) => s.slots.map((x) => x.operatorId).filter(Boolean);

@@ -270,7 +270,7 @@ Several maps currently have **empty site lists on purpose**. See [`docs/DATA_REV
 
 The board is drawn on the **real floor plan** of the strategy's floor, when the team has added one (see [docs/MAP_ASSETS.md](docs/MAP_ASSETS.md)). The app never draws a map itself. Layers, bottom to top: floor plan, callouts (rooms, objectives, hatches, stairs), areas, routes, crossfires, players and utility, notes. Multi-floor maps get floor tabs, and every object remembers its floor. All positions are stored **normalised** (0 to 1 across the plan), so they stay on the same spot at any size, zoom or orientation.
 
-Floors without a plan show a "No floor plan" notice. Older strategies use an **abstract schematic** (two boxes for the site, labelled *not the real map*). Once the plan exists, the editor can move them onto it.
+Every map floor in the planner has its official Ubisoft blueprint (`public/maps/<map>/<floor>.webp`, registered in `src/data/floorPlans.json`). Built-in and older strategies had their positions drawn on an abstract layout. They now show on the real blueprint unchanged, and the board says they *haven't been placed on this map yet*. Drag them into place in the editor, then mark them as placed. Plans not tied to a map show a notice, never a drawing.
 
 Toolbar groups (left rail; a row on phones):
 
@@ -309,7 +309,7 @@ Every strategy shows one of three labels, and they're never mixed up:
 
 | Label | What it is |
 | --- | --- |
-| **AI suggestion** | Starting points shipped in `src/data/strategies.json` (21 across Bank, Border, Chalet, Clubhouse, Coastline, Kafe, Oregon and two generic). Written by an AI from general Siege knowledge, **not verified or pro strategies**. Positions are schematic, not exact map spots. |
+| **AI suggestion** | Starting points shipped in `src/data/strategies.json` (21 across Bank, Border, Chalet, Clubhouse, Coastline, Kafe, Oregon and two generic). Written by an AI from general Siege knowledge, **not verified or pro strategies**. Positions come from an abstract layout and are flagged on the real map until someone moves them. |
 | **Online reference** | A link to a strategy someone published (website, coach, video), with a summary in your own words and, optionally, the operators it uses so it can be matched. Only metadata is stored; the text and images stay on the original page, which the strategy links to (*Source: … / Original strategy: …*). |
 | **Team** / **Adapted by team** | Your own strategies, or copies of the above. A copy keeps a link to what it was adapted from. |
 
@@ -379,7 +379,7 @@ Tactic format:
 
 - On the **Lineup roller** (Team → Lineup roller), the diagram uses the rolled lineup. Each teammate's operator is placed where their role sets up around the two rooms of the chosen bomb site (hard breacher on the breach wall, soft breacher above the hatch, intel droning, anchors in site, roamers outside…). Required roles nobody covers show as red **?** spots. A numbered legend says who does what.
 - On the **Tactics** screen, click **Diagram** on any card to see the roles' spots before rolling.
-- It's a schematic (two rooms, not the real floor plan), so it works on every map. For the exact layout, add a **Map image link** in the tactic editor: any `https://` image, such as a screenshot of the site with your setup drawn on it. It shows above the diagram.
+- It shows the real floor plan of the tactic's map and site floor. Quick tactics are role-based, so the numbered list says who does what and nothing is drawn on the map. You can still add a **Map image link** in the tactic editor (any `https://` image); it shows above the floor plan.
 
 The image link is stored in the `image_url` column. **If your database was set up before this column existed, re-run `supabase/schema.sql`** (it's safe to re-run). Tactics without an image keep working either way.
 

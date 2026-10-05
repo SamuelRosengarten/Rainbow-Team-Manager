@@ -1,4 +1,795 @@
 {
   "_readme": "Real floor plans, one per map floor. See docs/MAP_ASSETS.md. An entry is only used when its image file exists in public/<file>. Nothing here is drawn by the app: every plan must come from a source the team is allowed to use, and stays 'verified: false' until someone has checked it against the game.",
-  "plans": {}
+  "plans": {
+    "bank": {
+      "b": {
+        "file": "maps/bank/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-bank-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/bank/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-bank-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/bank/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-bank-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/bank/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-bank-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "border": {
+      "1f": {
+        "file": "maps/border/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-border-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/border/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-border-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/border/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-border-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "calypso-casino": {
+      "b": {
+        "file": "maps/calypso-casino/b.webp",
+        "width": 3840,
+        "height": 2160,
+        "source": "Official Ubisoft blueprint: R6S_Maps_CalypsoCasino_Basement.png",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/calypso-casino/1f.webp",
+        "width": 3840,
+        "height": 2160,
+        "source": "Official Ubisoft blueprint: R6S_Maps_CalypsoCasino_1F.png",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/calypso-casino/2f.webp",
+        "width": 3840,
+        "height": 2160,
+        "source": "Official Ubisoft blueprint: R6S_Maps_CalypsoCasino_2F.png",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/calypso-casino/roof.webp",
+        "width": 3840,
+        "height": 2160,
+        "source": "Official Ubisoft blueprint: R6S_Maps_CalypsoCasino_Roof.png",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "chalet": {
+      "b": {
+        "file": "maps/chalet/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-chalet-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/chalet/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-chalet-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/chalet/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-chalet-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/chalet/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-chalet-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "clubhouse": {
+      "b": {
+        "file": "maps/clubhouse/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-clubhouse-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/clubhouse/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-clubhouse-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/clubhouse/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-clubhouse-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/clubhouse/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-clubhouse-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "coastline": {
+      "1f": {
+        "file": "maps/coastline/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-coastline-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/coastline/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-coastline-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/coastline/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-coastline-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "consulate": {
+      "b": {
+        "file": "maps/consulate/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-consulate-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/consulate/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-consulate-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/consulate/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-consulate-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/consulate/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-consulate-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "fortress": {
+      "1f": {
+        "file": "maps/fortress/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-fortress-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/fortress/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-fortress-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/fortress/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-fortress-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "kafe-dostoyevsky": {
+      "1f": {
+        "file": "maps/kafe-dostoyevsky/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kafe-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/kafe-dostoyevsky/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kafe-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "3f": {
+        "file": "maps/kafe-dostoyevsky/3f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kafe-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/kafe-dostoyevsky/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kafe-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "kanal": {
+      "b": {
+        "file": "maps/kanal/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kanal-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/kanal/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kanal-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/kanal/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kanal-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/kanal/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-kanal-blueprint-5.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "lair": {
+      "b": {
+        "file": "maps/lair/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-lair-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/lair/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-lair-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/lair/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-lair-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/lair/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-lair-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "nighthaven-labs": {
+      "b": {
+        "file": "maps/nighthaven-labs/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-nighthavenlabs-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/nighthaven-labs/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-nighthavenlabs-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/nighthaven-labs/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-nighthavenlabs-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/nighthaven-labs/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-nighthavenlabs-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "oregon": {
+      "b": {
+        "file": "maps/oregon/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-oregon-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/oregon/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-oregon-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/oregon/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-oregon-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "3f": {
+        "file": "maps/oregon/3f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-oregon-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/oregon/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-oregon-blueprint-5.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "outback": {
+      "1f": {
+        "file": "maps/outback/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-outback-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/outback/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-outback-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/outback/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-outback-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "skyscraper": {
+      "1f": {
+        "file": "maps/skyscraper/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-skyscraper-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/skyscraper/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-skyscraper-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/skyscraper/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-skyscraper-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "theme-park": {
+      "1f": {
+        "file": "maps/theme-park/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-themepark-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/theme-park/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-themepark-blueprint-2.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/theme-park/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-themepark-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    },
+    "villa": {
+      "b": {
+        "file": "maps/villa/b.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-villa-blueprint-1.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "1f": {
+        "file": "maps/villa/1f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-villa-blueprint-3.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "2f": {
+        "file": "maps/villa/2f.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-villa-blueprint-4.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      },
+      "roof": {
+        "file": "maps/villa/roof.webp",
+        "width": 1600,
+        "height": 900,
+        "source": "Official Ubisoft blueprint: r6-maps-villa-blueprint-5.jpg",
+        "license": "Ubisoft blueprint supplied by the team",
+        "verified": false,
+        "verifiedBy": "",
+        "verifiedAt": "",
+        "checks": [],
+        "callouts": []
+      }
+    }
+  }
 }

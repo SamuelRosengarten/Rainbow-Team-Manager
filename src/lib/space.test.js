@@ -37,14 +37,21 @@ describe('normalised coordinates', () => {
       ],
     });
     const two = boardSpace(s, '2f');
-    expect(two.kind).toBe('missing');
+    expect(two).toMatchObject({ kind: 'floor', w: 100, h: 56.25, approximate: false });
+    expect(two.plan.url).toBe('/maps/bank/2f.webp');
     expect(onFloor(s, two, s.markers[0])).toBe(true);
     expect(projectStrategy(s, two).markers.map((m) => m.id)).toEqual(['a']);
     expect(projectStrategy(s, boardSpace(s, '1f')).markers.map((m) => m.id)).toEqual(['b']);
   });
 
-  it('new strategies use the schematic until their floor has a real plan', () => {
-    expect(createStrategy({ title: 'x', side: 'attack', mapId: 'bank', site: '2F Executive Lounge / CEO Office' }).layout).toBe('schematic');
+  it('draws every board on the real floor plan; old positions are flagged, no-map plans draw nothing', () => {
+    expect(createStrategy({ title: 'x', side: 'attack', mapId: 'bank', site: '2F Executive Lounge / CEO Office' }).layout).toBe('floor');
+    const old = normalizeStrategy({ title: 'x', side: 'attack', mapId: 'bank', site: 'B Lockers / CCTV Room', markers: [{ x: 50, y: 32 }] });
+    expect(boardSpace(old)).toMatchObject({ kind: 'floor', floorId: 'b', approximate: true });
+    expect(projectStrategy(old, boardSpace(old)).markers).toHaveLength(1);
+    const whole = normalizeStrategy({ title: 'x', side: 'attack', mapId: 'oregon' });
+    expect(boardSpace(whole)).toMatchObject({ kind: 'floor', floorId: '1f' });
+    expect(boardSpace(normalizeStrategy({ title: 'x', side: 'attack', mapId: 'any' })).kind).toBe('none');
   });
 });
 
@@ -75,8 +82,8 @@ describe('floor plans', () => {
     expect(plan.callouts).toEqual([{ id: 'ceo-office', name: 'CEO Office', kind: 'room', x: 0.4, y: 0.6 }]);
   });
 
-  it('reports missing plans, and has no callouts to search until plans exist', () => {
-    expect(missingFloorPlans().some((m) => m.mapId === 'bank' && m.floorId === '2f')).toBe(true);
+  it('has a real floor plan for every listed floor, and no callouts until they are placed', () => {
+    expect(missingFloorPlans()).toEqual([]);
     expect(searchCallouts('ceo')).toEqual([]);
   });
 });

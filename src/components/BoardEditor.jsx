@@ -4,9 +4,9 @@ import ObjectInspector from './ObjectInspector.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
 import { dist, moveItem, nearestPlayer, rectFrom, resizeZone, toBoardPoint } from '../lib/board.js';
-import { floorLabel, floorPlan } from '../lib/floorPlans.js';
+import { floorLabel } from '../lib/floorPlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
-import { boardSpace, projectItem, projectStrategy, unprojectPatch } from '../lib/space.js';
+import { boardSpace, primaryFloor, projectItem, projectStrategy, unprojectPatch } from '../lib/space.js';
 import { LIMITS, newId, slotColor, toFloorLayout } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, TOOL_GROUPS, ZONES, gadgetsForSide, toolLabel, utilityName } from '../lib/tactical.js';
 import { usePlans } from '../state/usePlans.js';
@@ -58,7 +58,7 @@ export default function BoardEditor({ draft, history, mapName }) {
   const space = boardSpace(draft, floorId);
   const view = projectStrategy(draft, space);
   const multiFloor = space.kind === 'floor' || space.kind === 'missing';
-  const itemFloor = multiFloor && space.floorId !== draft.floorId ? space.floorId : null;
+  const itemFloor = multiFloor && space.floorId !== primaryFloor(draft) ? space.floorId : null;
   const latest = useRef(view);
   const latestDoc = useRef(draft);
   useEffect(() => {
@@ -412,28 +412,18 @@ export default function BoardEditor({ draft, history, mapName }) {
           {tool === 'crossfire' && xf ? (xf.b ? 'Now click the engagement area.' : 'Now click player B.') : hint}
         </p>
 
-        {space.kind === 'schematic' && (
+        {space.approximate && (
           <p className="notice notice--warn beditor__layout">
-            This plan is on the abstract schematic, not the real map. Positions are approximate.
-            {floorPlan(draft.mapId, draft.floorId) ? (
-              <>
-                {' '}
-                <button
-                  type="button"
-                  className="link-btn"
-                  onClick={() => {
-                    if (window.confirm('Move this plan onto the real floor plan? Every object keeps its place on the board, so you will need to drag each one to its real position.')) {
-                      set((d) => toFloorLayout(d));
-                    }
-                  }}
-                >
-                  Move it onto the real {floorLabel(draft.floorId)} floor plan
-                </button>
-              </>
-            ) : (
-              ` No floor plan has been added for this floor yet.`
-            )}
+            This plan's positions come from the old abstract layout, so they don't match this map yet. Drag each object to its real spot on the{' '}
+            {floorLabel(space.floorId)} floor plan, then{' '}
+            <button type="button" className="link-btn" onClick={() => set((d) => toFloorLayout(d))}>
+              mark the positions as placed on the real map
+            </button>
+            .
           </p>
+        )}
+        {space.kind === 'none' && (
+          <p className="notice notice--warn beditor__layout">This plan isn't tied to a map. Choose a map and site in the details to plan it on the real floor plan.</p>
         )}
         {space.kind === 'missing' && (
           <p className="notice notice--warn beditor__layout">

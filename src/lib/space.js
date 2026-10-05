@@ -6,40 +6,53 @@
 // draws in "board units": 100 wide and as tall as the floor plan's aspect
 // ratio needs, so glyph sizes stay constant and the plan is never stretched.
 //
-// Layouts:
-//   floor      positions belong to the real floor plan of (mapId, floor). Each
-//              item may name its floor; the board shows one floor at a time.
-//   schematic  positions are relative to an abstract two-room diagram. Used by
-//              older strategies and floors without a floor plan. NOT a map.
-import { floorPlan, planSize } from './floorPlans.js';
+// Every board is drawn on the real floor plan (public/maps/<map>/<floor>.webp)
+// of the floor being shown. Layouts only say how trustworthy the positions are:
+//   floor      positions were placed on the real floor plan.
+//   schematic  positions come from the old abstract two-room layout (older
+//              strategies). They're drawn on the real plan unchanged, and the
+//              board says they haven't been placed on this map yet.
+// A strategy with no map ('any') has no floor plan: the board says so instead
+// of drawing anything.
+import { floorPlan, floorsFor, planSize } from './floorPlans.js';
 
+/** Board size when there's no floor plan to take the aspect ratio from. */
 export const SCHEMATIC_SIZE = { w: 100, h: 64 };
 
 const r4 = (v) => Math.round(v * 10000) / 10000;
 const r1 = (v) => Math.round(v * 10) / 10;
 
-/**
- * What to draw a strategy on, for one floor.
- * @returns {{ kind: 'floor'|'missing'|'schematic'|'image', w, h, floorId, plan?, url? }}
- */
-export function boardSpace(strategy, floorId = null) {
-  const floor = floorId || strategy.floorId || '';
-  if (strategy.boardImageUrl) return { kind: 'image', ...SCHEMATIC_SIZE, floorId: floor, url: strategy.boardImageUrl };
-  if (strategy.layout === 'floor') {
-    const plan = floorPlan(strategy.mapId, floor);
-    if (plan) return { kind: 'floor', ...planSize(plan), floorId: floor, plan };
-    return { kind: 'missing', ...SCHEMATIC_SIZE, floorId: floor };
-  }
-  return { kind: 'schematic', ...SCHEMATIC_SIZE, floorId: '' };
+/** Floor a whole-map plan opens on: 1F when the map has one, else its first floor. */
+export function defaultFloor(mapId) {
+  const floors = floorsFor(mapId);
+  return floors.includes('1f') ? '1f' : floors[0] ?? '';
 }
 
-/** Layout for a new strategy: the real floor when its plan exists, else the abstract schematic. */
-export const defaultLayout = (mapId, floorId) => (floorPlan(mapId, floorId) ? 'floor' : 'schematic');
+/** The strategy's own floor: its site's floor, or the map's default floor. */
+export const primaryFloor = (strategy) => strategy.floorId || defaultFloor(strategy.mapId);
 
-/** Is an item on the floor being shown? Single-floor spaces show everything. */
+/**
+ * What to draw a strategy on, for one floor.
+ * @returns {{ kind: 'floor'|'missing'|'none', w, h, floorId, plan?, approximate? }}
+ *   floor    the real floor plan; `approximate` when positions predate it
+ *   missing  the map floor has no floor plan image
+ *   none     the strategy isn't tied to a map
+ */
+export function boardSpace(strategy, floorId = null) {
+  const floor = floorId || primaryFloor(strategy);
+  if (!strategy.mapId || strategy.mapId === 'any' || !floor) return { kind: 'none', ...SCHEMATIC_SIZE, floorId: '' };
+  const plan = floorPlan(strategy.mapId, floor);
+  if (plan) return { kind: 'floor', ...planSize(plan), floorId: floor, plan, approximate: strategy.layout !== 'floor' };
+  return { kind: 'missing', ...SCHEMATIC_SIZE, floorId: floor };
+}
+
+/** Layout for a new strategy: positions on the real floor when its plan exists. */
+export const defaultLayout = (mapId, floorId) => (floorPlan(mapId, floorId || defaultFloor(mapId)) ? 'floor' : 'schematic');
+
+/** Is an item on the floor being shown? Boards without a map show everything. */
 export function onFloor(strategy, space, item) {
-  if (space.kind !== 'floor' && space.kind !== 'missing') return true;
-  return (item.floorId || strategy.floorId || '') === space.floorId;
+  if (space.kind === 'none') return true;
+  return (item.floorId || primaryFloor(strategy)) === space.floorId;
 }
 
 const toB = ([x, y], s) => [r1(x * s.w), r1(y * s.h)];
@@ -84,5 +97,5 @@ export function projectStrategy(strategy, space) {
 /** Floors that hold at least one item, for the floor switcher badges. */
 export function floorsInUse(strategy) {
   const all = [...strategy.markers, ...strategy.paths, ...strategy.zones, ...strategy.crossfires];
-  return new Set(all.map((it) => it.floorId || strategy.floorId).filter(Boolean));
+  return new Set(all.map((it) => it.floorId || primaryFloor(strategy)).filter(Boolean));
 }

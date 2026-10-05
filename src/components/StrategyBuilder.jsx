@@ -9,6 +9,7 @@ import TacticalBoard from './TacticalBoard.jsx';
 import { DetailsForm, StepsForm } from './StrategyForms.jsx';
 import { ROLES, ROLE_LABEL } from '../lib/fit.js';
 import { parseSite } from '../lib/diagram.js';
+import { floorIdFromSite, floorPlan } from '../lib/floorPlans.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
@@ -308,14 +309,11 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         <ChoiceGrid>
           {sites.map((s) => {
             const { floor, rooms } = parseSite(s);
+            const plan = floorPlan(w.mapId, floorIdFromSite(s));
             return (
               <li key={s}>
                 <button type="button" className="choice choice--site" aria-pressed={w.site === s} onClick={() => set((x) => ({ site: s, step: 3, reached: Math.max(x.reached, 3) }))}>
-                  <svg viewBox="0 0 100 64" className="choice__bp" aria-hidden="true">
-                    <rect x="26" y="18" width="24" height="26" className="mini-room" />
-                    <rect x="50" y="18" width="24" height="26" className="mini-room" />
-                    <rect x="5" y="7" width="90" height="48" className="mini-out" />
-                  </svg>
+                  {plan && <img className="choice__plan" src={plan.url} alt="" loading="lazy" />}
                   <span className="choice__floor">{floor}</span>
                   <span className="choice__name">{rooms.join(' / ')}</span>
                 </button>

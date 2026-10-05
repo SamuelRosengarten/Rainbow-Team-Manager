@@ -167,12 +167,14 @@ export function FloorTabs({ strategy, floorId, onChange }) {
  *
  * Read-only by default. The editor passes `editing`, a `draft` preview (in
  * board units) and pointer handlers; viewers pass `onItemClick` to inspect an
- * object. The floor shown is `floorId` when controlled, else picked with tabs.
+ * object. The floor shown is `floorId` when controlled, else picked with tabs
+ * (`showFloorTabs={false}` for previews inside a button).
  */
 export default function TacticalBoard({
   strategy: source,
   floorId: floorProp = null,
   onFloorChange,
+  showFloorTabs = true,
   showRooms = true,
   mapName,
   stepId = null,
@@ -239,7 +241,7 @@ export default function TacticalBoard({
 
   return (
     <div className={`tboard tboard--${space.kind}${editing ? ' tboard--editing' : ''} ${className}`}>
-      {multiFloor && (
+      {multiFloor && showFloorTabs && (
         <FloorTabs
           strategy={source}
           floorId={space.floorId}

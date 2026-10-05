@@ -159,8 +159,9 @@ describe('board geometry', () => {
 
   it('snaps to the nearest player marker', () => {
     const board = projectStrategy(plan(), boardSpace(plan()));
-    expect(nearestPlayer(board, [39, 51])?.id).toBe('m1');
-    expect(nearestPlayer(board, [50, 10])).toBeNull();
+    const m1 = board.markers.find((m) => m.id === 'm1');
+    expect(nearestPlayer(board, [m1.x + 1, m1.y + 1])?.id).toBe('m1');
+    expect(nearestPlayer(board, [m1.x + 12, m1.y - 30])).toBeNull();
   });
 });
 

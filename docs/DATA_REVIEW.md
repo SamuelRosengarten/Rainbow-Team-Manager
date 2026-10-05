@@ -46,7 +46,7 @@ Written from memory, **not** checked against the current season. Ubisoft changes
 
 ## Floor plans (`src/data/floorPlans.json`)
 
-**None are bundled.** Earlier versions drew an invented building around each bomb site. That's gone, because it didn't match the real maps. Accurate plans are Ubisoft's art, and I couldn't confirm they may be redistributed, so the team supplies them: see [MAP_ASSETS.md](MAP_ASSETS.md). The Maps screen lists every floor without a plan. Each plan stays *unverified* until someone checks it against the game.
+**Official Ubisoft blueprints, supplied by the team**, for all 63 floors of the 17 planner maps. They're unverified and have no callouts yet: see [MAP_ASSETS.md](MAP_ASSETS.md). Floors were identified by eye, because the blueprints don't print their floor names. Check these against the game first: **Kanal** (basement and floor order) and **Lair** (basement, 1F and 2F).
 
 The floors listed for each map come only from its bomb sites (`B`, `1F`, `2F`, `3F`). Roofs, towers and other floors without a site aren't listed until you add a `floors` list to the map.
 
@@ -72,7 +72,7 @@ Short starter notes exist only for the six maps above. Every other map shows an 
 
 ## Strategy library (`src/data/strategies.json`)
 
-**AI suggestions (21):** written from general Siege knowledge by an AI and labelled as such in the app. They are role-based plans (hard-breach execute, vertical, breach denial, site hold, deep roam) applied to real site names. They are **not** verified or pro strategies, and the board positions are schematic. Things to check before relying on one:
+**AI suggestions (21):** written from general Siege knowledge by an AI and labelled as such in the app. They are role-based plans (hard-breach execute, vertical, breach denial, site hold, deep roam) applied to real site names. They are **not** verified or pro strategies, and their board positions come from an abstract layout, so they're flagged on the real map. Things to check before relying on one:
 
 - Whether the "main wall", "hatch above" and "floor above" exist the way the plan assumes on that site.
 - Spawn fields are empty on purpose: fill in your team's spawns when you adapt a strategy.

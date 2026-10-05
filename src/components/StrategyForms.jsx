@@ -122,9 +122,9 @@ export function DetailsForm({ draft, set, compact = false }) {
       {!compact && (
         <>
           <label className="field">
-            <span className="field__label">Floor plan image link (optional)</span>
-            <input className="input" type="url" value={draft.boardImageUrl} placeholder="https://… your own floor plan screenshot" onChange={(e) => set({ boardImageUrl: e.target.value }, f('img'))} />
-            <span className="field__hint">Replaces the schematic. Use an image you're allowed to use; objects keep their positions, so move them to match.</span>
+            <span className="field__label">Attached image link (optional)</span>
+            <input className="input" type="url" value={draft.boardImageUrl} placeholder="https://… a screenshot or drawing for this plan" onChange={(e) => set({ boardImageUrl: e.target.value }, f('img'))} />
+            <span className="field__hint">Shown as a link under the board. The board itself always uses the real floor plan.</span>
           </label>
           <fieldset className="form field-group">
             <legend>Source</legend>

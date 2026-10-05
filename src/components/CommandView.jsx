@@ -148,7 +148,7 @@ export default function CommandView({ profile, strategyData, navigate }) {
                 </div>
               </div>
               <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={`Open ${featured.title}`}>
-                <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} />
+                <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
               </button>
               <div className="toolbar">
                 <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}/coach`)} disabled={!featured.steps.length}>

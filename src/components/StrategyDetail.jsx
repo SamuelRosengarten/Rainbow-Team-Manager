@@ -362,6 +362,13 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
             onItemClick={(item) => setInspect(inspect?.id === item.id ? null : item)}
           />
           {inspect && <ObjectCard strategy={view} selected={inspect} players={assigned} onClose={() => setInspect(null)} />}
+          {view.boardImageUrl && (
+            <p className="small">
+              <a href={view.boardImageUrl} target="_blank" rel="noopener noreferrer">
+                <Icon name="external" size={13} /> Open the image attached to this plan
+              </a>
+            </p>
+          )}
           <ExecuteTimeline strategy={view} stepId={stepId} onSelect={setStepId} />
           {!view.markers.length && !view.paths.length && !view.zones.length && (
             <p className="muted small">

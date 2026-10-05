@@ -1,12 +1,11 @@
-import { parseSite } from '../lib/diagram.js';
 import { floorLabel, siteCallouts } from '../lib/floorPlans.js';
 
 // The bottom layers of the tactical board, in board units (see space.js):
 //   1. the real floor plan image, untouched (never stretched: the board takes
 //      the image's aspect ratio)
 //   2. structured callouts: rooms, then objectives, hatches, stairs…
-// When a floor has no plan, the board says so instead of inventing one. Older
-// strategies use an abstract two-room diagram that is labelled as such.
+// Nothing here draws a map. A floor without a plan image, or a plan that
+// isn't tied to a map, gets a notice instead.
 
 const SYMBOL = {
   objective: (s) => (
@@ -92,28 +91,17 @@ function Missing({ size, mapName, floorId, mapId }) {
   );
 }
 
-/** Abstract two-room diagram for 'schematic' strategies. Not a map. */
-function Abstract({ site, size, compact }) {
-  const { rooms } = parseSite(site);
+/** A strategy that isn't tied to a map: say so, draw nothing. */
+function NoMap({ size }) {
   return (
-    <g className="ml-abstract" aria-hidden="true">
-      <rect x="5" y="7" width="90" height="48" rx="1" className="ml-abstract__building" />
-      <rect x="26" y="18" width="24" height="26" className="ml-abstract__room" />
-      <rect x="50" y="18" width="24" height="26" className="ml-abstract__room" />
-      <text className="ml-abstract__name" x="38" y="22.4">{rooms[0]}</text>
-      <text className="ml-abstract__name" x="62" y="22.4">{rooms[1]}</text>
-      <text className="ml-abstract__bomb" x="30" y="41.5">A</text>
-      <text className="ml-abstract__bomb" x="70" y="41.5">B</text>
-      {!compact && (
-        <>
-          <text className="ml-abstract__warn" x="5.5" y="4.6">
-            ABSTRACT LAYOUT · NOT THE REAL MAP · POSITIONS ARE APPROXIMATE
-          </text>
-          <text className="ml-abstract__out" x="50" y={size.h - 2.2}>
-            Outside
-          </text>
-        </>
-      )}
+    <g className="ml-missing">
+      <rect x="2" y="2" width={size.w - 4} height={size.h - 4} rx="1.5" className="ml-missing__frame" />
+      <text className="ml-missing__title" x={size.w / 2} y={size.h / 2 - 1}>
+        Generic plan: not tied to a map
+      </text>
+      <text className="ml-missing__sub" x={size.w / 2} y={size.h / 2 + 3.5}>
+        Choose a map and site in the details to plan it on the real floor plan.
+      </text>
     </g>
   );
 }
@@ -122,9 +110,6 @@ function Abstract({ site, size, compact }) {
  * @param {{ space: ReturnType<import('../lib/space.js').boardSpace>, strategy, mapName?, compact?, showRooms? }} props
  */
 export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true }) {
-  if (space.kind === 'image') {
-    return <image href={space.url} x="0" y="0" width={space.w} height={space.h} preserveAspectRatio="xMidYMid meet" />;
-  }
   if (space.kind === 'floor') {
     return (
       <g className="ml">
@@ -135,9 +120,17 @@ export default function MapLayer({ space, strategy, mapName, compact = false, sh
             UNVERIFIED FLOOR PLAN
           </text>
         )}
+        {space.approximate && !compact && (
+          <g className="ml-approx">
+            <rect x="0" y={space.h - 4.2} width={space.w} height="4.2" />
+            <text x={space.w / 2} y={space.h - 1.4}>
+              Positions come from the old abstract layout and haven't been placed on this map yet
+            </text>
+          </g>
+        )}
       </g>
     );
   }
   if (space.kind === 'missing') return <Missing size={space} mapName={mapName} floorId={space.floorId} mapId={strategy.mapId} />;
-  return <Abstract site={strategy.site} size={space} compact={compact} />;
+  return <NoMap size={space} />;
 }

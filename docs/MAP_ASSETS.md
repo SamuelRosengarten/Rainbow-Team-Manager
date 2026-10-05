@@ -65,9 +65,10 @@ A plan stays **unverified** (the board says so) until someone compares it with t
 ## Strategies and layouts
 
 - New strategies on a floor that has a plan use the **real floor plan** layout. Each object stores its floor, and the board shows one floor at a time.
-- Strategies made before floor plans existed, and new ones on floors without a plan, use the **abstract schematic**. That's two boxes for the bomb site, clearly labelled as not the real map. Their positions are approximate.
-- Once a plan exists, open a schematic strategy in the editor and use **Move it onto the real floor plan**. The objects keep their places on the board, so drag each one to its real position before saving.
+- Every board is drawn on the real floor plan of the floor it shows. A whole-map plan opens on 1F, and a plan with no map shows a notice.
+- Strategies made before floor plans existed (all the built-in ones) keep their stored positions. They're drawn on the real plan with a banner saying the positions haven't been placed on this map yet. In the editor, drag each object to its real spot, then use **mark the positions as placed on the real map**.
+- A strategy's optional image link is shown as a link under the board. It never replaces the floor plan.
 
 ## Missing assets
 
-The Maps index lists every map floor without a plan (and the file it expects). At the time of writing, **no plans are bundled**, so every floor is missing.
+The Maps index lists every map floor without a plan (and the file it expects). Every listed floor of the 17 maps in the planner currently has its official Ubisoft blueprint. None are verified yet and none have callouts. Unused blueprint sources (maps not in the planner, plus two unidentified images) are kept in `blueprints/`.
