@@ -42,6 +42,7 @@ export function useTeamData({ online, profile }) {
     let cancelled = false;
     const unsubs = [];
     let prefsTimer = null;
+    let wasDisconnected = false;
 
     const fail = (e) => {
       if (cancelled) return;
@@ -82,7 +83,23 @@ export function useTeamData({ online, profile }) {
               teamRef.current = next;
               setTeam(next);
             },
-            (s) => !cancelled && setLive(s),
+            (s) => {
+              if (cancelled) return;
+              setLive(s);
+              if (s === 'reconnecting') wasDisconnected = true;
+              if (s === 'live' && wasDisconnected) {
+                // Catch up on anything we missed while the socket was down.
+                wasDisconnected = false;
+                api
+                  .fetchTeamState()
+                  .then((next) => {
+                    if (cancelled) return;
+                    teamRef.current = next;
+                    setTeam(next);
+                  })
+                  .catch(reportWrite);
+              }
+            },
           ),
           api.subscribe('tactics', () => api.fetchTactics(idsRef.current).then((r) => !cancelled && setSavedTactics(r)).catch(reportWrite)),
           api.subscribe('map_notes', () => api.fetchMapNotes(idsRef.current).then((r) => !cancelled && setNoteRows(r)).catch(reportWrite)),

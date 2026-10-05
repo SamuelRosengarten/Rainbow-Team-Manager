@@ -121,13 +121,12 @@ export default function TacticsView({ profile, tacticsStore }) {
       </div>
 
       <div className="tabs-row">
-        <div className="segmented" role="tablist" aria-label="Tactic lists">
+        <div className="segmented" role="group" aria-label="Tactic lists">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
-              role="tab"
-              aria-selected={tab === t.id}
+              aria-pressed={tab === t.id}
               className="segmented__btn"
               onClick={() => setTab(t.id)}
             >

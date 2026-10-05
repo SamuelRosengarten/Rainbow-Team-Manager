@@ -346,16 +346,16 @@ textarea {
   text-transform: uppercase;
   cursor: pointer;
 }
-.segmented__btn[aria-checked='true'],
-.segmented__btn[aria-selected='true'] {
+.segmented__btn[aria-pressed='true'],
+.segmented__btn[aria-pressed='true'] {
   background: var(--surface-3);
   color: var(--text);
 }
-.segmented__btn--attack[aria-checked='true'] {
+.segmented__btn--attack[aria-pressed='true'] {
   background: var(--attack);
   color: #1d0c00;
 }
-.segmented__btn--defend[aria-checked='true'] {
+.segmented__btn--defend[aria-pressed='true'] {
   background: var(--defend);
   color: #001326;
 }
@@ -806,7 +806,7 @@ legend {
   font-size: 0.92rem;
   text-align: left;
 }
-.site-chip[aria-checked='true'] {
+.site-chip[aria-pressed='true'] {
   border-color: var(--accent);
   background: rgba(245, 166, 35, 0.14);
   color: #ffd794;
@@ -1294,4 +1294,15 @@ code {
     font-size: 0;
     gap: 0;
   }
+}
+
+.error-detail {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
 }

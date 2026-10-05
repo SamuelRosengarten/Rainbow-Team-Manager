@@ -52,13 +52,12 @@ export default function MapPicker({ mapId, site, side, onMapChange, onSiteChange
               No bomb sites are defined for {map.name} yet. Add them to <code>src/data/maps.json</code>.
             </p>
           ) : (
-            <div className="site-list" role="radiogroup" aria-label={`${map.name} bomb sites`}>
+            <div className="site-list" role="group" aria-label={`${map.name} bomb sites`}>
               {sites.map((s) => (
                 <button
                   key={s}
                   type="button"
-                  role="radio"
-                  aria-checked={site === s}
+                  aria-pressed={site === s}
                   className="site-chip"
                   onClick={() => onSiteChange(site === s ? '' : s)}
                 >

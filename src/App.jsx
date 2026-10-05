@@ -11,6 +11,7 @@ import {
   ProfilePicker,
 } from './components/Screens.jsx';
 import { useTeamData } from './state/useTeamData.js';
+import { useOnline } from './state/useOnline.js';
 import { isConfigured } from './lib/api.js';
 import { PLAYERS } from './lib/constants.js';
 import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, storeProfile } from './lib/config.js';
@@ -52,6 +53,7 @@ function TeamApp({ online, onOffline }) {
   const [picking, setPicking] = useState(false);
   const [view, setView] = useState('plan');
   const data = useTeamData({ online, profile });
+  const browserOnline = useOnline();
 
   if (!profile || picking) {
     return (
@@ -89,7 +91,10 @@ function TeamApp({ online, onOffline }) {
               type="button"
               className="nav__link"
               aria-current={view === v.id ? 'page' : undefined}
-              onClick={() => setView(v.id)}
+              onClick={() => {
+                setView(v.id);
+                window.scrollTo(0, 0);
+              }}
             >
               {v.label}
             </button>
@@ -112,6 +117,11 @@ function TeamApp({ online, onOffline }) {
         </div>
       </header>
 
+      {online && !browserOnline && (
+        <div className="banner">
+          <Notice>You're offline. Changes won't reach the team until your connection is back.</Notice>
+        </div>
+      )}
       {data.writeError && (
         <div className="banner">
           <Notice onDismiss={data.clearWriteError}>{data.writeError}</Notice>

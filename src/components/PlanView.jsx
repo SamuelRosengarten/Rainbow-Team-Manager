@@ -12,9 +12,13 @@ import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { formatLineupText, rerollPlayer, rollLineup } from '../lib/roll.js';
 
+const describe = (lineup, players) =>
+  players.map((p) => `${p}: ${OPERATORS_BY_ID[lineup[p]]?.name ?? 'none'}`).join(', ');
+
 export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics }) {
   const [error, setError] = useState('');
   const [changed, setChanged] = useState([]);
+  const [announce, setAnnounce] = useState('');
   const { side, bans, mapId, site } = team;
   const lineup = team.lineup?.side === side ? team.lineup.players : null;
   const common = { players: PLAYERS, operators: OPERATORS, side, bans, ...rollOptions };
@@ -26,6 +30,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
     }
     setError('');
     setChanged(changedPlayers);
+    setAnnounce(describe(res.lineup, changedPlayers));
     updateTeam({ lineup: { side, players: res.lineup } });
   }
 
@@ -70,6 +75,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
             <SideToggle side={side} onChange={changeSide} />
           </div>
           <Notice onDismiss={() => setError('')}>{error}</Notice>
+          <p className="visually-hidden" aria-live="polite">{announce}</p>
           <Lineup
             players={PLAYERS}
             lineup={lineup}
@@ -107,6 +113,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
           rollOptions={rollOptions}
           onRerolled={(next, rerolled) => {
             setChanged(rerolled);
+            setAnnounce(describe(next, rerolled));
             updateTeam({ lineup: { side, players: next } });
           }}
         />
