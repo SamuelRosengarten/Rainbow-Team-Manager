@@ -3,15 +3,20 @@ import builtinList from '../data/tactics.json';
 import * as api from '../lib/api.js';
 import { EMPTY_TEAM_STATE, PLAYERS } from '../lib/constants.js';
 import { defaultNotes } from '../lib/maps.js';
+import { buildRoster } from '../lib/roster.js';
 import { mergeTactics, normalizeTactic } from '../lib/tactics.js';
 
 const BUILTINS = builtinList.map((t) => normalizeTactic(t));
 const BUILTIN_IDS = new Set(BUILTINS.map((t) => t.id));
 
-const emptyPrefs = () => Object.fromEntries(PLAYERS.map((p) => [p, { owned: [], favorites: [], avoid: [] }]));
+const emptyPrefs = (names) => Object.fromEntries(names.map((p) => [p, { owned: [], favorites: [], avoid: [] }]));
+
+// Offline mode starts with the default five players.
+const OFFLINE_PROFILES = PLAYERS.map((name, i) => ({ id: `offline-${i}`, name, createdAt: '' }));
+const idsOf = (profiles) => Object.fromEntries(profiles.map((p) => [p.name, p.id]));
 
 /**
- * All shared team data: team state, tactics, map notes and operator prefs.
+ * All shared team data: roster, team state, tactics, map notes and operator prefs.
  * With `online` it loads from Supabase and stays live via realtime; without
  * it, everything is kept in memory (handy for trying the app with no backend).
  */
@@ -22,11 +27,14 @@ export function useTeamData({ online, profile }) {
   const [writeError, setWriteError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [idByName, setIdByName] = useState({});
+  const [profiles, setProfiles] = useState(online ? [] : OFFLINE_PROFILES);
+  // profile id -> details; null when the player_details table doesn't exist yet.
+  const [details, setDetails] = useState(online ? null : {});
+  const idByName = useMemo(() => idsOf(profiles), [profiles]);
   const [team, setTeam] = useState(EMPTY_TEAM_STATE);
   const [savedTactics, setSavedTactics] = useState([]);
   const [noteRows, setNoteRows] = useState([]);
-  const [prefs, setPrefs] = useState(emptyPrefs);
+  const [prefs, setPrefs] = useState(() => emptyPrefs(PLAYERS));
 
   const teamRef = useRef(team);
   const pendingTeamWrites = useRef(0);
@@ -53,23 +61,25 @@ export function useTeamData({ online, profile }) {
 
     (async () => {
       try {
-        const ids = await api.fetchProfiles();
-        const missing = PLAYERS.filter((p) => !ids[p]);
-        if (missing.length) throw new Error(`Profiles missing in the database: ${missing.join(', ')}. Re-run supabase/schema.sql.`);
-        const [teamState, tactics, notes, allPrefs] = await Promise.all([
+        const profileList = await api.fetchProfiles();
+        if (profileList.length === 0) throw new Error('No players found in the database. Re-run supabase/schema.sql.');
+        const ids = idsOf(profileList);
+        const [teamState, tactics, notes, allPrefs, playerDetails] = await Promise.all([
           api.fetchTeamState(),
           api.fetchTactics(ids),
           api.fetchMapNotes(ids),
           api.fetchAllPrefs(ids),
+          api.fetchPlayerDetails(),
         ]);
         if (cancelled) return;
         idsRef.current = ids;
         teamRef.current = teamState;
-        setIdByName(ids);
+        setProfiles(profileList);
+        setDetails(playerDetails);
         setTeam(teamState);
         setSavedTactics(tactics);
         setNoteRows(notes);
-        setPrefs({ ...emptyPrefs(), ...allPrefs });
+        setPrefs({ ...emptyPrefs(profileList.map((p) => p.name)), ...allPrefs });
         setStatus('ready');
 
         unsubs.push(
@@ -105,18 +115,35 @@ export function useTeamData({ online, profile }) {
           api.subscribe('map_notes', () => api.fetchMapNotes(idsRef.current).then((r) => !cancelled && setNoteRows(r)).catch(reportWrite)),
           api.subscribe('owned_operators', () => refreshPrefs()),
           api.subscribe('preferred_operators', () => refreshPrefs()),
+          api.subscribe('profiles', () => refreshRoster()),
+          api.subscribe('player_details', () => refreshRoster()),
         );
       } catch (e) {
         fail(e);
       }
     })();
 
+    let rosterTimer = null;
+    function refreshRoster() {
+      clearTimeout(rosterTimer);
+      rosterTimer = setTimeout(() => {
+        Promise.all([api.fetchProfiles(), api.fetchPlayerDetails()])
+          .then(([list, d]) => {
+            if (cancelled) return;
+            idsRef.current = idsOf(list);
+            setProfiles(list);
+            setDetails(d);
+          })
+          .catch(reportWrite);
+      }, 250);
+    }
+
     function refreshPrefs() {
       clearTimeout(prefsTimer);
       prefsTimer = setTimeout(() => {
         api
           .fetchAllPrefs(idsRef.current)
-          .then((r) => !cancelled && setPrefs({ ...emptyPrefs(), ...r }))
+          .then((r) => !cancelled && setPrefs({ ...emptyPrefs(Object.keys(idsRef.current)), ...r }))
           .catch(reportWrite);
       }, 250);
     }
@@ -124,6 +151,7 @@ export function useTeamData({ online, profile }) {
     return () => {
       cancelled = true;
       clearTimeout(prefsTimer);
+      clearTimeout(rosterTimer);
       unsubs.forEach((u) => u());
     };
   }, [online, reloadKey]);
@@ -138,7 +166,12 @@ export function useTeamData({ online, profile }) {
   const updateTeam = useCallback(
     (patch) => {
       const prev = teamRef.current;
-      const next = { ...prev, ...(typeof patch === 'function' ? patch(prev) : patch) };
+      const next = {
+        ...prev,
+        ...(typeof patch === 'function' ? patch(prev) : patch),
+        updatedBy: profileRef.current,
+        updatedAt: new Date().toISOString(),
+      };
       teamRef.current = next;
       setTeam(next);
       if (!online) return;
@@ -167,7 +200,7 @@ export function useTeamData({ online, profile }) {
   const saveTactic = useCallback(
     async (t) => {
       if (online) await api.upsertTactics([t], idsRef.current);
-      upsertLocal([t]);
+      upsertLocal([{ ...t, updatedAt: new Date().toISOString() }]);
     },
     [online],
   );
@@ -210,7 +243,7 @@ export function useTeamData({ online, profile }) {
       if (online) await api.saveMapNote(owner, mapId, notes, idsRef.current);
       setNoteRows((prev) => [
         ...prev.filter((r) => !(r.mapId === mapId && (r.owner ?? null) === (owner ?? null))),
-        { owner: owner ?? null, mapId, notes },
+        { owner: owner ?? null, mapId, notes, updatedAt: new Date().toISOString() },
       ]);
     },
     [online],
@@ -219,7 +252,10 @@ export function useTeamData({ online, profile }) {
   // ---- owned / preferred operators -----------------------------------------
   const reloadPrefs = useCallback(() => {
     if (!online) return;
-    api.fetchAllPrefs(idsRef.current).then((r) => setPrefs({ ...emptyPrefs(), ...r })).catch(() => {});
+    api
+      .fetchAllPrefs(idsRef.current)
+      .then((r) => setPrefs({ ...emptyPrefs(Object.keys(idsRef.current)), ...r }))
+      .catch(() => {});
   }, [online]);
 
   const setOwned = useCallback(
@@ -257,6 +293,40 @@ export function useTeamData({ online, profile }) {
     [online, reloadPrefs],
   );
 
+  // ---- roster --------------------------------------------------------------
+  const roster = useMemo(() => buildRoster(profiles, details ?? {}), [profiles, details]);
+  const rosterReady = details !== null;
+
+  const updatePlayer = useCallback(
+    async (name, patch) => {
+      const id = idsRef.current[name];
+      if (!id) throw new Error(`Unknown player "${name}".`);
+      const current = roster.find((p) => p.name === name);
+      const next = { ...current, ...patch };
+      if (online) {
+        if (!rosterReady) throw new Error('Player details need the latest database setup. Re-run supabase/schema.sql.');
+        await api.savePlayerDetails(id, next);
+      }
+      setDetails((prev) => ({ ...(prev ?? {}), [id]: next }));
+    },
+    [online, roster, rosterReady],
+  );
+
+  const addPlayer = useCallback(
+    async (name, patch = {}) => {
+      const clean = name.trim();
+      const profile = online
+        ? await api.addProfile(clean)
+        : { id: `offline-${Date.now()}`, name: clean, createdAt: new Date().toISOString() };
+      if (online && rosterReady) await api.savePlayerDetails(profile.id, patch);
+      idsRef.current = { ...idsRef.current, [profile.name]: profile.id };
+      setProfiles((prev) => (prev.some((p) => p.id === profile.id) ? prev : [...prev, profile]));
+      setDetails((prev) => (prev === null ? prev : { ...prev, [profile.id]: { ...prev[profile.id], ...patch } }));
+      setPrefs((prev) => ({ ...prev, [profile.name]: prev[profile.name] ?? { owned: [], favorites: [], avoid: [] } }));
+    },
+    [online, rosterReady],
+  );
+
   return {
     status,
     loadError,
@@ -267,10 +337,14 @@ export function useTeamData({ online, profile }) {
     team,
     updateTeam,
     tacticsStore: { tactics, saveTactic, deleteTactic, importTactics },
-    notes: { getNotes, saveNotes },
+    notes: { getNotes, saveNotes, rows: noteRows },
     prefs,
     setOwned,
     setPreference,
     idByName,
+    roster,
+    rosterReady,
+    updatePlayer,
+    addPlayer,
   };
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PLAYERS } from '../lib/constants.js';
-import { fetchPasscodeHash } from '../lib/api.js';
+import { checkPasscodeOnServer, passcodeStatus } from '../lib/api.js';
 import { checkPasscode } from '../lib/passcode.js';
 
 function Shell({ title, children, labelledBy = 'screen-title' }) {
@@ -74,7 +73,7 @@ export function ConfigMissingScreen({ onOffline }) {
 }
 
 export function PasscodeScreen({ onPass }) {
-  const [state, setState] = useState({ phase: 'loading', hash: null, error: '' });
+  const [state, setState] = useState({ phase: 'loading', gate: null, error: '' });
   const [value, setValue] = useState('');
   const [wrong, setWrong] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -82,9 +81,9 @@ export function PasscodeScreen({ onPass }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchPasscodeHash()
-      .then((hash) => !cancelled && setState({ phase: hash ? 'ready' : 'unset', hash, error: '' }))
-      .catch((e) => !cancelled && setState({ phase: 'error', hash: null, error: e.message }));
+    passcodeStatus()
+      .then((gate) => !cancelled && setState({ phase: gate.set ? 'ready' : 'unset', gate, error: '' }))
+      .catch((e) => !cancelled && setState({ phase: 'error', gate: null, error: e.message }));
     return () => {
       cancelled = true;
     };
@@ -94,7 +93,9 @@ export function PasscodeScreen({ onPass }) {
     e.preventDefault();
     setChecking(true);
     try {
-      if (await checkPasscode(value, state.hash)) onPass();
+      const { gate } = state;
+      const ok = gate.mode === 'server' ? await checkPasscodeOnServer(value) : await checkPasscode(value, gate.hash);
+      if (ok) onPass();
       else setWrong(true);
     } catch (err) {
       setState((s) => ({ ...s, phase: 'error', error: err.message }));
@@ -109,7 +110,7 @@ export function PasscodeScreen({ onPass }) {
       <ErrorScreen
         message={state.error}
         onRetry={() => {
-          setState({ phase: 'loading', hash: null, error: '' });
+          setState({ phase: 'loading', gate: null, error: '' });
           setAttempt((a) => a + 1);
         }}
       />
@@ -156,12 +157,12 @@ export function PasscodeScreen({ onPass }) {
   );
 }
 
-export function ProfilePicker({ current, onPick, onCancel }) {
+export function ProfilePicker({ players, current, onPick, onCancel }) {
   return (
     <Shell title="Who are you?">
       <p className="muted">Pick your profile. You can switch at any time from the header.</p>
       <div className="profile-grid">
-        {PLAYERS.map((p) => (
+        {players.map((p) => (
           <button
             key={p}
             type="button"

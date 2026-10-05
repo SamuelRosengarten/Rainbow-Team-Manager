@@ -16,10 +16,12 @@ export const REQUIRE_PASSCODE = parseRequirePasscode(import.meta.env.VITE_REQUIR
 const PROFILE_KEY = 'r6tp.profile';
 const PASSCODE_SESSION_KEY = 'r6tp.passcode-ok';
 
-// localStorage holds only the selected profile.
+// localStorage holds only the selected profile. Without `valid`, the stored
+// name is returned as is (checked later, once the roster has loaded).
 export function loadProfile(valid) {
   try {
     const v = localStorage.getItem(PROFILE_KEY);
+    if (!valid) return v || null;
     return valid.includes(v) ? v : null;
   } catch {
     return null;

@@ -7,7 +7,7 @@ import Notice from './Notice.jsx';
 import MapPicker from './MapPicker.jsx';
 import MapNotes from './MapNotes.jsx';
 import TacticPanel from './TacticPanel.jsx';
-import { PLAYERS } from '../lib/constants.js';
+import { useRoster } from '../state/roster-context.js';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { formatLineupText, rerollPlayer, rollLineup } from '../lib/roll.js';
@@ -16,12 +16,13 @@ const describe = (lineup, players) =>
   players.map((p) => `${p}: ${OPERATORS_BY_ID[lineup[p]]?.name ?? 'none'}`).join(', ');
 
 export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics }) {
+  const { lineupPlayers } = useRoster();
   const [error, setError] = useState('');
   const [changed, setChanged] = useState([]);
   const [announce, setAnnounce] = useState('');
   const { side, bans, mapId, site } = team;
   const lineup = team.lineup?.side === side ? team.lineup.players : null;
-  const common = { players: PLAYERS, operators: OPERATORS, side, bans, ...rollOptions };
+  const common = { players: lineupPlayers, operators: OPERATORS, side, bans, ...rollOptions };
 
   function applyResult(res, changedPlayers) {
     if (!res.ok) {
@@ -34,7 +35,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
     updateTeam({ lineup: { side, players: res.lineup } });
   }
 
-  const roll = () => applyResult(rollLineup(common), PLAYERS);
+  const roll = () => applyResult(rollLineup(common), lineupPlayers);
   const reroll = (player) => applyResult(rerollPlayer({ ...common, lineup, player }), [player]);
 
   const toggleBan = (id) =>
@@ -56,7 +57,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
   const shareText = () =>
     formatLineupText({
       lineup,
-      players: PLAYERS,
+      players: lineupPlayers,
       operatorsById: OPERATORS_BY_ID,
       side,
       mapName: MAPS_BY_ID[mapId]?.name,
@@ -65,71 +66,79 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
     });
 
   return (
-    <div className="plan">
-      <div className="plan__col">
-        <MapPicker mapId={mapId} site={site} side={side} onMapChange={changeMap} onSiteChange={changeSite} />
+    <div className="page">
+      <header className="page__head">
+        <div>
+          <h1 className="page__title">Plan</h1>
+          <p className="page__sub">Map, lineup, tactic and bans. Every change is shared with the team live.</p>
+        </div>
+      </header>
+      <div className="plan">
+        <div className="plan__col">
+          <MapPicker mapId={mapId} site={site} side={side} onMapChange={changeMap} onSiteChange={changeSite} />
 
-        <section className="panel panel--lineup" aria-labelledby="lineup-title">
-          <div className="panel__head">
-            <h2 id="lineup-title" className="panel__title">Lineup</h2>
-            <SideToggle side={side} onChange={changeSide} />
-          </div>
-          <Notice onDismiss={() => setError('')}>{error}</Notice>
-          <p className="visually-hidden" aria-live="polite">{announce}</p>
-          <Lineup
-            players={PLAYERS}
+          <section className="panel panel--lineup" aria-labelledby="lineup-title">
+            <div className="panel__head">
+              <h2 id="lineup-title" className="panel__title">Lineup</h2>
+              <SideToggle side={side} onChange={changeSide} />
+            </div>
+            <Notice onDismiss={() => setError('')}>{error}</Notice>
+            <p className="visually-hidden" aria-live="polite">{announce}</p>
+            <Lineup
+              players={lineupPlayers}
+              lineup={lineup}
+              highlight={changed}
+              onReroll={reroll}
+              currentProfile={currentProfile}
+            />
+            <div className="actions">
+              <button type="button" className={`btn btn--primary btn--${side}`} onClick={roll}>
+                Roll {side === 'attack' ? 'attackers' : 'defenders'}
+              </button>
+              <CopyButton getText={shareText} disabled={!lineup} />
+            </div>
+            <div className="lineup-foot">
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={Boolean(team.ownedOnly)}
+                  onChange={(e) => updateTeam({ ownedOnly: e.target.checked })}
+                />
+                Use owned operators only
+              </label>
+              {team.updatedBy && <span className="muted small">Last change by {team.updatedBy}</span>}
+            </div>
+          </section>
+
+          <TacticPanel
+            team={team}
+            updateTeam={updateTeam}
+            tactics={tactics}
             lineup={lineup}
-            highlight={changed}
-            onReroll={reroll}
-            currentProfile={currentProfile}
+            players={lineupPlayers}
+            operators={OPERATORS}
+            operatorsById={OPERATORS_BY_ID}
+            rollOptions={rollOptions}
+            onRerolled={(next, rerolled) => {
+              setChanged(rerolled);
+              setAnnounce(describe(next, rerolled));
+              updateTeam({ lineup: { side, players: next } });
+            }}
           />
-          <div className="actions">
-            <button type="button" className={`btn btn--primary btn--${side}`} onClick={roll}>
-              Roll {side === 'attack' ? 'attackers' : 'defenders'}
-            </button>
-            <CopyButton getText={shareText} disabled={!lineup} />
-          </div>
-          <div className="lineup-foot">
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={Boolean(team.ownedOnly)}
-                onChange={(e) => updateTeam({ ownedOnly: e.target.checked })}
-              />
-              Use owned operators only
-            </label>
-            {team.updatedBy && <span className="muted small">Last change by {team.updatedBy}</span>}
-          </div>
-        </section>
+        </div>
 
-        <TacticPanel
-          team={team}
-          updateTeam={updateTeam}
-          tactics={tactics}
-          lineup={lineup}
-          players={PLAYERS}
-          operators={OPERATORS}
-          operatorsById={OPERATORS_BY_ID}
-          rollOptions={rollOptions}
-          onRerolled={(next, rerolled) => {
-            setChanged(rerolled);
-            setAnnounce(describe(next, rerolled));
-            updateTeam({ lineup: { side, players: next } });
-          }}
-        />
-      </div>
-
-      <div className="plan__col">
-        {mapId && (
-          <MapNotes
-            key={mapId}
-            mapId={mapId}
-            currentProfile={currentProfile}
-            getNotes={notes.getNotes}
-            saveNotes={notes.saveNotes}
-          />
-        )}
-        <BansPanel side={side} bans={bans} onToggle={toggleBan} onClear={clearBans} />
+        <div className="plan__col">
+          {mapId && (
+            <MapNotes
+              key={mapId}
+              mapId={mapId}
+              currentProfile={currentProfile}
+              getNotes={notes.getNotes}
+              saveNotes={notes.saveNotes}
+            />
+          )}
+          <BansPanel side={side} bans={bans} onToggle={toggleBan} onClear={clearBans} />
+        </div>
       </div>
     </div>
   );

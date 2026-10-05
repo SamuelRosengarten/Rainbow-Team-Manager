@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLAYERS } from '../lib/constants.js';
+import { useRoster } from '../state/roster-context.js';
 import { MAPS_BY_ID } from '../lib/maps.js';
 
 /**
@@ -7,6 +7,7 @@ import { MAPS_BY_ID } from '../lib/maps.js';
  * their own notes, which teammates can read but only the owner edits.
  */
 export default function MapNotes({ mapId, currentProfile, getNotes, saveNotes }) {
+  const { players } = useRoster();
   const [owner, setOwner] = useState(null); // null = team
   const [draft, setDraft] = useState(null); // null = not editing
   const [saving, setSaving] = useState(false);
@@ -46,7 +47,7 @@ export default function MapNotes({ mapId, currentProfile, getNotes, saveNotes })
           }}
         >
           <option value="">Team notes</option>
-          {PLAYERS.map((p) => (
+          {players.map((p) => (
             <option key={p} value={p}>{p === currentProfile ? `My notes (${p})` : `${p}'s notes`}</option>
           ))}
         </select>

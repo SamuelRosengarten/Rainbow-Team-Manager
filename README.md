@@ -1,6 +1,16 @@
 # R6 Team Planner
 
-A Rainbow Six Siege planner for a five-player squad (Samuel, Anthony, Xavier, Mathis, William):
+A Rainbow Six Siege team manager and planner. It starts with a five-player squad (Samuel, Anthony, Xavier, Mathis, William), and you can add players from the app.
+
+Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.g. `#/matches`):
+
+- **Home**: the team dashboard. Next match with a countdown and one-tap RSVP, matches waiting for a result, win/loss record and recent form, the current plan and lineup, roster availability, recent activity and quick actions.
+- **Matches**: schedule scrims and league games (opponent, date and time, competition, map, notes). Upcoming, live, "needs result", completed and cancelled matches look different. Each match has RSVPs (In / Maybe / Out), a prep checklist and a quick score form. **Plan it** jumps to the Plan screen with the match's map.
+- **Plan**: the lineup roller, map and site, tactic and bans (below).
+- **Tactics**: the team's strats with diagrams.
+- **Team**: the roster (Ubisoft username, main role incl. IGL, starter / substitute / former, availability, notes, favourite operators, R6 Tracker link) and everyone's operator lists. The lineup roller uses the **starters** (up to five).
+
+The Plan screen:
 
 - **Roll** a distinct random operator for each player. A roll respects the selected side, bans, owned operators, favourites and "avoid" lists.
 - **Re-roll** a single player without touching the rest of the lineup.
@@ -16,17 +26,31 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 ## Contents
 
-1. [Security model (read first)](#security-model-read-first)
-2. [Setup: Supabase](#1-create-the-supabase-project)
-3. [Setup: local development](#4-run-locally)
-4. [Setup: Vercel](#5-deploy-on-vercel)
-5. [Running tests](#running-tests)
-6. [Adding operators, images and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
-7. [Tactics: editing and committing to the repo](#tactics)
-8. [How rolling works](#how-rolling-works)
-9. [Troubleshooting](#troubleshooting)
+1. [Upgrading an existing setup](#upgrading-an-existing-setup) (do this if your team already uses the app)
+2. [Security model (read first)](#security-model-read-first)
+3. [Setup: Supabase](#1-create-the-supabase-project)
+4. [Setup: local development](#4-run-locally)
+5. [Setup: Vercel](#5-deploy-on-vercel)
+6. [Running tests](#running-tests)
+7. [Adding operators, images and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
+8. [Tactics: editing and committing to the repo](#tactics)
+9. [How rolling works](#how-rolling-works)
+10. [Troubleshooting](#troubleshooting)
 
 ---
+
+## Upgrading an existing setup
+
+If your Supabase project was set up before the Matches and Roster features, do these **in this order**:
+
+1. **Deploy the new app first** (merge to `main`; Vercel redeploys). It works with the old database: Matches and roster details show "Database update needed" until step 2.
+2. **Re-run `supabase/schema.sql`** in Supabase → SQL Editor. It only adds things; no table or column is renamed or removed, and your data stays. It:
+   - adds the tables `player_details`, `matches`, `match_availability` and `match_checklist`, with checks on lengths and allowed values and an index on match time;
+   - lets the website add players (new rows in `profiles`, names 1–24 characters). Renaming or deleting players from the website isn't allowed;
+   - **hides the passcode hash** from the website and adds `check_team_passcode()` / `team_passcode_is_set()`, so the passcode is checked on the server;
+   - turns on Realtime for the new tables.
+
+Don't do step 2 before step 1: the old app reads the passcode hash directly, so it would show an error at the passcode screen until the new version is live. Your passcode doesn't change.
 
 ## Security model (read first)
 
@@ -34,7 +58,7 @@ This app has **no real authentication**, and that is by design:
 
 - The Supabase **anon key** is bundled into the website, as it is in every Supabase frontend. Anyone who has the site can extract it.
 - Row Level Security is **enabled**, but the policies in `supabase/schema.sql` deliberately allow the `anon` role to read and write the team tables. Everything is open to the team.
-- The **team passcode** is a *light gate*. The app hashes what you type and compares it with a hash stored in the `team_settings` table, **in the browser**. Anyone with the link and the passcode, or anyone who reads the anon key out of the site, can read and write everything.
+- The **team passcode** is a *light gate*. The database checks it (`check_team_passcode()`), and the stored hash can't be read from the website, so it can't be guessed offline. But it only gates the app's screens: anyone who reads the anon key out of the site can still call the API and read and write the team tables.
 - The five profiles are just names. Picking "Samuel" doesn't prove you are Samuel.
 
 Fine for a friends' planning board. **Do not store anything private in it.** Never put the Supabase **service role** key in this project, in `.env`, or in Vercel.
@@ -52,7 +76,7 @@ Fine for a friends' planning board. **Do not store anything private in it.** Nev
 1. In the Supabase dashboard, open **SQL Editor → New query**.
 2. Paste the whole contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
 
-This creates the tables (`profiles`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `team_settings`), seeds the five profiles, enables RLS with the permissive team policies, and turns on Realtime. The script is safe to run again.
+This creates the tables (`profiles`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `team_settings`, `player_details`, `matches`, `match_availability`, `match_checklist`), seeds the five profiles, enables RLS with the permissive team policies, adds the server-side passcode check, and turns on Realtime. The script is safe to run again.
 
 ## 3. Set the team passcode
 
@@ -295,10 +319,14 @@ The image link is stored in the `image_url` column. **If your database was set u
 ```
 src/
   data/          operators.json, operatorProfiles.json, maps.json, tactics.json (+ data tests)
-  lib/           roll.js, fit.js, tactics.js, diagram.js (pure + tests), api.js (all Supabase calls),
-                 passcode.js, config.js, constants.js, maps.js, operators.js
-  state/         useTeamData.js (loading, realtime, optimistic writes, offline mode)
-  components/    UI
+  lib/           roll.js, fit.js, tactics.js, diagram.js, matches.js, roster.js, activity.js
+                 (pure + tests), api.js (all Supabase calls), passcode.js, config.js,
+                 constants.js, maps.js, operators.js
+  state/         useTeamData.js (roster, plan, tactics, notes, prefs: loading, realtime,
+                 optimistic writes, offline mode), useMatchData.js (matches, RSVPs, checklist),
+                 useHashRoute.js, roster-context.js, useNow.js
+  components/    UI. Screens: DashboardView, MatchesView, PlanView, TacticsView, TeamView.
+                 Shared pieces in ui.jsx (Card, Sheet, EmptyState, DataState, Badge…) and Icon.jsx
 supabase/schema.sql
 docs/DATA_REVIEW.md   data to verify by hand
 public/operators/     your operator images
@@ -312,6 +340,8 @@ public/operators/     your operator images
 | "Can't reach the database… project may be paused" | Check your connection. Free Supabase projects pause after inactivity; open the dashboard and click **Restore project**. |
 | "The database tables are missing" | Run `supabase/schema.sql`. |
 | "No team passcode has been set yet" | Run the passcode statement from step 3. |
+| "Database update needed" on Matches or the dashboard | Re-run `supabase/schema.sql` (see [Upgrading](#upgrading-an-existing-setup)). |
+| "Adding players needs the latest database setup" | Same: re-run `supabase/schema.sql`. |
 | "Wrong passcode" | Re-run the statement from step 3 to reset it. |
 | Live dot says "Reconnecting…" | Realtime dropped. It reconnects automatically and catches up on missed changes. |
 | "Your change wasn't shared with the team" | The write failed (network or permissions). Your screen shows it; others don't see it yet. Retry once you're back online. |
