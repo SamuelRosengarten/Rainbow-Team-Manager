@@ -3001,3 +3001,215 @@ button.op-pill {
     overflow-wrap: break-word;
   }
 }
+
+/* ---------- Player stats, team snapshot, lineup coach ---------- */
+.pstats {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.pstats--empty {
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.pstats__rank {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.pstats__nums {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+.pstats__nums dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pstats__nums dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.pstats__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.pstats__label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pstats__op {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pstats__more summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+.pstats__detail {
+  display: grid;
+  gap: 8px;
+  padding-top: 6px;
+}
+.pstats__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.pstats__table th,
+.pstats__table td {
+  padding: 3px 6px;
+  text-align: right;
+}
+.pstats__table th:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+.pstats__table thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.pstats__refresh {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.find-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+}
+.found {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--ok);
+  border-radius: var(--radius);
+  background: var(--ok-soft);
+}
+.found__title {
+  margin: 0;
+  font-weight: 700;
+}
+.snapshot {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-x: auto;
+}
+.snapshot__title {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.snapshot__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.snapshot__table th,
+.snapshot__table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+.snapshot__table thead th {
+  border-top: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.coach__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.coach__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.coach__main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.coach__main p {
+  margin: 0;
+}
+.coach__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.coach__op {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.coach__job {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.coach__why {
+  font-size: 0.9rem;
+  color: #c8d2e0;
+}
+.coach__why-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.coach__alt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.tag--fav {
+  background: var(--ok-soft);
+  color: var(--ok);
+}

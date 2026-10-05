@@ -3,6 +3,7 @@ import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import OperatorsView from './OperatorsView.jsx';
 import PlayerEditor from './PlayerEditor.jsx';
+import PlayerStats, { TeamSnapshot } from './PlayerStats.jsx';
 import { Avatar, Badge, EmptyState } from './ui.jsx';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { AVAILABILITY, LINEUP_SIZE, MAIN_ROLES, PLAYER_STATUS, trackerUrl } from '../lib/roster.js';
@@ -10,7 +11,7 @@ import { useRoster } from '../state/roster-context.js';
 
 const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 
-function PlayerCard({ player, prefs, isMe, onEdit }) {
+function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
   const p = prefs[player.name] ?? { owned: [], favorites: [] };
   const favorites = p.favorites.map((id) => OPERATORS_BY_ID[id]).filter(Boolean);
   const tracker = trackerUrl(player.username);
@@ -23,12 +24,13 @@ function PlayerCard({ player, prefs, isMe, onEdit }) {
             {player.name}
             {isMe && <span className="tag tag--me">you</span>}
           </span>
-          <span className="player__user">{player.username || 'No Ubisoft username'}</span>
+          <span className="player__user">{player.username ? `Ubisoft: ${player.username}` : 'No Ubisoft username'}</span>
         </div>
         <button type="button" className="btn btn--ghost btn--icon" onClick={onEdit} aria-label={`Edit ${player.name}`}>
           <Icon name="edit" />
         </button>
       </div>
+      <PlayerStats player={player} onRefresh={onRefresh} />
       <div className="player__badges">
         <Badge tone={player.status === 'starter' ? 'accent' : 'neutral'}>{PLAYER_STATUS[player.status]}</Badge>
         <Badge tone={AVAIL_TONE[player.availability]} dot>
@@ -64,7 +66,7 @@ function PlayerCard({ player, prefs, isMe, onEdit }) {
   );
 }
 
-function Roster({ profile, prefs, addPlayer, updatePlayer }) {
+function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
   const { roster, rosterReady } = useRoster();
   const [editing, setEditing] = useState(null); // null | 'new' | player
   const current = roster.filter((p) => p.status !== 'archived');
@@ -86,10 +88,11 @@ function Roster({ profile, prefs, addPlayer, updatePlayer }) {
           Only {starters} starter{starters === 1 ? '' : 's'}. The lineup roller uses starters, so set {LINEUP_SIZE - starters} more.
         </p>
       )}
+      <TeamSnapshot players={current} />
       {current.length ? (
         <ul className="player-grid">
           {current.map((p) => (
-            <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} />
+            <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} onRefresh={() => refreshStats(p.name)} />
           ))}
         </ul>
       ) : (
@@ -110,7 +113,7 @@ function Roster({ profile, prefs, addPlayer, updatePlayer }) {
           <summary>Former players ({former.length})</summary>
           <ul className="player-grid">
             {former.map((p) => (
-              <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} />
+              <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} onRefresh={() => refreshStats(p.name)} />
             ))}
           </ul>
         </details>
@@ -133,7 +136,7 @@ function Roster({ profile, prefs, addPlayer, updatePlayer }) {
 }
 
 /** Players: the roster (roles, notes) plus everyone's operator pools. */
-export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, setOwned, setPreference }) {
+export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, refreshStats, setOwned, setPreference }) {
   const tab = sub === 'operators' ? 'operators' : 'roster';
   return (
     <section className="page" aria-labelledby="team-title">
@@ -161,7 +164,7 @@ export default function TeamView({ sub, navigate, profile, prefs, addPlayer, upd
         </button>
       </div>
       {tab === 'roster' ? (
-        <Roster profile={profile} prefs={prefs} addPlayer={addPlayer} updatePlayer={updatePlayer} />
+        <Roster profile={profile} prefs={prefs} addPlayer={addPlayer} updatePlayer={updatePlayer} refreshStats={refreshStats} />
       ) : (
         <OperatorsView key={profile} profile={profile} prefs={prefs} setOwned={setOwned} setPreference={setPreference} />
       )}

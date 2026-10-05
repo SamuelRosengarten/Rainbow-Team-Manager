@@ -4,6 +4,7 @@ import * as api from '../lib/api.js';
 import { EMPTY_TEAM_STATE, PLAYERS } from '../lib/constants.js';
 import { defaultNotes } from '../lib/maps.js';
 import { buildRoster } from '../lib/roster.js';
+import { lookupPlayer } from '../lib/statsProvider.js';
 import { mergeTactics, normalizeTactic } from '../lib/tactics.js';
 
 const BUILTINS = builtinList.map((t) => normalizeTactic(t));
@@ -327,6 +328,18 @@ export function useTeamData({ online, profile }) {
     [online, rosterReady],
   );
 
+  // Re-run the lookup for a player from their saved username. On failure the
+  // previous stats are kept (with their timestamp); nothing is ever invented.
+  const refreshStats = useCallback(
+    async (name) => {
+      const current = roster.find((p) => p.name === name);
+      const res = await lookupPlayer(current?.username, current?.platform);
+      if (res.ok) await updatePlayer(name, { stats: res.stats, statsUpdatedAt: new Date().toISOString() });
+      return res;
+    },
+    [roster, updatePlayer],
+  );
+
   return {
     status,
     loadError,
@@ -345,6 +358,7 @@ export function useTeamData({ online, profile }) {
     roster,
     rosterReady,
     updatePlayer,
+    refreshStats,
     addPlayer,
   };
 }

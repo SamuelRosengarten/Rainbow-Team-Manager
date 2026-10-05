@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import BoardEditor from './BoardEditor.jsx';
 import Icon from './Icon.jsx';
+import LineupCoach from './LineupCoach.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import PrefBadge from './PrefBadge.jsx';
 import RecommendationCard from './RecommendationCard.jsx';
@@ -16,6 +17,7 @@ import { rollLineup } from '../lib/roll.js';
 import { STRATEGY_TYPES, cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
 import { prefState, prefWho, recommendStrategies, whereFavoritesFit } from '../lib/recommend.js';
 import { fitToComposition } from '../lib/strategyMatch.js';
+import { recommendLineup } from '../lib/lineup.js';
 import { usePreferences } from '../state/usePreferences.js';
 import { TACTICAL_ROLES, defaultTacticalRole } from '../lib/tactical.js';
 import { useHistory } from '../state/useHistory.js';
@@ -149,7 +151,7 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
  * → customize → tactics on the map → steps and timing → save.
  */
 export default function StrategyBuilder({ profile, strategyData, navigate, preset, prefs, ownedOnly }) {
-  const { players: roster, lineupPlayers } = useRoster();
+  const { players: roster, lineupPlayers, roster: rosterEntries } = useRoster();
   const [w, setW] = useSessionState(KEY, () => fresh());
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -179,6 +181,31 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     const res = recommendStrategies(list, { pref, selected: ops, mapId: w.mapId, site: w.site });
     return { ranked: res.ranked.slice(0, 12), excluded: res.excluded };
   }, [strategyData.strategies, w.mapId, w.site, w.side, ops, pref]);
+
+  // The coach: best-fitting library plan for this map, site and side, with
+  // who should play which operator. Needs only the map and side; stats and
+  // roles sharpen it when the players have them.
+  const coach = useMemo(() => {
+    if (!w.side || !w.mapId) return null;
+    const list = filterStrategies(strategyData.strategies, { mapId: w.mapId, site: w.site || undefined, side: w.side }).filter((s) => s.slots.length);
+    const strategy = recommendStrategies(list, { pref, selected: [], mapId: w.mapId, site: w.site }).ranked[0]?.strategy ?? null;
+    const players = lineupPlayers.map((n) => rosterEntries.find((p) => p.name === n)).filter(Boolean);
+    return {
+      strategy,
+      lineup: recommendLineup({ strategy, side: w.side, mapId: w.mapId, site: w.site, players, prefs, pref, ownedOnly }),
+    };
+  }, [strategyData.strategies, w.mapId, w.site, w.side, pref, lineupPlayers, rosterEntries, prefs, ownedOnly]);
+
+  const applyCoachLineup = () => {
+    const picked = coach.lineup.slots.filter((s) => s.operatorId).slice(0, 5);
+    set((x) => ({
+      ops: [...picked.map((s) => s.operatorId), null, null, null, null, null].slice(0, 5),
+      players: Object.fromEntries(picked.filter((s) => s.player).map((s) => [s.operatorId, s.player])),
+      roles: Object.fromEntries(picked.map((s) => [s.operatorId, s.job])),
+      step: 6,
+      reached: Math.max(x.reached, 6),
+    }));
+  };
 
   const toggleOp = (id) =>
     set((x) => {
@@ -353,6 +380,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
 
       {w.step === 4 && (
         <div className="op-step">
+          <LineupCoach lineup={coach?.lineup} strategy={coach?.strategy} onUse={applyCoachLineup} />
           <div className="picked" aria-label="Your five operators">
             {w.ops.map((id, i) => {
               const op = OPERATORS_BY_ID[id];

@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import PlayerStats from './PlayerStats.jsx';
 import { Sheet } from './ui.jsx';
 import { AVAILABILITY, LINEUP_SIZE, MAIN_ROLES, PLAYER_STATUS, nameError } from '../lib/roster.js';
+import { PLATFORMS } from '../lib/playerStats.js';
+import { STATS_REASON, lookupPlayer } from '../lib/statsProvider.js';
 
 function Choice({ label, options, value, onChange }) {
   return (
@@ -17,13 +20,20 @@ function Choice({ label, options, value, onChange }) {
   );
 }
 
-/** Add a player (no `player`) or edit one. Names can't change once created. */
+/**
+ * Add a player (no `player`) or edit one. Names can't change once created.
+ * Ubisoft username + platform + "Find Player" fills in the stats; if the
+ * player can't be found they are still added, just without stats.
+ */
 export default function PlayerEditor({ player, roster, detailsEnabled, onSave, onClose }) {
   const isNew = !player;
   const startersElsewhere = roster.filter((p) => p.status === 'starter' && p.name !== player?.name).length;
   const [form, setForm] = useState(() => ({
     name: player?.name ?? '',
     username: player?.username ?? '',
+    platform: player?.platform ?? 'pc',
+    stats: player?.stats ?? null,
+    statsUpdatedAt: player?.statsUpdatedAt ?? null,
     mainRole: player?.mainRole ?? '',
     status: player?.status ?? (startersElsewhere >= LINEUP_SIZE ? 'sub' : 'starter'),
     availability: player?.availability ?? 'available',
@@ -31,7 +41,26 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
   }));
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [finding, setFinding] = useState(false);
+  const [lookup, setLookup] = useState(null); // null | { ok: true } | { ok: false, reason }
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  async function find() {
+    setFinding(true);
+    setLookup(null);
+    const res = await lookupPlayer(form.username, form.platform);
+    setLookup(res);
+    if (res.ok) {
+      setForm((f) => ({
+        ...f,
+        stats: res.stats,
+        statsUpdatedAt: new Date().toISOString(),
+        // A new player takes their Ubisoft name as the app name unless one was typed.
+        name: isNew && !f.name.trim() ? f.username.trim().slice(0, 24) : f.name,
+      }));
+    }
+    setFinding(false);
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -46,12 +75,23 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
     setSaving(true);
     try {
       const { name, ...details } = form;
-      await onSave(name.trim(), { ...details, username: details.username.trim(), notes: details.notes.trim() });
+      const username = details.username.trim();
+      // Stats belong to the username and platform they were found for.
+      const current = details.stats && details.stats.username === username && details.stats.platform === details.platform;
+      await onSave(name.trim(), {
+        ...details,
+        username,
+        notes: details.notes.trim(),
+        stats: current ? details.stats : null,
+        statsUpdatedAt: current ? details.statsUpdatedAt : null,
+      });
     } catch (err) {
       setError(err.message || 'Could not save the player.');
       setSaving(false);
     }
   }
+
+  const staleStats = form.stats && (form.stats.username !== form.username.trim() || form.stats.platform !== form.platform);
 
   return (
     <Sheet
@@ -75,24 +115,9 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
             {error}
           </p>
         )}
-        {isNew && (
-          <label className="field">
-            <span className="field__label">Name in the app</span>
-            <input
-              className="input"
-              value={form.name}
-              onChange={(e) => set({ name: e.target.value })}
-              maxLength={24}
-              autoFocus
-              autoComplete="off"
-              placeholder="e.g. Alex"
-            />
-            <span className="field__hint">This can't be changed later. It's how the app knows who's who.</span>
-          </label>
-        )}
         {!detailsEnabled && (
           <p className="notice notice--warn" role="status">
-            Role, status, availability and notes need the latest database setup. Re-run <code>supabase/schema.sql</code>.
+            Ubisoft username, role, status, availability and notes need the latest database setup. Re-run <code>supabase/schema.sql</code>.
           </p>
         )}
         <fieldset className="form" disabled={!detailsEnabled}>
@@ -102,17 +127,59 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
               className="input"
               value={form.username}
               onChange={(e) => set({ username: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && form.username.trim()) {
+                  e.preventDefault();
+                  find();
+                }
+              }}
               maxLength={40}
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
-              placeholder="Used for the R6 Tracker link"
+              autoFocus
+              placeholder="e.g. Samuie"
             />
           </label>
+          <div className="find-row">
+            <label className="field">
+              <span className="field__label">Platform</span>
+              <select className="select" value={form.platform} onChange={(e) => set({ platform: e.target.value })}>
+                {Object.entries(PLATFORMS).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="button" className="btn btn--secondary" onClick={find} disabled={finding || !form.username.trim()}>
+              {finding ? 'Searching…' : 'Find Player'}
+            </button>
+          </div>
+          {lookup && !lookup.ok && (
+            <p className="notice notice--warn" role="status">
+              Stats unavailable. {STATS_REASON[lookup.reason]} {isNew ? 'You can still add the player without stats.' : 'The player is unaffected.'}
+            </p>
+          )}
+          {form.stats && (
+            <div className="found" role="status">
+              {lookup?.ok && <p className="found__title">Found {form.stats.username}</p>}
+              {staleStats && <p className="muted small">These stats are for “{form.stats.username}”. Press Find Player to update them.</p>}
+              <PlayerStats player={{ ...form, name: form.name || form.username }} />
+            </div>
+          )}
+
+          {isNew && (
+            <label className="field">
+              <span className="field__label">Name in the app</span>
+              <input className="input" value={form.name} onChange={(e) => set({ name: e.target.value })} maxLength={24} autoComplete="off" placeholder="e.g. Alex" />
+              <span className="field__hint">This can't be changed later. It's how the app knows who's who.</span>
+            </label>
+          )}
           <label className="field">
             <span className="field__label">Main role</span>
             <select className="select" value={form.mainRole} onChange={(e) => set({ mainRole: e.target.value })}>
-              <option value="">Not set</option>
+              <option value="">{form.stats ? 'Work it out from their stats' : 'Not set'}</option>
               {Object.entries(MAIN_ROLES).map(([id, label]) => (
                 <option key={id} value={id}>
                   {label}
@@ -121,12 +188,7 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
             </select>
           </label>
           <Choice label="Status" options={PLAYER_STATUS} value={form.status} onChange={(status) => set({ status })} />
-          <Choice
-            label="Availability"
-            options={AVAILABILITY}
-            value={form.availability}
-            onChange={(availability) => set({ availability })}
-          />
+          <Choice label="Availability" options={AVAILABILITY} value={form.availability} onChange={(availability) => set({ availability })} />
           <label className="field">
             <span className="field__label">Notes</span>
             <textarea

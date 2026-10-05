@@ -245,6 +245,11 @@ create table if not exists public.player_details (
 --
 --   drop table if exists public.match_checklist, public.match_availability, public.matches;
 
+-- Player stats (added later; additive). The app works without them.
+alter table public.player_details add column if not exists platform text not null default 'pc' check (platform in ('pc', 'xbox', 'playstation'));
+alter table public.player_details add column if not exists stats jsonb;
+alter table public.player_details add column if not exists stats_updated_at timestamptz;
+
 alter table public.player_details enable row level security;
 
 drop policy if exists "team all player_details" on public.player_details;

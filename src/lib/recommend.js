@@ -15,12 +15,14 @@
 //   5. Other available operators fill whatever is left.
 // Strategies are then ranked by favorite coverage first, tactical quality
 // second.
+// Who plays which operator, and why, is lineup.js; it applies the same rules
+// and adds the players (roles, stats) underneath them.
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
 import { ROLE_LABEL } from './fit.js';
 
 // Weights for a candidate operator in a slot. Favorites outweigh everything so
 // a favorite that can do the job always wins the slot.
-const W = { exact: 3, listed: 2, role: 1, favorite: 6, selected: 2.5 };
+export const W = { exact: 3, listed: 2, role: 1, favorite: 6, selected: 2.5 };
 const MAX_CANDIDATES = 5;
 
 const rolesOf = (id) => OPERATORS_BY_ID[id]?.roles ?? [];
@@ -61,7 +63,7 @@ export const isUsable = (pref, id) => Boolean(OPERATORS_BY_ID[id]) && !pref.bloc
 export const sideFavorites = (pref, side) => [...pref.favorites.keys()].filter((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id));
 
 /** Why a slot would take an operator, best first; null when it can't do the job. */
-function fitKind(slot, id) {
+export function fitKind(slot, id) {
   if (id === slot.operatorId) return 'exact';
   if ((slot.alternatives ?? []).includes(id)) return 'listed';
   if (slot.operatorId ? shareRole(id, slot.operatorId) : rolesOf(id).includes(slot.role)) return 'role';

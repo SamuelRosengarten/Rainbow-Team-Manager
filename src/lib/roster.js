@@ -29,6 +29,9 @@ export const DEFAULT_DETAILS = Object.freeze({
   status: 'starter',
   availability: 'available',
   notes: '',
+  platform: 'pc',
+  stats: null, // normalised player stats (playerStats.js); null = unavailable
+  statsUpdatedAt: null,
 });
 
 /**

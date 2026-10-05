@@ -236,6 +236,7 @@ function TeamApp({ online, onOffline }) {
               prefs={data.prefs}
               addPlayer={data.addPlayer}
               updatePlayer={data.updatePlayer}
+              refreshStats={data.refreshStats}
               setOwned={data.setOwned}
               setPreference={data.setPreference}
             />

@@ -141,6 +141,9 @@ function playerDetailsFromRow(r) {
     status: r.status ?? 'starter',
     availability: r.availability ?? 'available',
     notes: r.notes ?? '',
+    platform: r.platform ?? 'pc',
+    stats: r.stats && typeof r.stats === 'object' ? r.stats : null,
+    statsUpdatedAt: r.stats_updated_at ?? null,
   };
 }
 
@@ -156,17 +159,25 @@ export async function fetchPlayerDetails() {
 }
 
 export async function savePlayerDetails(profileId, d) {
-  await run(
-    db().from('player_details').upsert({
-      profile_id: profileId,
-      username: d.username ?? '',
-      main_role: d.mainRole ?? '',
-      status: d.status ?? 'starter',
-      availability: d.availability ?? 'available',
-      notes: d.notes ?? '',
-      updated_at: new Date().toISOString(),
-    }),
-  );
+  const base = {
+    profile_id: profileId,
+    username: d.username ?? '',
+    main_role: d.mainRole ?? '',
+    status: d.status ?? 'starter',
+    availability: d.availability ?? 'available',
+    notes: d.notes ?? '',
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    await run(db().from('player_details').upsert({ ...base, platform: d.platform ?? 'pc', stats: d.stats ?? null, stats_updated_at: d.statsUpdatedAt ?? null }));
+  } catch (e) {
+    // A database set up before player stats has no such columns: still save
+    // the roster details; the stats just aren't shared with the team.
+    const cause = e?.cause ?? e;
+    const raw = String(cause?.message ?? '').toLowerCase();
+    if (!(cause?.code === 'PGRST204' || (raw.includes('column') && /stats|platform/.test(raw)))) throw e;
+    await run(db().from('player_details').upsert(base));
+  }
 }
 
 // ---------------------------------------------------------------------------
