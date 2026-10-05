@@ -1,12 +1,52 @@
 import { useMemo, useState } from 'react';
 import CompositionPicker from './CompositionPicker.jsx';
 import Icon from './Icon.jsx';
-import StrategyCard from './StrategyCard.jsx';
+import OperatorIcon from './OperatorIcon.jsx';
+import RecommendationCard from './RecommendationCard.jsx';
 import { DataState, EmptyState } from './ui.jsx';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { MAPS, MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { DIFFICULTY, ORIGINS, STRATEGY_TYPES, filterStrategies } from '../lib/strategies.js';
-import { rankStrategies } from '../lib/strategyMatch.js';
+import { OPERATORS_BY_ID } from '../lib/operators.js';
+import { prefWho, recommendStrategies, sideFavorites, whereFavoritesFit } from '../lib/recommend.js';
+import { usePreferences } from '../state/usePreferences.js';
+
+/** The favorites and blocks the recommendations are using, so it's clear why. */
+function PreferenceSummary({ pref, side }) {
+  const favs = sideFavorites(pref, side);
+  const blocked = [...new Set([...pref.blocked.keys(), ...pref.banned])].filter((id) => OPERATORS_BY_ID[id]?.side === side);
+  return (
+    <div className="pref-summary" aria-label="Operator preferences used">
+      <span className="pref-summary__group">
+        <span className="pref-summary__label">★ Favorites</span>
+        {favs.length ? (
+          favs.map((id) => (
+            <span key={id} className="pref-summary__op" title={prefWho(pref, id)}>
+              <OperatorIcon operator={OPERATORS_BY_ID[id]} size="xs" />
+              {OPERATORS_BY_ID[id].name}
+            </span>
+          ))
+        ) : (
+          <span className="muted small">None set: mark favorites in Team → Operators</span>
+        )}
+      </span>
+      <span className="pref-summary__group pref-summary__group--blocked">
+        <span className="pref-summary__label">🚫 Blocked (never recommended)</span>
+        {blocked.length ? (
+          blocked.map((id) => (
+            <span key={id} className="pref-summary__op pref-summary__op--blocked" title={prefWho(pref, id)}>
+              <OperatorIcon operator={OPERATORS_BY_ID[id]} size="xs" />
+              {OPERATORS_BY_ID[id].name}
+            </span>
+          ))
+        ) : (
+          <span className="muted small">None</span>
+        )}
+      </span>
+      {pref.players.length > 0 && <span className="muted small">From: {pref.players.join(', ')}</span>}
+    </div>
+  );
+}
 
 /**
  * Map → site → side → five players and operators → ranked strategies.
@@ -19,11 +59,15 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
   const setFilter = (patch) => set({ filters: { ...filters, ...patch } });
   const sites = mapId ? sitesFor(mapId, side) : [];
   const composition = picks.map((p) => p.operatorId).filter(Boolean);
+  // Preferences of the players in the setup (or the viewer's own).
+  const pref = usePreferences(picks.map((p) => p.player));
 
-  const ranked = useMemo(() => {
+  // Favorites and blocks drive the search: every candidate is rebuilt around
+  // the favorites, blocked operators are removed, then it's ranked.
+  const { ranked, excluded } = useMemo(() => {
     const list = filterStrategies(strategyData.strategies, { mapId, site, side, ...filters });
-    return rankStrategies(list, picks.map((p) => p.operatorId).filter(Boolean), { site });
-  }, [strategyData.strategies, mapId, site, side, filters, picks]);
+    return recommendStrategies(list, { pref, selected: picks.map((p) => p.operatorId).filter(Boolean), mapId, site });
+  }, [strategyData.strategies, mapId, site, side, filters, picks, pref]);
 
   const activeFilters = Object.values(filters).filter(Boolean).length;
   const mapName = MAPS_BY_ID[mapId]?.name;
@@ -82,12 +126,13 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
         </div>
         <h3 className="section-title setup-sub">Players and operators</h3>
         <CompositionPicker side={side} picks={picks} players={players} onChange={(next) => set({ picks: next })} />
+        <PreferenceSummary pref={pref} side={side} />
       </section>
 
       <section className="strat-results" aria-labelledby="results-title">
         <div className="results-bar">
           <h2 id="results-title" className="section-title">
-            {composition.length ? 'Best strategies for your composition' : 'Strategies'}
+            {pref.favorites.size ? 'Recommended for your favorites' : composition.length ? 'Best strategies for your composition' : 'Strategies'}
             <span className="muted">{ranked.length}</span>
           </h2>
           <div className="toolbar">
@@ -157,10 +202,33 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
         )}
 
         <DataState status={strategyData.status === 'missing' ? 'ready' : strategyData.status} error={strategyData.error} onRetry={strategyData.retry} lines={4}>
+          {excluded.length > 0 && (
+            <details className="notice notice--info rec-excluded">
+              <summary>
+                {excluded.length} strateg{excluded.length === 1 ? 'y is' : 'ies are'} hidden: they need a blocked operator with no usable replacement.
+              </summary>
+              <ul>
+                {excluded.map(({ strategy, rec }) => (
+                  <li key={strategy.id}>
+                    {strategy.title}: requires {rec.blockedMissing.map((b) => `${OPERATORS_BY_ID[b.blocked].name} (${b.by.join(', ')})`).join(', ')}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
           {ranked.length ? (
             <ul className="strat-list">
-              {ranked.map(({ strategy, match }) => (
-                <StrategyCard key={strategy.id} strategy={strategy} match={match} onOpen={() => navigate(`strategies/s/${strategy.id}`)} />
+              {ranked.map((item, i) => (
+                <RecommendationCard
+                  key={item.strategy.id}
+                  strategy={item.strategy}
+                  rec={item.rec}
+                  pref={pref}
+                  top={i === 0 && item.rec.status !== 'unscored'}
+                  fits={whereFavoritesFit(ranked, item)}
+                  onOpen={() => navigate(`strategies/s/${item.strategy.id}`)}
+                  onOpenOther={(s) => navigate(`strategies/s/${s.id}`)}
+                />
               ))}
             </ul>
           ) : (

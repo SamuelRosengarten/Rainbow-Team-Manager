@@ -49,8 +49,8 @@ describe('normalizeStrategy', () => {
   });
 
   it('clamps marker coordinates to the board', () => {
-    const s = normalizeStrategy({ title: 'x', side: 'defend', markers: [{ x: 140, y: -4 }] });
-    expect(s.markers[0]).toMatchObject({ x: 100, y: 0 });
+    const s = normalizeStrategy({ title: 'x', side: 'defend', schemaVersion: 3, markers: [{ x: 1.4, y: -0.04 }] });
+    expect(s.markers[0]).toMatchObject({ x: 1, y: 0 });
   });
 });
 

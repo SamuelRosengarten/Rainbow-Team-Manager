@@ -1,3 +1,4 @@
+import { boardSpace, projectStrategy } from './space.js';
 import { describe, it, expect } from 'vitest';
 import { familyOf, latestVersions, newVersion, normalizeStrategy } from './strategies.js';
 import { fitToComposition } from './strategyMatch.js';
@@ -63,16 +64,17 @@ describe('round clock', () => {
   });
 });
 
-describe('normalizeStrategy v2', () => {
+describe('normalizeStrategy', () => {
   it('keeps step actions for real slots, clamps zones and crossfires, drops broken ones', () => {
     const s = plan();
-    expect(s.schemaVersion).toBe(2);
+    expect(s.schemaVersion).toBe(3);
+    expect(s.layout).toBe('schematic');
     expect(s.steps[0].actions).toEqual({ a: 'Drone the wall.' });
     expect(s.steps[2].clock).toBe('');
     expect(s.zones).toHaveLength(1);
-    expect(s.zones[0]).toMatchObject({ x: 95, w: 5, h: 4 });
+    expect(s.zones[0]).toMatchObject({ x: 0.95, w: 0.05, h: 0.0625 });
     expect(s.crossfires).toHaveLength(1);
-    expect(s.crossfires[0]).toMatchObject({ slotA: 'a', slotB: null, radius: 15 });
+    expect(s.crossfires[0]).toMatchObject({ slotA: 'a', slotB: null, radius: 0.15 });
     expect(s.markers.find((m) => m.id === 'm2').gadget).toBe('ability');
     expect(s.markers.find((m) => m.id === 'm3').breachType).toBe('vertical');
   });
@@ -150,13 +152,15 @@ describe('board geometry', () => {
   it('draws and resizes zones from corners and keeps moves on the board', () => {
     expect(rectFrom([30, 20], [10, 5])).toEqual({ x: 10, y: 5, w: 20, h: 15 });
     expect(resizeZone({ x: 10, y: 10, w: 10, h: 10 }, 'se', [30, 25])).toEqual({ x: 10, y: 10, w: 20, h: 15 });
-    expect(moveItem('marker', { x: 99, y: 1 }, 5, -5)).toEqual({ x: 100, y: 0 });
-    expect(moveItem('zone', { x: 90, y: 0, w: 20, h: 5 }, 5, 0).x).toBe(80);
+    const size = { w: 100, h: 64 };
+    expect(moveItem('marker', { x: 99, y: 1 }, 5, -5, size)).toEqual({ x: 100, y: 0 });
+    expect(moveItem('zone', { x: 90, y: 0, w: 20, h: 5 }, 5, 0, size).x).toBe(80);
   });
 
   it('snaps to the nearest player marker', () => {
-    expect(nearestPlayer(plan(), [39, 51])?.id).toBe('m1');
-    expect(nearestPlayer(plan(), [50, 10])).toBeNull();
+    const board = projectStrategy(plan(), boardSpace(plan()));
+    expect(nearestPlayer(board, [39, 51])?.id).toBe('m1');
+    expect(nearestPlayer(board, [50, 10])).toBeNull();
   });
 });
 

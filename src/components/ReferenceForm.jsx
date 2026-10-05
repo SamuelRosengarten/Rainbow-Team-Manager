@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sheet } from './ui.jsx';
 import { MAPS, sitesFor } from '../lib/maps.js';
 import { operatorsForSide } from '../lib/operators.js';
-import { STRATEGY_TYPES, newId, normalizeStrategy } from '../lib/strategies.js';
+import { STRATEGY_TYPES, createStrategy, newId } from '../lib/strategies.js';
 
 /**
  * Add (or edit) a link to a strategy found online. Only metadata is stored:
@@ -35,7 +35,7 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
       if (!/^https:\/\/\S+$/i.test(form.sourceUrl.trim())) throw new Error('Paste the https:// link to the original strategy.');
       if (!form.sourceName.trim()) throw new Error('Name the source (website, creator or channel).');
       const operators = form.operators.filter(Boolean);
-      const strategy = normalizeStrategy({
+      const strategy = createStrategy({
         ...(initial ?? {}),
         id: initial?.id ?? newId('ref'),
         origin: 'reference',

@@ -7,8 +7,15 @@ import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 
+const PREF_STATES = [
+  [null, '♡', 'Not favorited'],
+  ['favorite', '★', 'Favorite'],
+  ['avoid', '🚫', 'Blocked'],
+];
+
 /**
- * A profile's owned-operator checklist plus favourite / avoid marks.
+ * A profile's owned-operator checklist plus favorite / blocked marks. Blocked
+ * is stored as the 'avoid' preference.
  * Everyone can look at anyone's lists; only your own are editable.
  */
 export default function OperatorsView({ profile, prefs, setOwned, setPreference }) {
@@ -42,9 +49,10 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
         </label>
       </div>
       <p className="panel__sub">
-        <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>Favourites</strong> roll
-        about 3× as often. <strong>Avoid</strong> operators are skipped for this player unless nothing else is left.
-        Click an operator for their profile, stats and intro video.
+        <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>★ Favorites</strong> are the
+        strongest preference: strategy recommendations are built around them and rolls pick them about 5× as often.{' '}
+        <strong>🚫 Blocked</strong> operators are never recommended, rolled, suggested as a substitute or put in a lineup for
+        you. Click an operator for their profile, stats and intro video.
       </p>
       {!mine && <Notice kind="info">You're viewing {viewing}'s lists (read only).</Notice>}
 
@@ -106,6 +114,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                 <button type="button" className="op-row__open" onClick={() => setOpen(op.id)}>
                   <OperatorIcon operator={op} size="sm" />
                   <span className="op-row__name">{op.name}</span>
+                  {pref && (
+                    <span className={`op-row__state op-row__state--${pref}`}>{pref === 'favorite' ? '★ Favorite' : '🚫 Blocked'}</span>
+                  )}
                   <span className="op-row__info" aria-hidden="true">ⓘ</span>
                   <span className="visually-hidden"> profile</span>
                 </button>
@@ -116,26 +127,21 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                 ))}
               </span>
               <span className="op-row__prefs" role="group" aria-label={`${op.name} preference`}>
-                <button
-                  type="button"
-                  className="pref-btn pref-btn--favorite"
-                  aria-pressed={pref === 'favorite'}
-                  disabled={!mine}
-                  onClick={() => setPreference(viewing, op.id, pref === 'favorite' ? null : 'favorite')}
-                  title="Favourite"
-                >
-                  ★<span className="visually-hidden"> Favourite {op.name}</span>
-                </button>
-                <button
-                  type="button"
-                  className="pref-btn pref-btn--avoid"
-                  aria-pressed={pref === 'avoid'}
-                  disabled={!mine}
-                  onClick={() => setPreference(viewing, op.id, pref === 'avoid' ? null : 'avoid')}
-                  title="Avoid"
-                >
-                  ⊘<span className="visually-hidden"> Avoid {op.name}</span>
-                </button>
+                {PREF_STATES.map(([kind, glyph, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`pref-btn pref-btn--${kind ?? 'none'}`}
+                    aria-pressed={pref === kind}
+                    disabled={!mine}
+                    onClick={() => pref !== kind && setPreference(viewing, op.id, kind)}
+                    title={label}
+                  >
+                    <span aria-hidden="true">{glyph}</span>
+                    <span className="pref-btn__label">{label}</span>
+                    <span className="visually-hidden"> {op.name}</span>
+                  </button>
+                ))}
               </span>
             </li>
           );

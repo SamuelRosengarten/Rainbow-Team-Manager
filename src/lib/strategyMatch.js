@@ -2,6 +2,7 @@
 // which slots need a substitute, and who plays which slot.
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
 import { strategyOperators } from './strategies.js';
+import { isUsable } from './recommend.js';
 
 /**
  * Maximum matching that respects preference order: slots are tried in order
@@ -30,15 +31,22 @@ const hasRole = (opId, role) => (OPERATORS_BY_ID[opId]?.roles ?? []).includes(ro
 
 /**
  * Operators (from the whole roster of this side) that could stand in for a
- * slot: the strategy's listed alternatives first, then same-role operators.
+ * slot: favorites first, then the strategy's listed alternatives, then
+ * same-role operators. With `pref` (see recommend.js) blocked and banned
+ * operators are never suggested.
  */
-export function suggestAlternatives(slot, side, limit = 3) {
+export function suggestAlternatives(slot, side, limit = 3, pref = null) {
   const required = slot.operatorId;
   const listed = slot.alternatives ?? [];
   const sameRole = OPERATORS.filter(
     (op) => op.side === side && op.id !== required && !listed.includes(op.id) && (required ? shareRole(op.id, required) : hasRole(op.id, slot.role)),
   ).map((op) => op.id);
-  return [...listed, ...sameRole].slice(0, limit);
+  let ids = [...listed, ...sameRole];
+  if (pref) {
+    ids = ids.filter((id) => isUsable(pref, id));
+    ids = [...ids.filter((id) => pref.favorites.has(id)), ...ids.filter((id) => !pref.favorites.has(id))];
+  }
+  return ids.slice(0, limit);
 }
 
 /**
@@ -55,7 +63,7 @@ export function suggestAlternatives(slot, side, limit = 3) {
  *   label: string
  * }}
  */
-export function matchStrategy(strategy, composition) {
+export function matchStrategy(strategy, composition, pref = null) {
   const ours = [...new Set(composition.filter((id) => OPERATORS_BY_ID[id]))];
   const slots = strategy.slots;
   const result = { scored: false, exact: [], substitutes: [], missing: [], unused: ours, roleCoverage: 0, score: 0, stars: 0, label: '' };
@@ -108,7 +116,7 @@ export function matchStrategy(strategy, composition) {
       slotKey: slot.key,
       required: slot.operatorId,
       role: slot.role,
-      suggestions: suggestAlternatives(slot, strategy.side),
+      suggestions: suggestAlternatives(slot, strategy.side, 3, pref),
     });
   }
   result.unused = ours.filter((id) => !used.has(id));

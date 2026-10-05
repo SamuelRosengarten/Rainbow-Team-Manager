@@ -2,17 +2,20 @@ import { useEffect, useMemo, useState } from 'react';
 import BoardEditor from './BoardEditor.jsx';
 import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
+import PrefBadge from './PrefBadge.jsx';
+import RecommendationCard from './RecommendationCard.jsx';
 import SynergyList from './SynergyList.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
-import { FitStars, OriginBadge } from './StrategyCard.jsx';
 import { DetailsForm, StepsForm } from './StrategyForms.jsx';
 import { ROLES, ROLE_LABEL } from '../lib/fit.js';
 import { parseSite } from '../lib/diagram.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
-import { STRATEGY_TYPES, cleanDraft, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
-import { fitToComposition, rankStrategies } from '../lib/strategyMatch.js';
+import { STRATEGY_TYPES, cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
+import { prefState, prefWho, recommendStrategies, whereFavoritesFit } from '../lib/recommend.js';
+import { fitToComposition } from '../lib/strategyMatch.js';
+import { usePreferences } from '../state/usePreferences.js';
 import { TACTICAL_ROLES, defaultTacticalRole } from '../lib/tactical.js';
 import { useHistory } from '../state/useHistory.js';
 import { useRoster } from '../state/roster-context.js';
@@ -20,6 +23,8 @@ import { useSessionState } from '../state/useSessionState.js';
 
 const STEPS = ['Map', 'Site', 'Side', 'Operators', 'Players', 'Start from', 'Customize', 'Tactics', 'Steps', 'Save'];
 const KEY = 'r6tp.builder';
+// Operator grid order: favorites first, blocked last.
+const PREF_ORDER = { favorite: 0, null: 1, blocked: 2 };
 
 const fresh = (preset = {}) => {
   const step = preset.mapId ? (preset.site !== undefined ? (preset.side ? 4 : 3) : 2) : 1;
@@ -148,6 +153,8 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [roleFilter, setRoleFilter] = useState('');
+  // Favorites and blocks of the starting five (or the viewer's own).
+  const pref = usePreferences(lineupPlayers);
 
   // A link like #/build/<map>/<site>/<side> starts a new build there, then
   // drops back to #/build so a refresh doesn't restart it.
@@ -165,21 +172,23 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
   const map = MAPS_BY_ID[w.mapId];
   const sites = w.mapId ? allSites(w.mapId) : [];
 
-  const ranked = useMemo(() => {
-    if (!w.side) return [];
+  const { ranked, excluded } = useMemo(() => {
+    if (!w.side) return { ranked: [], excluded: [] };
     const list = filterStrategies(strategyData.strategies, { mapId: w.mapId || undefined, site: w.site || undefined, side: w.side }).filter((s) => s.slots.length);
-    return rankStrategies(list, ops, { site: w.site }).slice(0, 12);
-  }, [strategyData.strategies, w.mapId, w.site, w.side, ops]);
+    const res = recommendStrategies(list, { pref, selected: ops, mapId: w.mapId, site: w.site });
+    return { ranked: res.ranked.slice(0, 12), excluded: res.excluded };
+  }, [strategyData.strategies, w.mapId, w.site, w.side, ops, pref]);
 
   const toggleOp = (id) =>
     set((x) => {
       if (x.ops.includes(id)) return { ops: x.ops.map((o) => (o === id ? null : o)) };
+      if (prefState(pref, id) === 'blocked') return {};
       const i = x.ops.indexOf(null);
       return i < 0 ? {} : { ops: x.ops.map((o, j) => (j === i ? id : o)) };
     });
 
   const roll = () => {
-    const res = rollLineup({ players: lineupPlayers, operators: OPERATORS, side: w.side, bans: [], prefs, ownedOnly });
+    const res = rollLineup({ players: lineupPlayers, operators: OPERATORS, side: w.side, bans: [...pref.banned], prefs, ownedOnly });
     if (!res.ok) {
       setError(res.error);
       return;
@@ -191,10 +200,13 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
 
   const roleOf = (id) => w.roles[id] ?? defaultTacticalRole(OPERATORS_BY_ID[id]?.roles?.[0], w.side);
 
-  const start = (base) => {
+  const start = (base, rec = null) => {
     let draft;
     if (base) {
       const { subs, extras } = fitToComposition(base, ops);
+      // Never keep a blocked operator: slots our five don't cover take the
+      // engine's replacement.
+      for (const b of rec?.blockedReplaced ?? []) if (!subs[b.slotKey]) subs[b.slotKey] = b.replacement;
       const copy = duplicateStrategy(base, { owner: profile, subs });
       draft = normalizeStrategy({
         ...copy,
@@ -204,7 +216,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         slots: [...copy.slots, ...extras.map((id) => ({ key: newId('s'), operatorId: id, role: OPERATORS_BY_ID[id].roles[0] }))].slice(0, 6),
       });
     } else {
-      draft = normalizeStrategy({
+      draft = createStrategy({
         title: 'New strategy',
         origin: 'team',
         side: w.side,
@@ -370,19 +382,28 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
           <ul className="pick-grid">
             {operatorsForSide(w.side)
               .filter((o) => !roleFilter || o.roles.includes(roleFilter))
+              .sort((a, b) => PREF_ORDER[prefState(pref, a.id)] - PREF_ORDER[prefState(pref, b.id)])
               .map((o) => {
                 const on = w.ops.includes(o.id);
                 return (
                   <li key={o.id}>
-                    <button type="button" className="op-tile" aria-pressed={on} disabled={!on && ops.length >= 5} onClick={() => toggleOp(o.id)}>
+                    <button
+                      type="button"
+                      className={`op-tile${prefState(pref, o.id) ? ` op-tile--${prefState(pref, o.id)}` : ''}`}
+                      aria-pressed={on}
+                      disabled={(!on && ops.length >= 5) || (!on && prefState(pref, o.id) === 'blocked')}
+                      title={prefWho(pref, o.id) || undefined}
+                      onClick={() => toggleOp(o.id)}
+                    >
                       <OperatorIcon operator={o} size="lg" />
                       <span className="op-tile__name">{o.name}</span>
+                      <PrefBadge pref={pref} id={o.id} />
                     </button>
                   </li>
                 );
               })}
           </ul>
-          <SynergyList ops={ops} side={w.side} onAdd={ops.length < 5 ? toggleOp : undefined} />
+          <SynergyList ops={ops} side={w.side} pref={pref} onAdd={ops.length < 5 ? toggleOp : undefined} />
         </div>
       )}
 
@@ -456,29 +477,25 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
                 <span className="strat-card__meta">Start from scratch with your {ops.length} operators.</span>
               </button>
             </li>
-            {ranked.map(({ strategy, match }) => (
-              <li key={strategy.id} className={`strat-card strat-card--${strategy.side}`}>
-                <button type="button" className="strat-card__main" onClick={() => start(strategy)}>
-                  <span className="strat-card__top">
-                    <span className="strat-card__title">{strategy.title}</span>
-                    <OriginBadge strategy={strategy} />
-                  </span>
-                  <span className="strat-card__meta">
-                    {MAPS_BY_ID[strategy.mapId]?.name ?? 'Any map'}
-                    {strategy.site ? ` · ${strategy.site}` : ''} · {STRATEGY_TYPES[strategy.type]}
-                  </span>
-                  <span className="tile__ops">
-                    {strategy.slots.map((s) => (
-                      <OperatorIcon key={s.key} operator={OPERATORS_BY_ID[s.operatorId]} size="sm" />
-                    ))}
-                  </span>
-                  <FitStars match={match} />
-                  <span className="muted small">Adapts it to your operators. The original stays as it is.</span>
-                </button>
-              </li>
+            {ranked.map((item, i) => (
+              <RecommendationCard
+                key={item.strategy.id}
+                strategy={item.strategy}
+                rec={item.rec}
+                pref={pref}
+                top={i === 0}
+                fits={whereFavoritesFit(ranked, item)}
+                onOpen={() => start(item.strategy, item.rec)}
+              />
             ))}
           </ul>
           {!ranked.length && <p className="muted">No strategies in the library for this map, site and side yet. Start from a blank board.</p>}
+          {excluded.length > 0 && (
+            <p className="muted small">
+              {excluded.length} more need a blocked operator with no replacement, so they're not offered: {excluded.map((x) => x.strategy.title).join(', ')}.
+            </p>
+          )}
+          <p className="muted small">Starting from a strategy adapts it to your operators. The original stays as it is.</p>
         </div>
       )}
 

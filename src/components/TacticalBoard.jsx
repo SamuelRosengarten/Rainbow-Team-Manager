@@ -1,9 +1,12 @@
-import { useId, useRef } from 'react';
-import SiteBlueprint from './SiteBlueprint.jsx';
+import { useId, useRef, useState } from 'react';
+import MapLayer from './MapLayer.jsx';
 import { stepState, towards } from '../lib/board.js';
+import { floorLabel, floorPlan, floorsFor } from '../lib/floorPlans.js';
 import { OPERATORS_BY_ID, operatorImage } from '../lib/operators.js';
-import { BOARD_H, BOARD_W, SLOT_COLORS } from '../lib/strategies.js';
+import { boardSpace, floorsInUse, projectStrategy } from '../lib/space.js';
+import { SLOT_COLORS } from '../lib/strategies.js';
 import { GADGETS, PATHS, ZONES } from '../lib/tactical.js';
+import { usePlans } from '../state/usePlans.js';
 
 const NEUTRAL = '#9aa7bb';
 const ENEMY = '#ff4757';
@@ -137,15 +140,40 @@ function Glyph({ m, color, op, clip, defuser }) {
 /** Approximate text width in board units for the note boxes. */
 const textW = (t, size = 1.75) => Math.max(4, t.length * size * 0.52 + 2);
 
+/** Floor tabs for multi-floor maps: which floor the board shows. */
+export function FloorTabs({ strategy, floorId, onChange }) {
+  const floors = floorsFor(strategy.mapId);
+  if (floors.length < 2) return null;
+  const used = floorsInUse(strategy);
+  return (
+    <div className="floor-tabs" role="group" aria-label="Floor">
+      {floors.map((f) => (
+        <button key={f} type="button" className="floor-tab" aria-pressed={f === floorId} onClick={() => onChange(f)}>
+          {floorLabel(f)}
+          {f === strategy.floorId && <span className="floor-tab__site" title="Site floor">●</span>}
+          {used.has(f) && f !== strategy.floorId && <span className="floor-tab__dot" title="Has objects" />}
+          {!floorPlan(strategy.mapId, f) && <span className="floor-tab__missing">no plan</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
- * The tactical board: site blueprint (or the strategy's own floor-plan
- * image), then zones, routes, crossfires, markers and notes.
+ * The tactical board: the real floor plan (or the strategy's own image, a
+ * missing-plan notice or the abstract schematic), then callouts, zones,
+ * routes, crossfires, markers and notes. `strategy` is stored data
+ * (normalised coordinates); it is projected to board units here.
  *
- * Read-only by default. The editor passes `editing`, a `draft` preview and
- * pointer handlers; viewers pass `onItemClick` to inspect an object.
+ * Read-only by default. The editor passes `editing`, a `draft` preview (in
+ * board units) and pointer handlers; viewers pass `onItemClick` to inspect an
+ * object. The floor shown is `floorId` when controlled, else picked with tabs.
  */
 export default function TacticalBoard({
-  strategy,
+  strategy: source,
+  floorId: floorProp = null,
+  onFloorChange,
+  showRooms = true,
   mapName,
   stepId = null,
   focusSlot = null,
@@ -161,6 +189,12 @@ export default function TacticalBoard({
   className = '',
   title,
 }) {
+  usePlans();
+  const [ownFloor, setOwnFloor] = useState(null);
+  const floorId = floorProp ?? ownFloor ?? source.floorId;
+  const space = boardSpace(source, floorId);
+  const strategy = projectStrategy(source, space);
+  const multiFloor = space.kind === 'floor' || space.kind === 'missing';
   const uid = useId().replace(/[:«»]/g, '');
   const ownRef = useRef(null);
   const ref = svgRef ?? ownRef;
@@ -204,11 +238,20 @@ export default function TacticalBoard({
   const markersById = Object.fromEntries(strategy.markers.map((m) => [m.id, m]));
 
   return (
-    <div className={`tboard${editing ? ' tboard--editing' : ''} ${className}`}>
+    <div className={`tboard tboard--${space.kind}${editing ? ' tboard--editing' : ''} ${className}`}>
+      {multiFloor && (
+        <FloorTabs
+          strategy={source}
+          floorId={space.floorId}
+          onChange={(f) => (onFloorChange ? onFloorChange(f) : setOwnFloor(f))}
+        />
+      )}
       <svg
         ref={ref}
         className="tboard__svg"
-        viewBox={`0 0 ${BOARD_W} ${BOARD_H}`}
+        viewBox={`0 0 ${space.w} ${space.h}`}
+        data-board-w={space.w}
+        data-board-h={space.h}
         role="img"
         aria-label={title ?? `Tactical board for ${strategy.title}`}
         onPointerDown={onPointerDownBoard}
@@ -230,13 +273,9 @@ export default function TacticalBoard({
           </pattern>
         </defs>
 
-        <rect x="0" y="0" width={BOARD_W} height={BOARD_H} className="tboard__bg" />
-        <rect x="0" y="0" width={BOARD_W} height={BOARD_H} fill={`url(#${uid}-grid)`} />
-        {strategy.boardImageUrl ? (
-          <image href={strategy.boardImageUrl} x="0" y="0" width={BOARD_W} height={BOARD_H} preserveAspectRatio="xMidYMid meet" />
-        ) : (
-          <SiteBlueprint site={strategy.site} mapName={mapName} side={strategy.side} />
-        )}
+        <rect x="0" y="0" width={space.w} height={space.h} className="tboard__bg" />
+        {space.kind !== 'floor' && <rect x="0" y="0" width={space.w} height={space.h} fill={`url(#${uid}-grid)`} />}
+        <MapLayer space={space} strategy={source} mapName={mapName} showRooms={showRooms} />
 
         {/* Zones */}
         {strategy.zones.map((z) => {
@@ -351,7 +390,7 @@ export default function TacticalBoard({
                 {sel && <circle r="3.8" className="tb-sel-ring" />}
                 <Glyph m={m} color={color} op={op} clip={clip} defuser={slotOf(m.slotKey)?.defuser} />
                 {showLabel('marker', m, v) && m.label && (
-                  <text className="tb-label" y={m.y > 56 ? -3.6 : 4.6}>
+                  <text className="tb-label" y={m.y > space.h - 8 ? -3.6 : 4.6}>
                     {m.label}
                   </text>
                 )}

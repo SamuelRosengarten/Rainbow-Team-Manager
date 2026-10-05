@@ -11,18 +11,26 @@
 //            who plays which slot lives in assignments, so a strategy survives
 //            roster changes.
 //   steps    the execute in order (drone, clear, breach, plant, post-plant…).
-//   markers  points on the board (x 0-100, y 0-64), optionally tied to a slot
-//            and a step: players, enemies, utility, breaches, drones, notes…
+//   markers  points on the board, optionally tied to a slot, a step and a
+//            floor: players, enemies, utility, breaches, drones, notes…
 //   paths    movement/entry/clearing/drone/rotation lines, per slot and step.
 //   zones    translucent areas: hold, contest, danger, no entry, watch…
 //   crossfires  two players (A, B) covering one engagement area.
 //
 // Version 2 added zones, crossfires, step clocks and per-slot step actions,
-// tactical roles, and versions (`family` + `version`). Version 1 documents
-// are upgraded on read; nothing is lost.
+// tactical roles, and versions (`family` + `version`).
+//
+// Version 3 stores every coordinate normalised (0-1 across the floor; see
+// space.js), adds `layout` ('floor': positions on the real floor plan, or
+// 'schematic': positions on the abstract diagram), the primary `floorId`, and
+// an optional `floorId` per item. Version 1 and 2 documents were drawn on a
+// 100 x 64 schematic: they're upgraded on read to the 'schematic' layout with
+// their coordinates divided down, so nothing is lost or silently misplaced.
 import { OPERATORS_BY_ID, operatorProfile } from './operators.js';
 import { ROLES } from './fit.js';
 import { parseSite } from './diagram.js';
+import { FLOOR_LABEL, floorIdFromSite } from './floorPlans.js';
+import { defaultLayout } from './space.js';
 import {
   BREACH_TYPES,
   GADGETS,
@@ -37,9 +45,11 @@ import {
 } from './tactical.js';
 
 export { STRATEGY_TYPES };
-export const SCHEMA_VERSION = 2;
-export const BOARD_W = 100;
-export const BOARD_H = 64;
+export const SCHEMA_VERSION = 3;
+export const LAYOUTS = { floor: 'Real floor plan', schematic: 'Abstract schematic' };
+// Board size that version 1 and 2 documents were drawn on.
+const LEGACY = { w: 100, h: 64 };
+const UNIT = { w: 1, h: 1 };
 
 /** Where a strategy comes from. Shown on every card and board. */
 export const ORIGINS = {
@@ -70,10 +80,12 @@ export function slotColor(strategy, slotKey) {
 const SIDES = ['attack', 'defend'];
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
 const str = (v, max) => String(v ?? '').trim().slice(0, max);
-const num = (v, lo, hi) => {
+/** Coordinate stored at scale `scale` -> 0-1 (clamped to lo-hi), or null. */
+const unit = (v, scale = 1, lo = 0, hi = 1) => {
   const n = Number(v);
-  return Number.isFinite(n) ? clamp(Math.round(n * 10) / 10, lo, hi) : null;
+  return Number.isFinite(n) ? Math.round(clamp(n / scale, lo, hi) * 10000) / 10000 : null;
 };
+const floorRef = (v) => (FLOOR_LABEL[v] ? v : null);
 const list = (v) => (Array.isArray(v) ? v : []);
 
 let idCounter = 0;
@@ -120,9 +132,11 @@ function normalizeStep(raw, i, slotKeys) {
   };
 }
 
-function normalizeMarker(raw, stepIds, slotKeys) {
-  const x = num(raw.x, 0, BOARD_W);
-  const y = num(raw.y, 0, BOARD_H);
+// `sc` is the scale coordinates were stored at: UNIT for version 3 documents,
+// LEGACY (100 x 64) for older ones.
+function normalizeMarker(raw, stepIds, slotKeys, sc) {
+  const x = unit(raw.x, sc.w);
+  const y = unit(raw.y, sc.h);
   if (x === null || y === null) return null;
   const kind = OBJECTS[raw.kind] ? raw.kind : 'position';
   return {
@@ -133,6 +147,7 @@ function normalizeMarker(raw, stepIds, slotKeys) {
     label: str(raw.label, 60),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
     slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
+    floorId: floorRef(raw.floorId),
     purpose: str(raw.purpose, 120),
     timing: str(raw.timing, 30),
     note: str(raw.note, 300),
@@ -142,52 +157,54 @@ function normalizeMarker(raw, stepIds, slotKeys) {
   };
 }
 
-const point = (p) => {
-  const x = num(p?.[0], 0, BOARD_W);
-  const y = num(p?.[1], 0, BOARD_H);
+const point = (p, sc) => {
+  const x = unit(p?.[0], sc.w);
+  const y = unit(p?.[1], sc.h);
   return x === null || y === null ? null : [x, y];
 };
 
-function normalizeZone(raw, stepIds, slotKeys) {
-  const x = num(raw.x, 0, BOARD_W - 1);
-  const y = num(raw.y, 0, BOARD_H - 1);
+function normalizeZone(raw, stepIds, slotKeys, sc) {
+  const x = unit(raw.x, sc.w, 0, 0.99);
+  const y = unit(raw.y, sc.h, 0, 0.99);
   if (x === null || y === null) return null;
   return {
     id: str(raw.id, 30) || newId('z'),
     kind: ZONES[raw.kind] ? raw.kind : 'hold',
     x,
     y,
-    w: num(raw.w, 1, BOARD_W - x) ?? 10,
-    h: num(raw.h, 1, BOARD_H - y) ?? 8,
+    w: unit(raw.w, sc.w, 0.01, 1 - x) ?? 0.1,
+    h: unit(raw.h, sc.h, 0.01, 1 - y) ?? 0.125,
     label: str(raw.label, 60),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
     slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
+    floorId: floorRef(raw.floorId),
     note: str(raw.note, 300),
   };
 }
 
-function normalizeCrossfire(raw, stepIds, slotKeys) {
-  const a = point(raw.a);
-  const b = point(raw.b);
-  const target = point(raw.target);
+function normalizeCrossfire(raw, stepIds, slotKeys, sc) {
+  const a = point(raw.a, sc);
+  const b = point(raw.b, sc);
+  const target = point(raw.target, sc);
   if (!a || !b || !target) return null;
   return {
     id: str(raw.id, 30) || newId('x'),
     a,
     b,
     target,
-    radius: num(raw.radius, 1.5, 15) ?? 4,
+    radius: unit(raw.radius, sc.w, 0.015, 0.15) ?? 0.04,
     slotA: slotKeys.has(raw.slotA) ? raw.slotA : null,
     slotB: slotKeys.has(raw.slotB) ? raw.slotB : null,
     label: str(raw.label, 60),
     timing: str(raw.timing, 30),
     note: str(raw.note, 300),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
+    floorId: floorRef(raw.floorId),
   };
 }
 
-function normalizePath(raw, stepIds, slotKeys) {
-  const points = list(raw.points).map(point).filter(Boolean).slice(0, 30);
+function normalizePath(raw, stepIds, slotKeys, sc) {
+  const points = list(raw.points).map((p) => point(p, sc)).filter(Boolean).slice(0, 30);
   if (points.length < 2) return null;
   return {
     id: str(raw.id, 30) || newId('p'),
@@ -196,6 +213,7 @@ function normalizePath(raw, stepIds, slotKeys) {
     label: str(raw.label, 60),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
     slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
+    floorId: floorRef(raw.floorId),
   };
 }
 
@@ -224,6 +242,10 @@ export function normalizeStrategy(raw) {
   const site = str(raw.site, 80);
   const id = str(raw.id, 80) || newId('strat');
   const version = Number.isInteger(raw.version) && raw.version > 0 ? Math.min(raw.version, 999) : 1;
+  // Before version 3, positions were drawn on the 100 x 64 schematic.
+  const legacy = !(Number(raw.schemaVersion) >= 3);
+  const sc = legacy ? LEGACY : UNIT;
+  const layout = !legacy && LAYOUTS[raw.layout] ? raw.layout : 'schematic';
   return {
     id,
     schemaVersion: SCHEMA_VERSION,
@@ -232,6 +254,8 @@ export function normalizeStrategy(raw) {
     mapId: str(raw.mapId, 40) || 'any',
     site,
     floor: str(raw.floor, 20) || parseSite(site).floor,
+    floorId: floorRef(raw.floorId) ?? (floorIdFromSite(site) || null),
+    layout,
     side: raw.side,
     type: normalizeType(raw.type, raw.side),
     difficulty: DIFFICULTY[raw.difficulty] ? Number(raw.difficulty) : 2,
@@ -255,14 +279,30 @@ export function normalizeStrategy(raw) {
     favorite: Boolean(raw.favorite),
     slots,
     steps,
-    markers: list(raw.markers).map((m) => normalizeMarker(m, stepIds, keys)).filter(Boolean).slice(0, LIMITS.markers),
-    paths: list(raw.paths).map((p) => normalizePath(p, stepIds, keys)).filter(Boolean).slice(0, LIMITS.paths),
-    zones: list(raw.zones).map((z) => normalizeZone(z, stepIds, keys)).filter(Boolean).slice(0, LIMITS.zones),
-    crossfires: list(raw.crossfires).map((c) => normalizeCrossfire(c, stepIds, keys)).filter(Boolean).slice(0, LIMITS.crossfires),
+    markers: list(raw.markers).map((m) => normalizeMarker(m, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.markers),
+    paths: list(raw.paths).map((p) => normalizePath(p, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.paths),
+    zones: list(raw.zones).map((z) => normalizeZone(z, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.zones),
+    crossfires: list(raw.crossfires).map((c) => normalizeCrossfire(c, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.crossfires),
     updatedAt: raw.updatedAt ?? null,
     updatedBy: raw.updatedBy ?? null,
   };
 }
+
+/**
+ * A brand-new strategy: version 3 coordinates, drawn on the real floor plan
+ * when the team has supplied one for its floor, else on the schematic.
+ */
+export function createStrategy(raw) {
+  const floorId = raw.floorId || floorIdFromSite(raw.site);
+  return normalizeStrategy({ layout: defaultLayout(raw.mapId, floorId), ...raw, schemaVersion: SCHEMA_VERSION });
+}
+
+/**
+ * Move a schematic strategy onto the real floor plan. Positions keep their
+ * numbers but were placed on the schematic, so they will need moving: the
+ * caller says so to the person.
+ */
+export const toFloorLayout = (s) => ({ ...s, layout: 'floor', boardImageUrl: '' });
 
 /** Operators a strategy is written for (in slot order). */
 export const strategyOperators = (s) => s.slots.map((x) => x.operatorId).filter(Boolean);

@@ -1,3 +1,4 @@
+import FloorPlanPanel from './FloorPlanPanel.jsx';
 import Icon from './Icon.jsx';
 import MapNotes from './MapNotes.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
@@ -5,9 +6,13 @@ import { StrategyTile } from './TeamLibrary.jsx';
 import { EmptyState } from './ui.jsx';
 import { parseSite } from '../lib/diagram.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
-import { latestVersions, normalizeStrategy } from '../lib/strategies.js';
+import { missingFloorPlans, planCoverage } from '../lib/floorPlans.js';
+import { createStrategy, latestVersions } from '../lib/strategies.js';
+import { usePlans } from '../state/usePlans.js';
 
 function MapIndex({ strategies, navigate }) {
+  usePlans();
+  const missing = missingFloorPlans();
   return (
     <>
       <header className="page__head">
@@ -17,16 +22,35 @@ function MapIndex({ strategies, navigate }) {
           <p className="page__sub">Pick a map to see its sites, your plans for each, and the team's map notes.</p>
         </div>
       </header>
+      {missing.length > 0 && (
+        <details className="notice notice--warn missing-plans">
+          <summary>
+            {missing.length} map floor{missing.length === 1 ? ' has' : 's have'} no floor plan yet. Boards on those floors can't show the real map.
+          </summary>
+          <ul>
+            {missing.map((m) => (
+              <li key={`${m.mapId}/${m.floorId}`}>
+                {m.mapName} {m.label}: <code>{m.file}</code>
+              </li>
+            ))}
+          </ul>
+          <p className="small">See docs/MAP_ASSETS.md for how to add one.</p>
+        </details>
+      )}
       <ul className="map-grid">
         {MAPS.map((m) => {
           const list = latestVersions(strategies.filter((s) => s.mapId === m.id));
           const atk = list.filter((s) => s.side === 'attack').length;
           const def = list.filter((s) => s.side === 'defend').length;
+          const cov = planCoverage(m.id);
           return (
             <li key={m.id}>
               <button type="button" className="map-card" onClick={() => navigate(`maps/${m.id}`)}>
                 <span className="map-card__name">{m.name}</span>
                 <span className="map-card__meta">{allSites(m.id).length ? `${allSites(m.id).length} sites` : 'Sites not listed yet'}</span>
+                <span className={`map-card__plans${cov.floors && cov.withPlan === cov.floors ? ' map-card__plans--ok' : ''}`}>
+                  {cov.floors ? `Floor plans ${cov.withPlan}/${cov.floors}${cov.withPlan ? ` · ${cov.verified} verified` : ''}` : 'Floors not listed'}
+                </span>
                 <span className="map-card__counts">
                   <span className="side-count side-count--attack">{atk} attack</span>
                   <span className="side-count side-count--defend">{def} defense</span>
@@ -41,10 +65,12 @@ function MapIndex({ strategies, navigate }) {
 }
 
 /**
- * Maps: the map list, and per map its bomb sites with their schematic, the
- * plans for each site and side, and the team's map notes.
+ * Maps: the map list, and per map its floor plans, its bomb sites on the
+ * real floor (when the plan exists), the plans for each site and side, and
+ * the team's map notes.
  */
 export default function MapsView({ sub, strategyData, navigate, profile, notes }) {
+  usePlans();
   const map = MAPS_BY_ID[sub];
   if (!sub || !map) return <section className="page">{<MapIndex strategies={strategyData.strategies} navigate={navigate} />}</section>;
 
@@ -72,6 +98,8 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
         </button>
       </header>
 
+      <FloorPlanPanel key={map.id} map={map} />
+
       {!sites.length && (
         <EmptyState icon="map" title="Bomb sites aren't listed for this map yet">
           Add them to <code>src/data/maps.json</code>. Plans for the whole map still work.
@@ -82,11 +110,11 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
         {sites.map((site, siteIndex) => {
           const { floor, rooms } = parseSite(site);
           const forSite = list.filter((s) => s.site === site);
-          const preview = normalizeStrategy({ title: site, side: 'attack', mapId: map.id, site });
+          const preview = createStrategy({ title: site, side: 'attack', mapId: map.id, site });
           return (
             <section key={site} className="panel site-card" aria-label={site}>
               <div className="site-card__board">
-                <TacticalBoard strategy={preview} mapName={map.name} title={`${map.name} ${site} schematic`} />
+                <TacticalBoard strategy={preview} mapName={map.name} title={`${map.name} ${site}`} />
               </div>
               <div className="site-card__body">
                 <p className="page__kicker">{floor}</p>

@@ -85,8 +85,12 @@ function TeamApp({ online, onOffline }) {
       players: activePlayers(data.roster).map((p) => p.name),
       lineupPlayers: lineupPlayers(data.roster),
       rosterReady: data.rosterReady,
+      // Operator preferences for the recommendation engine (see recommend.js).
+      prefs: data.prefs,
+      bans: data.team.bans ?? [],
+      profile: storedProfile,
     }),
-    [data.roster, data.rosterReady],
+    [data.roster, data.rosterReady, data.prefs, data.team.bans, storedProfile],
   );
 
   if (data.status === 'loading') return <LoadingScreen />;

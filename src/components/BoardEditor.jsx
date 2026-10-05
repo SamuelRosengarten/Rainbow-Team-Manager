@@ -4,9 +4,12 @@ import ObjectInspector from './ObjectInspector.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
 import { dist, moveItem, nearestPlayer, rectFrom, resizeZone, toBoardPoint } from '../lib/board.js';
+import { floorLabel, floorPlan } from '../lib/floorPlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
-import { LIMITS, newId, slotColor } from '../lib/strategies.js';
+import { boardSpace, projectItem, projectStrategy, unprojectPatch } from '../lib/space.js';
+import { LIMITS, newId, slotColor, toFloorLayout } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, TOOL_GROUPS, ZONES, gadgetsForSide, toolLabel, utilityName } from '../lib/tactical.js';
+import { usePlans } from '../state/usePlans.js';
 
 const GROUP_ICON = {
   units: 'user',
@@ -48,10 +51,21 @@ export default function BoardEditor({ draft, history, mapName }) {
   const [xf, setXf] = useState(null); // { a, slotA, b, slotB }
   const [gadget, setGadget] = useState('ability');
   const [breachType, setBreachType] = useState('hard');
-  const latest = useRef(draft);
+  const [floorId, setFloorId] = useState(draft.floorId);
+  usePlans();
+  // The board works in board units on one floor; the draft stores normalised
+  // coordinates. `view` is the projected floor; every write is unprojected.
+  const space = boardSpace(draft, floorId);
+  const view = projectStrategy(draft, space);
+  const multiFloor = space.kind === 'floor' || space.kind === 'missing';
+  const itemFloor = multiFloor && space.floorId !== draft.floorId ? space.floorId : null;
+  const latest = useRef(view);
+  const latestDoc = useRef(draft);
   useEffect(() => {
-    latest.current = draft;
-  }, [draft]);
+    latest.current = view;
+    latestDoc.current = draft;
+  });
+  const pt = (e) => toBoardPoint(svgRef.current, e, space);
 
   const [toolKind, toolArg] = tool.split(':');
   const counts = { markers: draft.markers.length, paths: draft.paths.length, zones: draft.zones.length, crossfires: draft.crossfires.length };
@@ -65,10 +79,13 @@ export default function BoardEditor({ draft, history, mapName }) {
     if (t !== 'select') setSelected(null);
   };
 
+  /** Add an item given in board units on the floor being shown. */
   const add = (collection, item) => {
-    if (latest.current[collection].length >= LIMITS[collection]) return;
-    set((d) => ({ [collection]: [...d[collection], item] }));
-    setSelected({ type: { markers: 'marker', paths: 'path', zones: 'zone', crossfires: 'crossfire' }[collection], id: item.id });
+    if (latestDoc.current[collection].length >= LIMITS[collection]) return;
+    const type = { markers: 'marker', paths: 'path', zones: 'zone', crossfires: 'crossfire' }[collection];
+    const stored = { ...unprojectPatch(type, item, space), floorId: itemFloor };
+    set((d) => ({ [collection]: [...d[collection], stored] }));
+    setSelected({ type, id: item.id });
   };
 
   const finishPath = (pts = path) => {
@@ -132,14 +149,14 @@ export default function BoardEditor({ draft, history, mapName }) {
   };
 
   const startZone = (e, start) => {
-    const move = (ev) => setZoneDraft({ kind: toolArg, ...rectFrom(start, toBoardPoint(svgRef.current, ev)) });
+    const move = (ev) => setZoneDraft({ kind: toolArg, ...rectFrom(start, pt(ev)) });
     const up = (ev) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       setZoneDraft(null);
-      const end = toBoardPoint(svgRef.current, ev);
+      const end = pt(ev);
       let r = rectFrom(start, end);
-      if (r.w < 2 || r.h < 2) r = { x: Math.min(start[0], 86), y: Math.min(start[1], 55), w: 14, h: 9 };
+      if (r.w < 2 || r.h < 2) r = { x: Math.min(start[0], space.w - 14), y: Math.min(start[1], space.h - 9), w: 14, h: 9 };
       add('zones', { id: newId('z'), kind: toolArg, ...r, label: '', slotKey: null, stepId, note: '' });
     };
     window.addEventListener('pointermove', move);
@@ -148,7 +165,7 @@ export default function BoardEditor({ draft, history, mapName }) {
 
   const onPointerDownBoard = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
-    const p = toBoardPoint(svgRef.current, e);
+    const p = pt(e);
     if (toolKind === 'zone') {
       e.preventDefault();
       startZone(e, p);
@@ -158,18 +175,22 @@ export default function BoardEditor({ draft, history, mapName }) {
   };
 
   const collectionOf = { marker: 'markers', zone: 'zones', crossfire: 'crossfires', path: 'paths' };
+  /** Patch in stored coordinates (the inspector edits stored data). */
   const update = (type, id, patch, opts) =>
     set((d) => ({ [collectionOf[type]]: d[collectionOf[type]].map((x) => (x.id === id ? { ...x, ...(typeof patch === 'function' ? patch(x) : patch) } : x)) }), opts);
+  /** Patch in board units (drags and nudges); a function patch gets the projected item. */
+  const updateBoard = (type, id, patch, opts) =>
+    update(type, id, (x) => unprojectPatch(type, typeof patch === 'function' ? patch(projectItem(type, x, space)) : patch, space), opts);
 
   const startDrag = (e, item, handle) => {
     const coll = collectionOf[item.type];
     const original = latest.current[coll].find((x) => x.id === item.id);
     if (!original) return;
     e.preventDefault();
-    const p0 = toBoardPoint(svgRef.current, e);
+    const p0 = pt(e);
     let moved = false;
     const move = (ev) => {
-      const p = toBoardPoint(svgRef.current, ev);
+      const p = pt(ev);
       if (!moved) {
         if (dist(p, p0) < 0.4) return;
         moved = true;
@@ -184,8 +205,8 @@ export default function BoardEditor({ draft, history, mapName }) {
       else if (item.type === 'path' && handle?.startsWith('p')) {
         const i = Number(handle.slice(1));
         patch = { points: original.points.map((pt, j) => (j === i ? p : pt)) };
-      } else patch = moveItem(item.type, original, dx, dy);
-      update(item.type, item.id, patch, { record: false });
+      } else patch = moveItem(item.type, original, dx, dy, space);
+      updateBoard(item.type, item.id, patch, { record: false });
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
@@ -203,7 +224,7 @@ export default function BoardEditor({ draft, history, mapName }) {
     }
     const target = item.type === 'marker' ? latest.current.markers.find((m) => m.id === item.id) : null;
     if (tool === 'note' && target) {
-      placeMarker('note', [Math.min(96, target.x + 7), Math.max(3, target.y - 6)], { anchorId: target.id, slotKey: target.slotKey });
+      placeMarker('note', [Math.min(space.w - 4, target.x + 7), Math.max(3, target.y - 6)], { anchorId: target.id, slotKey: target.slotKey });
       return;
     }
     if (tool === 'crossfire' && target?.kind === 'position') {
@@ -212,10 +233,10 @@ export default function BoardEditor({ draft, history, mapName }) {
     }
     if (toolKind === 'zone') {
       e.preventDefault();
-      startZone(e, toBoardPoint(svgRef.current, e));
+      startZone(e, pt(e));
       return;
     }
-    clickAt(toBoardPoint(svgRef.current, e));
+    clickAt(pt(e));
   };
 
   const remove = (item) => {
@@ -230,7 +251,7 @@ export default function BoardEditor({ draft, history, mapName }) {
   // Keyboard: undo/redo, delete, escape, enter, nudge.
   const keyState = useRef({});
   useEffect(() => {
-    keyState.current = { selected, path, remove, undo, redo, finishPath, update };
+    keyState.current = { selected, path, remove, undo, redo, finishPath, updateBoard, space };
   });
   useEffect(() => {
     const onKey = (e) => {
@@ -258,7 +279,7 @@ export default function BoardEditor({ draft, history, mapName }) {
         e.preventDefault();
         const step = e.shiftKey ? 2 : 0.5;
         const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
-        k.update('marker', k.selected.id, (m) => moveItem('marker', m, d[0], d[1]), { key: `nudge-${k.selected.id}` });
+        k.updateBoard('marker', k.selected.id, (m) => moveItem('marker', m, d[0], d[1], k.space), { key: `nudge-${k.selected.id}` });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -391,8 +412,43 @@ export default function BoardEditor({ draft, history, mapName }) {
           {tool === 'crossfire' && xf ? (xf.b ? 'Now click the engagement area.' : 'Now click player B.') : hint}
         </p>
 
+        {space.kind === 'schematic' && (
+          <p className="notice notice--warn beditor__layout">
+            This plan is on the abstract schematic, not the real map. Positions are approximate.
+            {floorPlan(draft.mapId, draft.floorId) ? (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => {
+                    if (window.confirm('Move this plan onto the real floor plan? Every object keeps its place on the board, so you will need to drag each one to its real position.')) {
+                      set((d) => toFloorLayout(d));
+                    }
+                  }}
+                >
+                  Move it onto the real {floorLabel(draft.floorId)} floor plan
+                </button>
+              </>
+            ) : (
+              ` No floor plan has been added for this floor yet.`
+            )}
+          </p>
+        )}
+        {space.kind === 'missing' && (
+          <p className="notice notice--warn beditor__layout">
+            No floor plan for {floorLabel(space.floorId)} yet. Objects you place here can't be checked against the real map. Add the plan in Maps → Floor plans.
+          </p>
+        )}
         <TacticalBoard
           strategy={draft}
+          floorId={space.floorId || null}
+          onFloorChange={(f) => {
+            setFloorId(f);
+            setSelected(null);
+            setPath([]);
+            setXf(null);
+          }}
           mapName={mapName}
           stepId={stepId}
           selected={selected}

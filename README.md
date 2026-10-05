@@ -6,11 +6,11 @@ Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.
 
 - **Command** (home): create a strategy, jump to attack or defense plans, maps, the operator library and the team's saved strategies, with the featured plan on the board.
 - **Strategy builder** (`#/build`, the **New strategy** button): map → site → attack/defense → five operators (with synergy suggestions, or roll them) → players and tactical roles → start from a library strategy adapted to your operators, or a blank board → customize → draw the tactics → steps and timing → save.
-- **Strategies**: the team library, organised **Attack / Defense → map → strategy**, with favourites, versions (v1, v2, v3…), duplication and side-by-side comparison. Also **Find by composition** (strategies ranked by how well they fit your five operators) and the older role-based **Quick tactics**.
+- **Strategies**: the team library, organised **Attack / Defense → map → strategy**, with favourites, versions (v1, v2, v3…), duplication and side-by-side comparison. Also **Find by composition**: strategies recommended around your **favorite** operators, with **blocked** operators never used, and the reasons shown on every result. and the older role-based **Quick tactics**.
 - **Strategy view**: the tactical board step by step, the round clock timeline, each operator's role, player and instructions, synergy, plus:
   - **Coach mode**: full-screen presentation. *STEP 4 / 7 · 0:31 · Thermite: "Move to breach position."* → **Next step**.
   - **Player view**: one player sees only their operator, positions, routes, utility, crossfires and timing.
-- **Maps**: every map and bomb site with its schematic, the plans for each site and side, and the team's map notes.
+- **Maps**: every map and bomb site, the **floor plans** you've added (with calibrated callouts and a list of missing ones), the plans for each site and side, and the team's map notes.
 - **Operators**: every operator with their portrait, roles and gadget, and the well-known pairs (Thermite + Thatcher, Smoke + Mute…).
 - **Team**: the roster and everyone's operator pools. The old lineup roller is still there (**Lineup roller**).
 
@@ -169,7 +169,9 @@ The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, syn
 - no duplicate operators within the team, and bans always respected
 - re-rolling one player keeps the others unchanged
 - owned-only pools per player, including overlapping pools solved with matching
-- avoid lists (skipped when possible) and favourite weighting (~3×)
+- blocked operators are never rolled (a clear error instead), and favourite weighting (~5×)
+- recommendations: blocked operators never appear, favorites fill the slots they can do, coverage and ranking
+- normalised coordinates, the version 2 → 3 upgrade, per-floor boards and floor-plan validation
 - the "not enough operators" error, with a readable message
 - tactic filtering by map, side and site, generic fallback, and maps with no sites
 - the fit check (one player per required role) and the minimal fit-aware re-roll
@@ -207,7 +209,7 @@ Every operator has a portrait in `public/operators/<id>.svg`: the operator's in-
 
 ## Operator profiles and intro videos
 
-Click any operator on the **Operators** screen to open their profile: picture, health and speed (1 to 3), ability, primary and secondary weapons, a "how to play" tip, which teammates own, favour or avoid them, and a **Watch intro video** button.
+Click any operator on the **Operators** screen to open their profile: picture, health and speed (1 to 3), ability, primary and secondary weapons, a "how to play" tip, which teammates own, favour or block them, and a **Watch intro video** button.
 
 Profile data lives in `src/data/operatorProfiles.json`, keyed by operator id:
 
@@ -259,14 +261,16 @@ Several maps currently have **empty site lists on purpose**. See [`docs/DATA_REV
 
 **New strategy** opens the builder: map → site → side → five operators → players and tactical roles → a starting point → customize → tactics → steps → save.
 
-- **Operators**: tap portraits to pick five, filter by role, or **Roll for the starters** (uses each starter's owned / favourite / avoid lists). *Pairs well with your picks* suggests partners (e.g. Thatcher for Thermite).
+- **Operators**: tap portraits to pick five, filter by role, or **Roll for the starters** (uses each starter's owned / favorite / blocked lists). *Pairs well with your picks* suggests partners (e.g. Thatcher for Thermite).
 - **Players**: who plays each operator, and their **tactical role**: Entry, Support, Hard Breach, Flex, Flank Watch, Drone, IGL, Anchor, Roamer, Utility Denial, Plant, Post-Plant. The role shows next to the operator everywhere.
 - **Start from**: a library strategy, ranked by fit and **adapted to your operators** (names and gadgets in the text are rewritten), or a blank board. The original is never changed.
 - **Tactics**: the map editor (below). **Steps**: title, round clock (`0:45`), what happens, who acts, and one line per operator ("Thermite: Move to breach position."). One click adds a *Drone → Clear → Breach → Execute → Plant* template.
 
 ### The tactical map
 
-The board is a **schematic** of the bomb site: the two objective rooms (named after the site), reinforceable walls, doors with swings, windows, stairs, hatches, the bomb spots, the surrounding rooms, hallways and the outside approach. It's drawn by the app, not Ubisoft's floor plan, so rooms other than the two objective rooms have generic names. For the exact layout, set a **floor plan image link** in the strategy's details.
+The board is drawn on the **real floor plan** of the strategy's floor, when the team has added one (see [docs/MAP_ASSETS.md](docs/MAP_ASSETS.md)). The app never draws a map itself. Layers, bottom to top: floor plan, callouts (rooms, objectives, hatches, stairs), areas, routes, crossfires, players and utility, notes. Multi-floor maps get floor tabs, and every object remembers its floor. All positions are stored **normalised** (0 to 1 across the plan), so they stay on the same spot at any size, zoom or orientation.
+
+Floors without a plan show a "No floor plan" notice. Older strategies use an **abstract schematic** (two boxes for the site, labelled *not the real map*). Once the plan exists, the editor can move them onto it.
 
 Toolbar groups (left rail; a row on phones):
 
@@ -384,8 +388,17 @@ The image link is stored in the `image_url` column. **If your database was set u
 ## How rolling works
 
 - Each player's pool is the selected side's operators, minus bans, and limited to their owned list when **Use owned operators only** is on. That setting is shared team state.
-- **Avoid**: skipped for that player unless nothing else is left.
-- **Favourite**: rolled about 3× as often (`FAVORITE_WEIGHT` in `src/lib/roll.js`).
+- **Blocked** (🚫): never rolled for that player, like a ban. If that leaves too few operators, you get a clear message.
+- **Favorite** (★): rolled about 5× as often (`FAVORITE_WEIGHT` in `src/lib/roll.js`).
+
+## How recommendations work
+
+`src/lib/recommend.js` drives **Find by composition**, the builder's **Start from** list, substitute suggestions and *Pairs well with your picks*. The players in the setup (or just you) supply their favorites and blocks, and the team's bans count as blocks.
+
+1. **Blocked operators are never used.** A strategy written around a blocked operator is adapted with a replacement and says so ("Requires blocked operator: Ace · adapted with Thermite"). If no usable operator can do that job, it's hidden and listed as hidden.
+2. **Favorites are built in first.** Each slot takes a favorite whenever the favorite can do that slot's job (same role, or a listed alternative). A favorite with no job in a plan isn't forced in: the card says why and links a strategy that does use it.
+3. Then the team's **selected operators**, then the strategy's own operators, then anyone else available.
+4. Results are ranked by **favorite coverage** (favorites used ÷ favorites that could be used), then tactical quality. Each card shows ★ scores for favorite match, operator compatibility and strategy match, plus the reasons.
 - Picks are distinct. If random picking keeps colliding (for example tight owned lists), a bipartite matching finds a valid lineup whenever one exists. When none exists, you get a clear message saying why, instead of a crash.
 - **Re-roll to fit** keeps the players who already cover required roles, and re-rolls the fewest remaining players into the missing roles. It only widens to more players when that's the only way.
 
@@ -397,7 +410,8 @@ src/
                  synergies.json, tactics.json (+ data tests)
   lib/           tactical.js (objects, zones, routes, roles, types, gadgets, clock,
                  briefings, stats), strategies.js (model, versions, adaptation),
-                 strategyMatch.js, synergy.js, board.js (board geometry),
+                 strategyMatch.js, recommend.js, synergy.js, board.js (board geometry),
+                 floorPlans.js (floor-plan assets), space.js (normalised coordinates),
                  roll.js, fit.js, tactics.js, diagram.js, roster.js (pure + tests),
                  api.js (all Supabase calls), passcode.js, config.js, maps.js, operators.js
   state/         useTeamData.js, useStrategyData.js, useHistory.js (undo/redo),
@@ -405,10 +419,13 @@ src/
   components/    Screens: CommandView, StrategyBuilder, StrategiesView (library, detail,
                  editor, CoachMode, PlayerMode, StrategyCompare), MapsView,
                  OperatorLibraryView, TeamView, PlanView (lineup roller).
-                 Board: TacticalBoard, SiteBlueprint, BoardEditor, ObjectInspector.
+                 Board: TacticalBoard, MapLayer, BoardEditor, ObjectInspector, FloorPlanPanel.
   styles.css, tactical.css
 supabase/schema.sql
 docs/DATA_REVIEW.md   data to verify by hand
+docs/MAP_ASSETS.md    adding and verifying real floor plans
+src/data/floorPlans.json  floor-plan manifest (empty until plans are added)
+public/maps/          floor-plan images (<map>/<floor>.webp)
 public/operators/     operator portraits (<id>.svg)
 ```
 

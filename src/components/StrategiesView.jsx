@@ -11,7 +11,7 @@ import StrategyLibrary from './StrategyLibrary.jsx';
 import TeamLibrary from './TeamLibrary.jsx';
 import { EmptyState, Skeleton } from './ui.jsx';
 import { MAPS_BY_ID } from '../lib/maps.js';
-import { normalizeStrategy } from '../lib/strategies.js';
+import { createStrategy } from '../lib/strategies.js';
 import { autoAssign } from '../lib/strategyMatch.js';
 import { useRoster } from '../state/roster-context.js';
 import { useSessionState } from '../state/useSessionState.js';
@@ -92,7 +92,7 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
       />
     );
   } else if (mode === 'new') {
-    const blank = normalizeStrategy({
+    const blank = createStrategy({
       title: 'New strategy',
       origin: 'team',
       side: setup.side,

@@ -2,7 +2,7 @@
 // function takes its inputs explicitly (including an optional rng) so it can
 // be unit tested deterministically.
 
-export const FAVORITE_WEIGHT = 3;
+export const FAVORITE_WEIGHT = 5;
 const GREEDY_ATTEMPTS = 60;
 
 export const SIDE_LABEL = { attack: 'attackers', defend: 'defenders' };
@@ -38,23 +38,22 @@ export function weightedPick(ids, weightOf, rng = Math.random) {
 
 /**
  * The operators a player may receive, before considering teammates' picks.
- * Avoided operators are kept here; they're filtered "when possible" at pick time.
+ * Blocked operators (`prefs.avoid`) are a hard exclusion, like bans: a player
+ * never receives an operator they blocked.
  */
 export function playerPool({ operators, side, bans = [], prefs, ownedOnly = false }) {
   const banned = new Set(bans);
+  const blocked = new Set(prefs?.avoid ?? []);
   const owned = ownedOnly ? new Set(prefs?.owned ?? []) : null;
   return operators
-    .filter((op) => op.side === side && !banned.has(op.id) && (!owned || owned.has(op.id)))
+    .filter((op) => op.side === side && !banned.has(op.id) && !blocked.has(op.id) && (!owned || owned.has(op.id)))
     .map((op) => op.id);
 }
 
 function pickForPlayer(candidates, prefs, rng) {
   if (candidates.length === 0) return null;
-  const avoid = new Set(prefs?.avoid ?? []);
   const favorites = new Set(prefs?.favorites ?? []);
-  const preferred = candidates.filter((id) => !avoid.has(id));
-  const usable = preferred.length > 0 ? preferred : candidates;
-  return weightedPick(usable, (id) => (favorites.has(id) ? FAVORITE_WEIGHT : 1), rng);
+  return weightedPick(candidates, (id) => (favorites.has(id) ? FAVORITE_WEIGHT : 1), rng);
 }
 
 /**
@@ -94,14 +93,14 @@ function explainShortage({ players, pools, side, ownedOnly, taken = new Set() })
   if (empty.length > 0) {
     const who = empty.join(', ');
     return ownedOnly
-      ? `No ${label} available for ${who}: check their owned operators and the bans.`
-      : `No ${label} left for ${who}: too many operators are banned.`;
+      ? `No ${label} available for ${who}: check their owned and blocked operators and the bans.`
+      : `No ${label} left for ${who}: too many operators are banned or blocked.`;
   }
   const union = new Set(players.flatMap((p) => pools[p]).filter((id) => !taken.has(id)));
   if (!ownedOnly) {
-    return `Only ${union.size} ${label} available after bans, but ${players.length} are needed. Unban some operators.`;
+    return `Only ${union.size} ${label} available after bans and blocks, but ${players.length} are needed. Unban or unblock some operators.`;
   }
-  return `Not enough different ${label} across the players' owned lists (${union.size} usable for ${players.length} players). Add owned operators, remove bans, or turn off "owned only".`;
+  return `Not enough different ${label} across the players' owned lists (${union.size} usable for ${players.length} players). Add owned operators, remove bans or blocks, or turn off "owned only".`;
 }
 
 /**
@@ -109,7 +108,7 @@ function explainShortage({ players, pools, side, ownedOnly, taken = new Set() })
  * Operators in `taken` are reserved by teammates and never handed out.
  */
 function assignDistinct({ players, pools, prefsByPlayer, taken = new Set(), rng }) {
-  // Randomised greedy first: it honours avoid lists and favourite weights.
+  // Randomised greedy first: it honours favourite weights.
   for (let attempt = 0; attempt < GREEDY_ATTEMPTS; attempt += 1) {
     const used = new Set(taken);
     const result = {};

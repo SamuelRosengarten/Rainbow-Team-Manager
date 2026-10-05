@@ -1,0 +1,4 @@
+{
+  "_readme": "Real floor plans, one per map floor. See docs/MAP_ASSETS.md. An entry is only used when its image file exists in public/<file>. Nothing here is drawn by the app: every plan must come from a source the team is allowed to use, and stays 'verified: false' until someone has checked it against the game.",
+  "plans": {}
+}

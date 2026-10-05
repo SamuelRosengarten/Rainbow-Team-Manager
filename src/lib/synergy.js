@@ -18,9 +18,10 @@ export function compositionSynergies(ops) {
 
 /**
  * Operators that would pair with the composition but aren't in it yet,
- * best first: [{ id, pairs: [...] }].
+ * best first: [{ id, pairs: [...], favorite }]. With `pref` (recommend.js)
+ * blocked and banned operators are left out and favorites come first.
  */
-export function suggestedPartners(ops, side, limit = 6) {
+export function suggestedPartners(ops, side, limit = 6, pref = null) {
   const set = new Set(ops.filter(Boolean));
   const out = new Map();
   for (const p of SYNERGIES) {
@@ -28,8 +29,13 @@ export function suggestedPartners(ops, side, limit = 6) {
     if (inside.length !== 1) continue;
     const partner = p.ops.find((id) => !set.has(id));
     if (OPERATORS_BY_ID[partner]?.side !== side) continue;
+    if (pref && (pref.blocked.has(partner) || pref.banned.has(partner))) continue;
     if (!out.has(partner)) out.set(partner, { id: partner, pairs: [] });
     out.get(partner).pairs.push({ ...p, with: inside[0] });
   }
-  return [...out.values()].sort((a, b) => b.pairs.length - a.pairs.length).slice(0, limit);
+  const fav = (id) => Boolean(pref?.favorites.has(id));
+  return [...out.values()]
+    .map((x) => ({ ...x, favorite: fav(x.id) }))
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.pairs.length - a.pairs.length)
+    .slice(0, limit);
 }

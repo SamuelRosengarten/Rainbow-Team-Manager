@@ -44,6 +44,12 @@ Written from memory, **not** checked against the current season. Ubisoft changes
 - **Marked `"check": true`** (the profile shows a "needs checking" note): Deimos, Striker, Rauora, Solid Snake, Sentry, Skopós, Denari, Noor. Rauora, Solid Snake, Denari and Noor have no weapons listed and only a rough ability description.
 - **Intro videos**: every profile links to a YouTube search. Add a `"video"` URL to pin the exact video.
 
+## Floor plans (`src/data/floorPlans.json`)
+
+**None are bundled.** Earlier versions drew an invented building around each bomb site. That's gone, because it didn't match the real maps. Accurate plans are Ubisoft's art, and I couldn't confirm they may be redistributed, so the team supplies them: see [MAP_ASSETS.md](MAP_ASSETS.md). The Maps screen lists every floor without a plan. Each plan stays *unverified* until someone checks it against the game.
+
+The floors listed for each map come only from its bomb sites (`B`, `1F`, `2F`, `3F`). Roofs, towers and other floors without a site aren't listed until you add a `floors` list to the map.
+
 ## Maps (`src/data/maps.json`)
 
 Ubisoft's Split Fire page doesn't list the ranked pool, so the list is pieced together from several sources:

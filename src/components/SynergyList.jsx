@@ -26,9 +26,10 @@ function Pair({ ids, label, text }) {
  * Synergies inside a composition, and (with `side`) operators that would
  * pair with it. `onAdd(id)` makes suggestions clickable.
  */
-export default function SynergyList({ ops, side, onAdd, compact = false }) {
+export default function SynergyList({ ops, side, onAdd, pref = null, compact = false }) {
   const pairs = compositionSynergies(ops);
-  const suggestions = side ? suggestedPartners(ops, side, 4) : [];
+  // Blocked operators are never suggested; favorites come first.
+  const suggestions = side ? suggestedPartners(ops, side, 4, pref) : [];
   if (!pairs.length && !suggestions.length) return null;
   return (
     <section className={`synergies${compact ? ' synergies--compact' : ''}`} aria-label="Operator synergy">
@@ -53,7 +54,10 @@ export default function SynergyList({ ops, side, onAdd, compact = false }) {
                 <>
                   <OperatorIcon operator={op} size="sm" />
                   <span>
-                    <strong>{op.name}</strong>
+                    <strong>
+                      {s.favorite && <span aria-label="Favorite">★ </span>}
+                      {op.name}
+                    </strong>
                     <span className="partner__why">{why}</span>
                   </span>
                 </>

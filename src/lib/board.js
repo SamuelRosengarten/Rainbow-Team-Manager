@@ -1,16 +1,17 @@
 // Board geometry helpers shared by the board, editor and presentation modes.
-import { BOARD_H, BOARD_W } from './strategies.js';
+// Points here are in board units (see space.js): `size` is { w, h } of the
+// board being drawn.
 
 const r1 = (v) => Math.round(v * 10) / 10;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 /** Client (pointer) coordinates -> board coordinates, clamped and rounded. */
-export function toBoardPoint(svg, e) {
+export function toBoardPoint(svg, e, size) {
   const pt = svg.createSVGPoint();
   pt.x = e.clientX;
   pt.y = e.clientY;
   const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-  return [r1(clamp(p.x, 0, BOARD_W)), r1(clamp(p.y, 0, BOARD_H))];
+  return [r1(clamp(p.x, 0, size.w)), r1(clamp(p.y, 0, size.h))];
 }
 
 export const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -62,11 +63,11 @@ export function resizeZone(z, handle, p) {
 }
 
 /** Move a whole object by a delta, staying on the board. */
-export function moveItem(type, item, dx, dy) {
-  const mx = (x) => r1(clamp(x + dx, 0, BOARD_W));
-  const my = (y) => r1(clamp(y + dy, 0, BOARD_H));
+export function moveItem(type, item, dx, dy, size) {
+  const mx = (x) => r1(clamp(x + dx, 0, size.w));
+  const my = (y) => r1(clamp(y + dy, 0, size.h));
   if (type === 'marker') return { x: mx(item.x), y: my(item.y) };
-  if (type === 'zone') return { x: r1(clamp(item.x + dx, 0, BOARD_W - item.w)), y: r1(clamp(item.y + dy, 0, BOARD_H - item.h)) };
+  if (type === 'zone') return { x: r1(clamp(item.x + dx, 0, size.w - item.w)), y: r1(clamp(item.y + dy, 0, size.h - item.h)) };
   if (type === 'path') return { points: item.points.map(([x, y]) => [mx(x), my(y)]) };
   if (type === 'crossfire') return { a: [mx(item.a[0]), my(item.a[1])], b: [mx(item.b[0]), my(item.b[1])], target: [mx(item.target[0]), my(item.target[1])] };
   return {};

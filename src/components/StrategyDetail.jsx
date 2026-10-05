@@ -22,10 +22,52 @@ import {
   newVersion,
   slotColor,
 } from '../lib/strategies.js';
+import { recommendStrategy } from '../lib/recommend.js';
 import { autoAssign, matchStrategy, substitutionsFor } from '../lib/strategyMatch.js';
+import { usePreferences } from '../state/usePreferences.js';
 import { TACTICAL_ROLES, slotAction } from '../lib/tactical.js';
 
 const opName = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any operator';
+
+/**
+ * A strategy that needs a blocked operator: say so, and offer the engine's
+ * replacement. Blocked operators are never used silently.
+ */
+function BlockedPanel({ rec, subs, setSubs }) {
+  const open = rec.blockedReplaced.filter((b) => subs[b.slotKey] !== b.replacement);
+  if (!open.length && !rec.blockedMissing.length) return null;
+  return (
+    <section className="adapt adapt--blocked" aria-labelledby="blocked-title">
+      <div className="adapt__head">
+        <h3 id="blocked-title" className="section-title">🚫 Requires a blocked operator</h3>
+        {open.length > 1 && (
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => setSubs({ ...subs, ...Object.fromEntries(open.map((b) => [b.slotKey, b.replacement])) })}>
+            Use the adapted strategy
+          </button>
+        )}
+      </div>
+      <ul className="adapt__list">
+        {open.map((b) => (
+          <li key={b.slotKey} className="adapt__item adapt__item--missing">
+            <span>
+              <strong>{opName(b.blocked)}</strong> is blocked ({b.by.join(', ')}). Possible replacement: <strong>{opName(b.replacement)}</strong>.
+            </span>
+            <button type="button" className="btn btn--primary btn--sm" onClick={() => setSubs({ ...subs, [b.slotKey]: b.replacement })}>
+              Use {opName(b.replacement)}
+            </button>
+          </li>
+        ))}
+        {rec.blockedMissing.map((b) => (
+          <li key={b.slotKey} className="adapt__item adapt__item--missing">
+            <span>
+              <strong>{opName(b.blocked)}</strong> is blocked ({b.by.join(', ')}) and no usable operator can do this job. This strategy isn't recommended for you.
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 function AdaptPanel({ match, subs, setSubs, strategy }) {
   const pending = [...match.substitutes, ...match.missing].filter((x) => !subs[x.slotKey]);
@@ -144,7 +186,9 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
   const [busy, setBusy] = useState(false);
 
   const players = picks.map((p) => p.player).filter(Boolean);
-  const match = useMemo(() => matchStrategy(strategy, picks.map((p) => p.operatorId).filter(Boolean)), [strategy, picks]);
+  const pref = usePreferences(players);
+  const match = useMemo(() => matchStrategy(strategy, picks.map((p) => p.operatorId).filter(Boolean), pref), [strategy, picks, pref]);
+  const rec = useMemo(() => recommendStrategy(strategy, { pref, selected: picks.map((p) => p.operatorId).filter(Boolean) }), [strategy, picks, pref]);
   const { strategy: view, warnings } = useMemo(() => adaptStrategy(strategy, subs), [strategy, subs]);
   const saved = strategyData.assignments[strategy.id] ?? {};
   const assigned = autoAssign(view, picks, saved);
@@ -293,6 +337,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       </header>
 
       <Notice onDismiss={() => setError('')}>{error}</Notice>
+      <BlockedPanel rec={rec} subs={subs} setSubs={setSubs} />
       {match.scored && !isTeam && picks.some((p) => p.operatorId) && <AdaptPanel match={match} subs={subs} setSubs={setSubs} strategy={strategy} />}
       {warnings.length > 0 && (
         <ul className="warn-list">

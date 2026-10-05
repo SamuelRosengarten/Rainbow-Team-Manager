@@ -41,7 +41,7 @@ describe('rollLineup', () => {
   it('returns a clear error when bans leave too few operators', () => {
     const res = rollLineup({ ...base, bans: ['thermite', 'hibana', 'ash', 'sledge'] });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Only 4 attackers available after bans, but 5 are needed/);
+    expect(res.error).toMatch(/Only 4 attackers available after bans and blocks, but 5 are needed/);
   });
 
   it('returns an error naming the player when their owned pool is empty', () => {
@@ -83,7 +83,7 @@ describe('rollLineup', () => {
     expect(rollLineup({ ...base, prefs, ownedOnly: false }).ok).toBe(true);
   });
 
-  it('skips avoided operators when possible', () => {
+  it('never rolls a blocked operator for the player who blocked it', () => {
     const avoid = ['thermite', 'hibana', 'ash'];
     for (let seed = 1; seed <= 200; seed += 1) {
       const res = rollLineup({ ...base, prefs: { Samuel: { avoid } }, rng: seededRng(seed) });
@@ -91,12 +91,12 @@ describe('rollLineup', () => {
     }
   });
 
-  it('still rolls an avoided operator when nothing else is left', () => {
+  it('fails clearly instead of rolling a blocked operator when nothing else is left', () => {
     const prefs = { Samuel: { owned: ['thermite'], avoid: ['thermite'] } };
     for (const p of PLAYERS.slice(1)) prefs[p] = { owned: ['ash', 'iq', 'lion', 'sledge'] };
     const res = rollLineup({ ...base, prefs, ownedOnly: true, rng: seededRng(9) });
-    expect(res.ok).toBe(true);
-    expect(res.lineup.Samuel).toBe('thermite');
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/Samuel.*blocked/);
   });
 
   it('weights favourites more heavily', () => {
@@ -108,11 +108,11 @@ describe('rollLineup', () => {
       counts.total += 1;
       if (res.lineup.Samuel === 'iq') counts.fav += 1;
     }
-    // 8 attackers, iq weighted 3 => expected 3/10 = 0.30; uniform would be 0.125.
+    // 8 attackers, iq weighted 5 => expected 5/12 = 0.42; uniform would be 0.125.
     const share = counts.fav / counts.total;
-    expect(share).toBeGreaterThan(0.25);
-    expect(share).toBeLessThan(0.35);
-    expect(FAVORITE_WEIGHT).toBe(3);
+    expect(share).toBeGreaterThan(0.37);
+    expect(share).toBeLessThan(0.47);
+    expect(FAVORITE_WEIGHT).toBe(5);
   });
 });
 
