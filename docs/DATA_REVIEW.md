@@ -72,7 +72,7 @@ Short starter notes exist only for the six maps above. Every other map shows an 
 
 ## Strategy library (`src/data/strategies.json`)
 
-**AI suggestions (21):** written from general Siege knowledge by an AI and labelled as such in the app. They are role-based plans (hard-breach execute, vertical, breach denial, site hold, deep roam) applied to real site names. They are **not** verified or pro strategies, and their board positions come from an abstract layout, so they're flagged on the real map. Things to check before relying on one:
+**AI suggestions (21):** written from general Siege knowledge by an AI and labelled "Suggested" in the app (no model runs in the app: they are fixed data, ranked by rules). They are role-based plans (hard-breach execute, vertical, breach denial, site hold, deep roam) applied to real site names. They are **not** verified or pro strategies, and their board positions come from an abstract layout, so they're flagged on the real map. Things to check before relying on one:
 
 - Whether the "main wall", "hatch above" and "floor above" exist the way the plan assumes on that site.
 - Spawn fields are empty on purpose: fill in your team's spawns when you adapt a strategy.

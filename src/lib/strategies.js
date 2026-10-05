@@ -60,9 +60,9 @@ export const ORIGINS = {
   },
   team: { label: 'Team strategy', short: 'Team', note: 'Created or adapted by your team.' },
   suggested: {
-    label: 'AI suggestion',
-    short: 'AI suggestion',
-    note: 'Generated starting point, not a verified or pro strategy. Positions are approximate. Adapt and test it.',
+    label: 'Suggested',
+    short: 'Suggested',
+    note: 'A starting point written from general Siege knowledge and matched by rules, not a verified or pro strategy. Positions are approximate. Adapt and test it.',
   },
 };
 
@@ -469,7 +469,7 @@ export function latestVersions(list) {
 /** One-line attribution for cards and the board header. */
 export function attribution(s) {
   if (s.origin === 'reference') return `Source: ${s.sourceName || 'online'}${s.sourceTitle ? ` · “${s.sourceTitle}”` : ''}`;
-  if (s.origin === 'suggested') return 'AI suggestion · not a verified strategy';
+  if (s.origin === 'suggested') return 'Suggested starting point · not a verified strategy';
   if (s.adaptedFrom) {
     const from = ORIGINS[s.adaptedFrom.origin]?.short ?? '';
     return `Adapted by the team from “${s.adaptedFrom.title}”${from ? ` (${from.toLowerCase()})` : ''}`;

@@ -74,7 +74,7 @@ describe('strategies.json', async () => {
     });
   });
 
-  it('keeps references link-only and labels AI suggestions', () => {
+  it('keeps references link-only and labels suggested starting points', () => {
     strategies.filter((s) => s.origin === 'reference').forEach((s) => {
       expect(s.sourceUrl).toMatch(/^https:\/\//);
       expect(s.sourceName).toBeTruthy();

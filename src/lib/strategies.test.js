@@ -80,7 +80,7 @@ describe('duplicateStrategy and attribution', () => {
     expect(copy).toMatchObject({ origin: 'team', owner: 'Sam', adaptedFrom: { id: 'cctv-take', origin: 'suggested' } });
     expect(copy.slots[0].operatorId).toBe('ace');
     expect(attribution(copy)).toMatch(/^Adapted by the team from “Clubhouse CCTV take”/);
-    expect(attribution(base())).toMatch(/AI suggestion/);
+    expect(attribution(base())).toMatch(/Suggested/);
   });
 
   it('copies of copies keep pointing at the original', () => {

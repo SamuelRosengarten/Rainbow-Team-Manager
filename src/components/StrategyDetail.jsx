@@ -320,7 +320,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
         {strategy.origin === 'suggested' && (
           <p className="notice notice--warn" role="note">
             <span>
-              <strong>AI suggestion.</strong> {ORIGINS.suggested.note}
+              <strong>Suggested starting point.</strong> {ORIGINS.suggested.note}
             </span>
           </p>
         )}
