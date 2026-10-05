@@ -2,6 +2,12 @@
   {
     "id": "bank",
     "name": "Bank",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Executive Lounge / CEO Office",
@@ -21,6 +27,11 @@
   {
     "id": "border",
     "name": "Border",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Armory Lockers / Archives",
@@ -40,6 +51,12 @@
   {
     "id": "calypso-casino",
     "name": "Calypso Casino",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -49,6 +66,12 @@
   {
     "id": "chalet",
     "name": "Chalet",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Master Bedroom / Office",
@@ -68,6 +91,12 @@
   {
     "id": "clubhouse",
     "name": "Clubhouse",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Gym / Bedroom",
@@ -87,6 +116,11 @@
   {
     "id": "coastline",
     "name": "Coastline",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Hookah Lounge / Billiards Room",
@@ -106,6 +140,12 @@
   {
     "id": "consulate",
     "name": "Consulate",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -115,6 +155,11 @@
   {
     "id": "fortress",
     "name": "Fortress",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -124,6 +169,12 @@
   {
     "id": "kafe-dostoyevsky",
     "name": "Kafe Dostoyevsky",
+    "floors": [
+      "1f",
+      "2f",
+      "3f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "3F Cocktail Lounge / Bar",
@@ -143,6 +194,12 @@
   {
     "id": "kanal",
     "name": "Kanal",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -152,6 +209,12 @@
   {
     "id": "lair",
     "name": "Lair",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -161,6 +224,12 @@
   {
     "id": "nighthaven-labs",
     "name": "Nighthaven Labs",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -170,6 +239,13 @@
   {
     "id": "oregon",
     "name": "Oregon",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "3f",
+      "roof"
+    ],
     "sites": {
       "attack": [
         "2F Kids' Dorms / Dorms Main Hall",
@@ -189,6 +265,11 @@
   {
     "id": "outback",
     "name": "Outback",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -198,6 +279,11 @@
   {
     "id": "skyscraper",
     "name": "Skyscraper",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -207,6 +293,11 @@
   {
     "id": "theme-park",
     "name": "Theme Park",
+    "floors": [
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []
@@ -216,6 +307,12 @@
   {
     "id": "villa",
     "name": "Villa",
+    "floors": [
+      "b",
+      "1f",
+      "2f",
+      "roof"
+    ],
     "sites": {
       "attack": [],
       "defend": []

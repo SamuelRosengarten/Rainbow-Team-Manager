@@ -49,12 +49,13 @@ describe('normalised coordinates', () => {
 });
 
 describe('floor plans', () => {
-  it("reads the floor from a site and lists a map's floors without guessing", () => {
+  it("reads the floor from a site and lists each map's floors from maps.json", () => {
     expect(floorIdFromSite('B Lockers / CCTV Room')).toBe('b');
     expect(floorIdFromSite('2F Executive Lounge / CEO Office')).toBe('2f');
     expect(floorIdFromSite('Anywhere')).toBe('');
-    expect(floorsFor('bank')).toEqual(['b', '1f', '2f']);
-    expect(floorsFor('lair')).toEqual([]);
+    expect(floorsFor('bank')).toEqual(['b', '1f', '2f', 'roof']);
+    expect(floorsFor('oregon')).toEqual(['b', '1f', '2f', '3f', 'roof']);
+    expect(floorsFor('nope')).toEqual([]);
   });
 
   it('accepts only usable plan entries and keeps the image aspect ratio', () => {
