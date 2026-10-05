@@ -50,7 +50,12 @@ function MiniRow({ s, navigate }) {
 export default function CommandView({ profile, strategyData, navigate }) {
   const all = strategyData.strategies;
   const team = latestVersions(all.filter((s) => s.origin === 'team' && !s.builtin));
-  const bySide = (side) => ({ team: team.filter((s) => s.side === side).length, all: latestVersions(all).filter((s) => s.side === side).length });
+  // "total" counts every plan, including the generic ones that aren't tied to a
+  // map. The Maps page only counts plans on a specific map, so show the gap.
+  const bySide = (side) => {
+    const list = latestVersions(all).filter((s) => s.side === side);
+    return { team: team.filter((s) => s.side === side).length, all: list.length, anyMap: list.filter((s) => s.mapId === 'any').length };
+  };
   const atk = bySide('attack');
   const def = bySide('defend');
   const recent = [...team].sort((a, b) => Number(b.favorite) - Number(a.favorite) || String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))).slice(0, 5);
@@ -90,14 +95,14 @@ export default function CommandView({ profile, strategyData, navigate }) {
               <Icon name="swords" size={26} />
               <span className="cmd-card__title">Attack strategies</span>
               <span className="cmd-card__stat">
-                <strong>{atk.team}</strong> team · {atk.all} total
+                <strong>{atk.team}</strong> team · {atk.all} total{atk.anyMap > 0 && ` (${atk.anyMap} not tied to a map)`}
               </span>
             </button>
             <button type="button" className="cmd-card cmd-card--defend" onClick={() => navigate('strategies/defense')}>
               <Icon name="shield" size={26} />
               <span className="cmd-card__title">Defense strategies</span>
               <span className="cmd-card__stat">
-                <strong>{def.team}</strong> team · {def.all} total
+                <strong>{def.team}</strong> team · {def.all} total{def.anyMap > 0 && ` (${def.anyMap} not tied to a map)`}
               </span>
             </button>
           </div>
