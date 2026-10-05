@@ -21,7 +21,7 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 3. [Setup: local development](#4-run-locally)
 4. [Setup: Vercel](#5-deploy-on-vercel)
 5. [Running tests](#running-tests)
-6. [Adding operators, images and maps](#adding-operators)
+6. [Adding operators, images and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
 7. [Tactics: editing and committing to the repo](#tactics)
 8. [How rolling works](#how-rolling-works)
 9. [Troubleshooting](#troubleshooting)
@@ -177,6 +177,29 @@ public/operators/solid-snake.png
 
 A square image of about 128×128 or larger works best (it's shown in a circle). Any operator without an image gets a styled circle with its initials, so you can add images gradually. Use images you have the rights to. The repo doesn't include or hotlink Ubisoft assets.
 
+## Operator profiles and intro videos
+
+Click any operator on the **Operators** screen to open their profile: picture, health and speed (1 to 3), ability, primary and secondary weapons, a "how to play" tip, which teammates own, favour or avoid them, and a **Watch intro video** button.
+
+Profile data lives in `src/data/operatorProfiles.json`, keyed by operator id:
+
+```json
+"thermite": {
+  "health": 2, "speed": 2,
+  "ability": "Exothermic Charge",
+  "abilityText": "Deployable charge that burns a large hole through reinforced walls.",
+  "primary": ["556XI", "M1014"], "secondary": ["5.7 USG", "M45 MEUSOC"],
+  "tip": "The classic hard breacher…",
+  "video": "https://www.youtube.com/watch?v=…"
+}
+```
+
+- `video` is optional. Without it, the button opens a YouTube search for that operator's video, which always works. Paste the exact link of the video you like to pin it.
+- `check: true` shows a small "still needs checking" note in the profile. See [`docs/DATA_REVIEW.md`](docs/DATA_REVIEW.md).
+- The picture is the image from `public/operators/` (see above), or the initials badge.
+
+A data test makes sure every operator has a profile, so add one when you add an operator.
+
 ## Adding or changing maps
 
 Edit `src/data/maps.json`:
@@ -247,7 +270,15 @@ Tactic format:
 }
 ```
 
-`mapId: "any"` makes a generic tactic, and `site: ""` means any site. `requiredRoles` can repeat (for example two anchors), and each required role must be filled by a different player.
+`mapId: "any"` makes a generic tactic, and `site: ""` means any site. `requiredRoles` can repeat (for example two anchors), and each required role must be filled by a different player. An optional `"imageUrl": "https://…"` adds a map image (see below).
+
+**Tactic diagrams.** Every tactic gets a picture, drawn automatically:
+
+- On the **Plan** screen, the diagram uses the rolled lineup. Each teammate's operator is placed where their role sets up around the two rooms of the chosen bomb site (hard breacher on the breach wall, soft breacher above the hatch, intel droning, anchors in site, roamers outside…). Required roles nobody covers show as red **?** spots. A numbered legend says who does what.
+- On the **Tactics** screen, click **Diagram** on any card to see the roles' spots before rolling.
+- It's a schematic (two rooms, not the real floor plan), so it works on every map. For the exact layout, add a **Map image link** in the tactic editor: any `https://` image, such as a screenshot of the site with your setup drawn on it. It shows above the diagram.
+
+The image link is stored in the `image_url` column. **If your database was set up before this column existed, re-run `supabase/schema.sql`** (it's safe to re-run). Tactics without an image keep working either way.
 
 ---
 
@@ -263,8 +294,8 @@ Tactic format:
 
 ```
 src/
-  data/          operators.json, maps.json, tactics.json (+ data tests)
-  lib/           roll.js, fit.js, tactics.js (pure + tests), api.js (all Supabase calls),
+  data/          operators.json, operatorProfiles.json, maps.json, tactics.json (+ data tests)
+  lib/           roll.js, fit.js, tactics.js, diagram.js (pure + tests), api.js (all Supabase calls),
                  passcode.js, config.js, constants.js, maps.js, operators.js
   state/         useTeamData.js (loading, realtime, optimistic writes, offline mode)
   components/    UI

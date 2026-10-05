@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Notice from './Notice.jsx';
+import TacticDiagram from './TacticDiagram.jsx';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { ROLE_LABEL, checkFit, filterTactics, rerollToFit, rollTactic } from '../lib/fit.js';
 
@@ -84,6 +85,13 @@ export default function TacticPanel({ team, updateTeam, tactics, lineup, players
             {tactic.owner ? ` · by ${tactic.owner}` : ' · team'}
           </p>
           {tactic.description && <p className="tactic__desc">{tactic.description}</p>}
+          <TacticDiagram
+            tactic={{ ...tactic, site: tactic.site || site }}
+            lineup={lineup}
+            players={players}
+            operatorsById={operatorsById}
+            mapName={MAPS_BY_ID[tactic.mapId]?.name ?? mapName}
+          />
 
           {tactic.requiredRoles.length > 0 && (
             <div className="fit">

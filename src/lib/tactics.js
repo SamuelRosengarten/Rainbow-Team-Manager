@@ -21,6 +21,8 @@ export function normalizeTactic(raw, { owner = null } = {}) {
   const badRole = requiredRoles.find((r) => !ROLES.includes(r));
   if (badRole) throw new Error(`"${name}": unknown role "${badRole}".`);
   if (requiredRoles.length > 5) throw new Error(`"${name}": at most 5 required roles.`);
+  const imageUrl = String(raw.imageUrl ?? '').trim();
+  if (imageUrl && !/^https:\/\/\S+$/i.test(imageUrl)) throw new Error(`"${name}": image link must start with https://.`);
   return {
     id: String(raw.id ?? '').trim() || newTacticId(),
     name: name.slice(0, 120),
@@ -29,6 +31,7 @@ export function normalizeTactic(raw, { owner = null } = {}) {
     site: String(raw.site ?? '').trim(),
     description: String(raw.description ?? '').slice(0, 4000),
     requiredRoles,
+    imageUrl: imageUrl.slice(0, 1000),
     shared: raw.shared === undefined ? true : Boolean(raw.shared),
     owner: raw.owner === undefined ? owner : raw.owner || null,
     example: Boolean(raw.example),
@@ -86,6 +89,7 @@ export function exportTactics(tactics) {
       requiredRoles: t.requiredRoles || [],
       shared: t.shared !== false,
     };
+    if (t.imageUrl) out.imageUrl = t.imageUrl;
     if (t.example) out.example = true;
     if (t.owner) out.owner = t.owner;
     return out;

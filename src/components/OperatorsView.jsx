@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
 import Notice from './Notice.jsx';
+import OperatorProfile from './OperatorProfile.jsx';
 import { PLAYERS, SIDES } from '../lib/constants.js';
-import { operatorsForSide } from '../lib/operators.js';
+import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 
 /**
@@ -13,6 +14,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
   const [viewing, setViewing] = useState(profile);
   const [side, setSide] = useState('attack');
   const [filter, setFilter] = useState('');
+  const [open, setOpen] = useState(null);
   const mine = viewing === profile;
   const p = prefs[viewing] ?? { owned: [], favorites: [], avoid: [] };
   const owned = new Set(p.owned);
@@ -40,6 +42,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
       <p className="panel__sub">
         <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>Favourites</strong> roll
         about 3× as often. <strong>Avoid</strong> operators are skipped for this player unless nothing else is left.
+        Click an operator for their profile, stats and intro video.
       </p>
       {!mine && <Notice kind="info">You're viewing {viewing}'s lists (read only).</Notice>}
 
@@ -88,17 +91,23 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
           const pref = favorites.has(op.id) ? 'favorite' : avoid.has(op.id) ? 'avoid' : null;
           return (
             <li key={op.id} className={`op-row${pref ? ` op-row--${pref}` : ''}`}>
-              <label className="op-row__own">
-                <input
-                  type="checkbox"
-                  checked={isOwned}
-                  disabled={!mine}
-                  onChange={(e) => setOwned(viewing, [op.id], e.target.checked)}
-                />
-                <OperatorIcon operator={op} size="sm" />
-                <span className="op-row__name">{op.name}</span>
-                <span className="visually-hidden">{isOwned ? ' owned' : ' not owned'}</span>
-              </label>
+              <span className="op-row__main">
+                <label className="op-row__own">
+                  <input
+                    type="checkbox"
+                    checked={isOwned}
+                    disabled={!mine}
+                    onChange={(e) => setOwned(viewing, [op.id], e.target.checked)}
+                  />
+                  <span className="visually-hidden">{op.name} owned</span>
+                </label>
+                <button type="button" className="op-row__open" onClick={() => setOpen(op.id)}>
+                  <OperatorIcon operator={op} size="sm" />
+                  <span className="op-row__name">{op.name}</span>
+                  <span className="op-row__info" aria-hidden="true">ⓘ</span>
+                  <span className="visually-hidden"> profile</span>
+                </button>
+              </span>
               <span className="op-row__roles">
                 {op.roles.map((r) => (
                   <span key={r} className={`role role--${r}`}>{ROLE_LABEL[r]}</span>
@@ -130,6 +139,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
           );
         })}
       </ul>
+      {open && <OperatorProfile key={open} operator={OPERATORS_BY_ID[open]} prefs={prefs} onClose={() => setOpen(null)} />}
     </section>
   );
 }

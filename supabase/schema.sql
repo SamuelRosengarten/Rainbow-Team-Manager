@@ -58,6 +58,9 @@ create table if not exists public.tactics (
   updated_at timestamptz not null default now()
 );
 
+-- Added later: optional link to a map image for a tactic.
+alter table public.tactics add column if not exists image_url text not null default '';
+
 -- ---------------------------------------------------------------------------
 -- Map notes. owner_profile_id NULL = team notes. One row per owner + map.
 -- ---------------------------------------------------------------------------

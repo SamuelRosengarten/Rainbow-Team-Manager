@@ -43,6 +43,9 @@ export function friendlyError(error) {
   if (code === '42P01' || code === 'PGRST205' || raw.includes('does not exist') || raw.includes('could not find the table')) {
     return 'The database tables are missing. Run supabase/schema.sql in the Supabase SQL editor.';
   }
+  if (raw.includes('image_url')) {
+    return 'Tactic images need a newer database. Re-run supabase/schema.sql in the Supabase SQL editor.';
+  }
   if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
     return 'The database refused the request (permissions). Re-run supabase/schema.sql to restore the team policies.';
   }
@@ -153,6 +156,7 @@ function tacticFromRow(row, nameById) {
     site: row.site || '',
     description: row.description || '',
     requiredRoles: row.required_roles || [],
+    imageUrl: row.image_url || '',
     shared: row.shared,
     example: row.example,
     deleted: row.deleted,
@@ -160,8 +164,14 @@ function tacticFromRow(row, nameById) {
   };
 }
 
+// Databases set up before tactic images existed have no image_url column.
+// Only send it when the column is there or the tactic actually has an image.
+let hasImageColumn = false;
+
 function tacticToRow(t, idByName) {
+  const image = hasImageColumn || t.imageUrl ? { image_url: t.imageUrl || '' } : {};
   return {
+    ...image,
     id: t.id,
     owner_profile_id: t.owner ? idByName[t.owner] ?? null : null,
     name: t.name,
@@ -182,6 +192,7 @@ const invert = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [
 export async function fetchTactics(idByName) {
   const rows = await run(db().from('tactics').select('*'));
   const nameById = invert(idByName);
+  if (rows.length > 0) hasImageColumn = 'image_url' in rows[0];
   return rows.map((r) => tacticFromRow(r, nameById));
 }
 

@@ -1,4 +1,5 @@
 import operatorList from '../data/operators.json';
+import profiles from '../data/operatorProfiles.json';
 import { indexOperators } from './roll.js';
 
 export const OPERATORS = operatorList;
@@ -17,4 +18,22 @@ export function initials(name = '') {
 
 export function operatorImage(id) {
   return `${import.meta.env.BASE_URL}operators/${id}.png`;
+}
+
+const EMPTY_PROFILE = { health: 0, speed: 0, ability: '', abilityText: '', primary: [], secondary: [], tip: '', check: false };
+
+/** Stats, ability and loadout for an operator, from operatorProfiles.json. */
+export function operatorProfile(id) {
+  return profiles[id] ? { ...EMPTY_PROFILE, ...profiles[id] } : { ...EMPTY_PROFILE, check: true };
+}
+
+/**
+ * Link to the operator's intro video. Uses an exact `video` URL from
+ * operatorProfiles.json when set, otherwise a YouTube search that always works.
+ */
+export function operatorVideoUrl(operator) {
+  const exact = profiles[operator.id]?.video;
+  if (exact) return exact;
+  const q = `Rainbow Six Siege ${operator.name} operator video`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
 }
