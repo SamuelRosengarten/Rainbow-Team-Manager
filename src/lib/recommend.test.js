@@ -71,7 +71,15 @@ describe('recommendStrategy: favorites drive the lineup', () => {
     const pref = preferenceSet(prefsFor(['thermite'], []), ['Samuel']);
     const rec = recommendStrategy(s, { pref });
     expect(rec.lineup[0]).toMatchObject({ operatorId: 'thermite', favorite: true, original: 'hibana' });
-    expect(rec.favoriteLabel).toBe('1/1 favorite operators');
+    expect(rec.favoriteLabel).toBe('1 of 1 favorite operator');
+    expect(rec.favoriteStars).toBeNull(); // a sample of one doesn't earn stars
+  });
+
+  it('earns favorite stars only with three or more relevant favorites', () => {
+    const s = strat([{ key: 'a', operatorId: 'hibana' }, { key: 'b', operatorId: 'iq' }, { key: 'c', operatorId: 'ash' }]);
+    const pref = preferenceSet(prefsFor(['thermite', 'jackal', 'buck'], []), ['Samuel']);
+    const rec = recommendStrategy(s, { pref });
+    expect(rec.favoriteLabel).toBe('3 of 3 favorite operators');
     expect(rec.favoriteStars).toBe(5);
   });
 

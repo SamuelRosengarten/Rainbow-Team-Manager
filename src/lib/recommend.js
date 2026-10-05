@@ -24,6 +24,9 @@ import { ROLE_LABEL } from './fit.js';
 // a favorite that can do the job always wins the slot.
 export const W = { exact: 3, listed: 2, role: 1, favorite: 6, selected: 2.5 };
 const MAX_CANDIDATES = 5;
+// Stars on the favorite match only mean something with a real sample: 1 of 1
+// is 100% of almost nothing. Below this many relevant favorites show the raw count.
+export const MIN_FAVORITES_FOR_STARS = 3;
 
 const rolesOf = (id) => OPERATORS_BY_ID[id]?.roles ?? [];
 const shareRole = (a, b) => rolesOf(a).some((r) => rolesOf(b).includes(r));
@@ -132,7 +135,7 @@ const starsFrom = (ratio) => Math.max(0, Math.min(5, Math.round(ratio * 5)));
  *   blockedReplaced: {slotKey, blocked, replacement, by: string[]}[],
  *   blockedMissing: {slotKey, blocked, by: string[]}[],
  *   favoritesUsed: string[], favoritesIdle: {id, why}[],
- *   favoriteCoverage: number, favoriteStars: number, favoriteLabel: string,
+ *   favoriteCoverage: number, favoriteStars: number|null (null below MIN_FAVORITES_FOR_STARS), favoriteLabel: string,
  *   compatibility: number, compatStars: number, quality: number, qualityStars: number,
  *   reasons: {ok: boolean, text: string}[]
  * }}
@@ -149,7 +152,7 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     favoritesUsed: [],
     favoritesIdle: [],
     favoriteCoverage: 0,
-    favoriteStars: 0,
+    favoriteStars: null,
     favoriteLabel: '',
     compatibility: 0,
     compatStars: 0,
@@ -191,8 +194,8 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   out.favoritesUsed = used;
   const denom = Math.min(relevant.length, slots.length);
   out.favoriteCoverage = favs.length === 0 ? 0 : denom ? used.length / denom : 0;
-  out.favoriteStars = starsFrom(out.favoriteCoverage);
-  out.favoriteLabel = favs.length ? `${used.length}/${denom || 0} favorite operators` : 'No favorites set';
+  out.favoriteStars = denom >= MIN_FAVORITES_FOR_STARS ? starsFrom(out.favoriteCoverage) : null;
+  out.favoriteLabel = favs.length ? `${used.length} of ${denom || 0} favorite operator${denom === 1 ? '' : 's'}` : 'No favorites set';
 
   // Favorites that have no job in this plan, with the reason.
   const neededRoles = new Set(slots.flatMap((s) => (s.operatorId ? rolesOf(s.operatorId) : [s.role])));
