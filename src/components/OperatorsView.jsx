@@ -51,8 +51,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
       <p className="panel__sub">
         <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>★ Favorites</strong> are the
         strongest preference: strategy recommendations are built around them and rolls pick them about 5× as often.{' '}
-        <strong>🚫 Blocked</strong> operators are never recommended, rolled, suggested as a substitute or put in a lineup for
-        you. Click an operator for their profile, stats and intro video.
+        <strong>🚫 Blocked</strong> means “I never want to play this”: you set it yourself, and nobody else's favourites
+        can block it. A blocked operator is left out of recommendations, rolls, substitutes and lineups for any lineup that includes
+        you, and the finder shows who blocked it. Click an operator for their profile, stats and intro video.
       </p>
       {!mine && <Notice kind="info">You're viewing {viewing}'s lists (read only).</Notice>}
 

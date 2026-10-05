@@ -31,12 +31,13 @@ function PreferenceSummary({ pref, side }) {
         )}
       </span>
       <span className="pref-summary__group pref-summary__group--blocked">
-        <span className="pref-summary__label">🚫 Blocked (never recommended)</span>
+        <span className="pref-summary__label">🚫 Blocked by a player in this lineup (left out)</span>
         {blocked.length ? (
           blocked.map((id) => (
             <span key={id} className="pref-summary__op pref-summary__op--blocked" title={prefWho(pref, id)}>
               <OperatorIcon operator={OPERATORS_BY_ID[id]} size="xs" />
               {OPERATORS_BY_ID[id].name}
+              <span className="muted small"> · {prefWho(pref, id).replace(/^Blocked by /, '')}</span>
             </span>
           ))
         ) : (
