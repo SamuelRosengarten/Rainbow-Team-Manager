@@ -34,7 +34,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
         <div className="panel__head">
           <h2 id="setup-title" className="panel__title">Your setup</h2>
           <button type="button" className="btn btn--ghost btn--sm" onClick={onSyncPlan}>
-            <Icon name="refresh" size={16} /> Use Plan lineup
+            <Icon name="refresh" size={16} /> Use shared lineup
           </button>
         </div>
         <div className="setup-grid">
@@ -97,7 +97,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
             <button type="button" className="btn btn--ghost btn--sm" onClick={onAddReference} disabled={!strategyData.canSave}>
               <Icon name="external" size={16} /> Add reference
             </button>
-            <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate('tactics/new')} disabled={!strategyData.canSave}>
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate('build')} disabled={!strategyData.canSave}>
               <Icon name="plus" size={16} /> New strategy
             </button>
           </div>
@@ -160,7 +160,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
           {ranked.length ? (
             <ul className="strat-list">
               {ranked.map(({ strategy, match }) => (
-                <StrategyCard key={strategy.id} strategy={strategy} match={match} onOpen={() => navigate(`tactics/s/${strategy.id}`)} />
+                <StrategyCard key={strategy.id} strategy={strategy} match={match} onOpen={() => navigate(`strategies/s/${strategy.id}`)} />
               ))}
             </ul>
           ) : (
@@ -168,7 +168,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
               icon="book"
               title={`No strategies${mapName ? ` for ${mapName}` : ''} yet`}
               action={
-                <button type="button" className="btn btn--primary" onClick={() => navigate('tactics/new')} disabled={!strategyData.canSave}>
+                <button type="button" className="btn btn--primary" onClick={() => navigate('build')} disabled={!strategyData.canSave}>
                   <Icon name="plus" size={18} /> New strategy
                 </button>
               }

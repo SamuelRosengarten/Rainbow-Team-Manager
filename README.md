@@ -1,24 +1,20 @@
-# R6 Team Planner
+# R6 Tactical Command
 
-A Rainbow Six Siege team manager and planner. It starts with a five-player squad (Samuel, Anthony, Xavier, Mathis, William), and you can add players from the app.
+A Rainbow Six Siege tactical planner for one team: a coach's digital whiteboard backed by a strategy library and adapted to the team's own operators and players. It answers one question first: **what are we playing, where are we playing it, and what is everyone supposed to do?**
 
-Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.g. `#/matches`):
+Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.g. `#/strategies`):
 
-- **Home**: the team dashboard. Next match with a countdown and one-tap RSVP, matches waiting for a result, win/loss record and recent form, the current plan and lineup, roster availability, recent activity and quick actions.
-- **Matches**: schedule scrims and league games (opponent, date and time, competition, map, notes). Upcoming, live, "needs result", completed and cancelled matches look different. Each match has RSVPs (In / Maybe / Out), a prep checklist and a quick score form. **Plan it** jumps to the Plan screen with the match's map.
-- **Plan**: the lineup roller, map and site, tactic and bans (below).
-- **Tactics**: the **strategy library**. Pick map, site, side and your five players' operators, get strategies ranked by how well they fit, adapt them to your operators, see the tactical board step by step with each operator's instructions, and save your team's version. The original role-based **Quick tactics** are in the second tab.
-- **Team**: the roster (Ubisoft username, main role incl. IGL, starter / substitute / former, availability, notes, favourite operators, R6 Tracker link) and everyone's operator lists. The lineup roller uses the **starters** (up to five).
+- **Command** (home): create a strategy, jump to attack or defense plans, maps, the operator library and the team's saved strategies, with the featured plan on the board.
+- **Strategy builder** (`#/build`, the **New strategy** button): map → site → attack/defense → five operators (with synergy suggestions, or roll them) → players and tactical roles → start from a library strategy adapted to your operators, or a blank board → customize → draw the tactics → steps and timing → save.
+- **Strategies**: the team library, organised **Attack / Defense → map → strategy**, with favourites, versions (v1, v2, v3…), duplication and side-by-side comparison. Also **Find by composition** (strategies ranked by how well they fit your five operators) and the older role-based **Quick tactics**.
+- **Strategy view**: the tactical board step by step, the round clock timeline, each operator's role, player and instructions, synergy, plus:
+  - **Coach mode**: full-screen presentation. *STEP 4 / 7 · 0:31 · Thermite: "Move to breach position."* → **Next step**.
+  - **Player view**: one player sees only their operator, positions, routes, utility, crossfires and timing.
+- **Maps**: every map and bomb site with its schematic, the plans for each site and side, and the team's map notes.
+- **Operators**: every operator with their portrait, roles and gadget, and the well-known pairs (Thermite + Thatcher, Smoke + Mute…).
+- **Team**: the roster and everyone's operator pools. The old lineup roller is still there (**Lineup roller**).
 
-The Plan screen:
-
-- **Roll** a distinct random operator for each player. A roll respects the selected side, bans, owned operators, favourites and "avoid" lists.
-- **Re-roll** a single player without touching the rest of the lineup.
-- **Pick a map and bomb site** from the current ranked pool, with editable team notes and per-player notes.
-- **Roll a tactic** for the map, side and site. The app checks whether the lineup covers the tactic's required roles, and **Re-roll to fit** swaps only as many players as needed.
-- **Copy lineup** produces Discord-ready text:
-  `Map: Bank | Site: B Lockers / CCTV Room | Attackers: Samuel - Ash | Anthony - Thermite | ...`
-- **Live sync**: when anyone rolls or changes the map, site, side or bans, everyone's screen updates (Supabase Realtime).
+The **tactical map** supports players (with operator portraits), enemies, spawns, waypoints, drones and drone routes, cameras, operator-specific utility and general gadgets, traps, hard/soft/vertical breaches, reinforcements, rotation holes, plant spots, objectives, movement / entry / clearing / rotation routes, hold, contest, danger, no-entry, watch and enemy-likely areas (draw, move, resize, label), crossfires (player A + player B → an engagement area), and notes attached to a player, marker, location or step. Every object can carry a purpose, timing and instructions. Undo/redo, keyboard shortcuts and a grouped toolbar included.
 
 Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It deploys to Vercel as a static site.
 
@@ -32,7 +28,7 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 4. [Setup: local development](#4-run-locally)
 5. [Setup: Vercel](#5-deploy-on-vercel)
 6. [Running tests](#running-tests)
-7. [Adding operators, images and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
+7. [Adding operators, portraits and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
 8. [Strategy library](#strategy-library) and [quick tactics](#tactics-quick-tactics)
 9. [How rolling works](#how-rolling-works)
 10. [Troubleshooting](#troubleshooting)
@@ -41,18 +37,24 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 ## Upgrading an existing setup
 
-If your Supabase project was set up before the Matches and Roster features, do these **in this order**:
+**From the match-planner version.** Match scheduling, match history, RSVPs and win/loss records were removed: the app is now a tactical planner. Nothing else used the `matches`, `match_availability` and `match_checklist` tables, so:
 
-1. **Deploy the new app first** (merge to `main`; Vercel redeploys). It works with the old database: Matches and roster details show "Database update needed" until step 2.
-2. **Re-run `supabase/schema.sql`** in Supabase → SQL Editor. It only adds things; no table or column is renamed or removed, and your data stays. It:
-   - adds the tables `player_details`, `matches`, `match_availability` and `match_checklist`, with checks on lengths and allowed values and an index on match time;
-   - lets the website add players (new rows in `profiles`, names 1–24 characters). Renaming or deleting players from the website isn't allowed;
-   - **hides the passcode hash** from the website and adds `check_team_passcode()` / `team_passcode_is_set()`, so the passcode is checked on the server;
-   - turns on Realtime for the new tables.
+- the app no longer reads or writes them, and `supabase/schema.sql` no longer creates them for new setups;
+- your existing tables and their data are **left untouched**. Re-running the schema doesn't change them;
+- to delete them for good, run this by hand in the Supabase SQL editor (it can't be undone):
 
-The strategy library adds two more tables the same way (`strategies`, `strategy_assignments`). Until you re-run the schema, the built-in strategies still work; saving team strategies, references and player assignments is switched off.
+  ```sql
+  drop table if exists public.match_checklist, public.match_availability, public.matches;
+  ```
 
-Don't do step 2 before step 1: the old app reads the passcode hash directly, so it would show an error at the passcode screen until the new version is live. Your passcode doesn't change.
+The new tactical features (zones, crossfires, round clocks, per-operator step actions, tactical roles, versions, favourites) live inside each strategy's document, so **no database change is needed** for them. Strategies saved by the previous version open as they are and are upgraded when they're next saved. Old `#/tactics/…` links redirect to `#/strategies/…`.
+
+**From a setup older than the roster and strategy library**, do these **in this order**:
+
+1. **Deploy the new app first** (merge to `main`; Vercel redeploys). It works with the old database: saving team strategies and roster details shows "Database update needed" until step 2.
+2. **Re-run `supabase/schema.sql`** in Supabase → SQL Editor. It only adds things; your data stays. It adds `player_details`, `strategies` and `strategy_assignments`, lets the website add players, hides the passcode hash behind `check_team_passcode()` / `team_passcode_is_set()`, and turns on Realtime for the new tables.
+
+Don't do step 2 before step 1: very old versions read the passcode hash directly and would show an error at the passcode screen until the new version is live. Your passcode doesn't change.
 
 ## Security model (read first)
 
@@ -78,7 +80,7 @@ Fine for a friends' planning board. **Do not store anything private in it.** Nev
 1. In the Supabase dashboard, open **SQL Editor → New query**.
 2. Paste the whole contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
 
-This creates the tables (`profiles`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `team_settings`, `player_details`, `matches`, `match_availability`, `match_checklist`), seeds the five profiles, enables RLS with the permissive team policies, adds the server-side passcode check, and turns on Realtime. The script is safe to run again.
+This creates the tables (`profiles`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `team_settings`, `player_details`, `strategies`, `strategy_assignments`), seeds the five profiles, enables RLS with the permissive team policies, adds the server-side passcode check, and turns on Realtime. The script is safe to run again.
 
 ## 3. Set the team passcode
 
@@ -162,7 +164,7 @@ About `VITE_REQUIRE_PASSCODE`: `true` shows the passcode screen and `false` hide
 npm test
 ```
 
-The pure logic lives in `src/lib/roll.js`, `src/lib/fit.js` and `src/lib/tactics.js`. It has no React and no Supabase, and takes an injectable RNG. The tests cover:
+The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, synergy, board geometry, rolling, fit). It has no React and no Supabase. The tests cover:
 
 - no duplicate operators within the team, and bans always respected
 - re-rolling one player keeps the others unchanged
@@ -173,6 +175,8 @@ The pure logic lives in `src/lib/roll.js`, `src/lib/fit.js` and `src/lib/tactics
 - the fit check (one player per required role) and the minimal fit-aware re-roll
 - data integrity for `operators.json`, `maps.json` and `tactics.json`
 - passcode hashing, which matches the SQL formula
+- the strategy document (v2 normalisation, legacy types, versions), round clocks and the execute timeline, coach briefings and player views, comparison stats, board geometry, fitting a strategy to five operators, and synergies
+- every operator has a portrait file, and synergy pairs use real same-side operators
 
 ---
 
@@ -192,16 +196,14 @@ Then run `npm test`. A data test checks ids and roles. The test that expects exa
 
 Role assignments are a judgement call. See [`docs/DATA_REVIEW.md`](docs/DATA_REVIEW.md) for the ones flagged for review.
 
-## Adding images
+## Operator portraits
 
-Put a PNG in `public/operators/` named after the operator id:
+Every operator has a portrait in `public/operators/<id>.svg`: the operator's in-game badge icon. They're used on the board (player and utility markers), in operator selection, strategy steps, coach and player views, and the squad lists.
 
-```
-public/operators/thermite.png
-public/operators/solid-snake.png
-```
-
-A square image of about 128×128 or larger works best (it's shown in a circle). Any operator without an image gets a styled circle with its initials, so you can add images gradually. Use images you have the rights to. The repo doesn't include or hotlink Ubisoft assets.
+- 76 of the 78 badges come from [r6operators](https://github.com/marcopixel/r6operators) (MIT-licensed code; the icons are Ubisoft's artwork, used here for a private, non-commercial team tool). *Tom Clancy's Rainbow Six Siege and its operator icons are trademarks of Ubisoft Entertainment. This project isn't affiliated with Ubisoft.*
+- **Solid Snake** and **Noor** aren't in that set yet, so they have simple stand-in badges drawn for this app. Replace `public/operators/solid-snake.svg` and `noor.svg` when you have better ones.
+- To swap any portrait, replace its file (keep the name). A square image works best. A data test fails if an operator has no portrait file.
+- If an image fails to load, the app falls back to an initials badge.
 
 ## Operator profiles and intro videos
 
@@ -253,18 +255,49 @@ Several maps currently have **empty site lists on purpose**. See [`docs/DATA_REV
 
 ## Strategy library
 
-The **Tactics → Strategies** tab is built around your composition:
+### Building a strategy
 
-1. **Map → floor / site → attack or defense.**
-2. **Players and operators:** five rows, each a player and the operator they'll play (**Use Plan lineup** copies the Plan screen).
-3. **Results** are ranked by fit: ★★★★★ *Perfect operator match*, or e.g. ★★★☆☆ *3/5 operators match · 1 substitute*. Green pills are exact matches, yellow ones substitutes ("Ace ↔ Thermite"), red ones operators you're missing. Filters: search, type, difficulty, source, required role.
-4. **Open a strategy** for:
-   - its source and fit;
-   - **Adapt to your operators**: "Thermite is in the original strategy. You picked Ace…" → **Use Ace**. The strategy updates: the slot, instructions, steps and board labels now say Ace and Ace's gadget, with a reminder to check the gadget differences;
-   - the **tactical board**: positions, utility, breach points, drones and paths, coloured per operator. Step chips show one step at a time;
-   - **Players and operators**: who plays which slot. These are stored separately from the strategy, so it survives roster changes. Tap an operator for their step-by-step instructions;
-   - the strategy **steps** with timing, utility and notes.
-5. **Duplicate & customize** (or **Save adapted copy**) creates a team-owned copy and opens the editor: details, operators (alternatives, spawn, instructions), steps, and the board (tap to place markers, drag to move, draw paths per step and operator). The original is never changed. **Load into Plan** sets the Plan screen's map, site, side and lineup.
+**New strategy** opens the builder: map → site → side → five operators → players and tactical roles → a starting point → customize → tactics → steps → save.
+
+- **Operators**: tap portraits to pick five, filter by role, or **Roll for the starters** (uses each starter's owned / favourite / avoid lists). *Pairs well with your picks* suggests partners (e.g. Thatcher for Thermite).
+- **Players**: who plays each operator, and their **tactical role**: Entry, Support, Hard Breach, Flex, Flank Watch, Drone, IGL, Anchor, Roamer, Utility Denial, Plant, Post-Plant. The role shows next to the operator everywhere.
+- **Start from**: a library strategy, ranked by fit and **adapted to your operators** (names and gadgets in the text are rewritten), or a blank board. The original is never changed.
+- **Tactics**: the map editor (below). **Steps**: title, round clock (`0:45`), what happens, who acts, and one line per operator ("Thermite: Move to breach position."). One click adds a *Drone → Clear → Breach → Execute → Plant* template.
+
+### The tactical map
+
+The board is a **schematic** of the bomb site: the two objective rooms (named after the site), reinforceable walls, doors with swings, windows, stairs, hatches, the bomb spots, the surrounding rooms, hallways and the outside approach. It's drawn by the app, not Ubisoft's floor plan, so rooms other than the two objective rooms have generic names. For the exact layout, set a **floor plan image link** in the strategy's details.
+
+Toolbar groups (left rail; a row on phones):
+
+| Group | Tools |
+| --- | --- |
+| Select | click to edit; drag to move; drag corner handles to resize areas, crossfire handles to move A / B / target / size |
+| Units | Player, Enemy, Spawn, Waypoint |
+| Routes | Movement, Entry route, Clearing route, Rotation |
+| Intel | Drone, Drone route, Camera |
+| Utility | Utility (the operator's own gadget, or smoke, stun, frag, claymore, EMP, wire, shield, bulletproof camera, C4, impact, alarm, observation blocker), Trap, Utility throw |
+| Breach | Breach (hard / soft / vertical / hatch), Reinforce, Rotation hole |
+| Areas | Hold, Contest, Danger, No entry, Watch this angle, Enemy likely here |
+| Crossfire | click player A, player B, then the engagement area (clicks snap to players) |
+| Objective | Plant spot, Objective |
+| Note | click the map, or click an object to attach the note to it |
+
+**Who** and **When** above the board decide which operator and step new objects belong to (*Setup* objects show in every step). The inspector edits the selected object: label, operator, step, purpose, timing and instructions. Viewers tap any object to see the same details.
+
+Keys: `Ctrl+Z` / `Ctrl+Shift+Z` (or `Ctrl+Y`) undo / redo, `Delete` removes, `Esc` cancels, `Enter` finishes a route, arrows nudge (`Shift` for bigger steps).
+
+### Library, versions, favourites, comparing
+
+- The **Team library** groups the team's strategies by side and map and shows the latest version of each. **Include starting points** adds the built-in strategies.
+- **New version** copies a team strategy into the same family as v2, v3… with a "what changed" note ("v2 Changed Buck route"). Every version stays; the version pills switch between them.
+- **Duplicate** starts a separate strategy. **Save to team library** does the same for built-ins and references.
+- **★** marks a favourite; favourites sort first and can be filtered.
+- **Compare** puts two strategies side by side: operators, board, pace (from the step clocks), utility, steps, breaches, areas and crossfires.
+
+**Strategy types.** Attack: Execute, Default, Rush, Slow take, Vertical, Clear, Plant, Post-plant, Conditioning, Fake, Split. Defense: Standard setup, Aggressive, Passive, Roam, Turtle, Retake, Utility-heavy, Vertical, Extended hold, Site denial.
+
+**Synergy** pairs live in `src/data/synergies.json` (`ops`, `label`, `text`). They show in the builder, on strategies and in operator profiles.
 
 ### Where strategies come from
 
@@ -278,17 +311,18 @@ Every strategy shows one of three labels, and they're never mixed up:
 
 **About importing online strategies:** I couldn't find any R6 strategy source with a public API, feed or licence that allows copying its content. Liquipedia's text is CC BY-SA, but it covers maps and competitive history rather than step-by-step strats. So the app doesn't scrape or copy anything: references are links plus metadata, and your team writes its own adapted version. If a source gives you permission or publishes structured data under an open licence, it can be imported into `strategies.json` with its source and licence fields filled in.
 
-The board uses a schematic of the site's two rooms because the real floor plans are Ubisoft's artwork. In the editor you can set **Board image link** to your own floor-plan screenshot.
 
 ### Data model
 
-A strategy is one document (see `src/lib/strategies.js`):
+A strategy is one document (see `src/lib/strategies.js`; the vocabulary is in `src/lib/tactical.js`), `schemaVersion: 2`:
 
-- `slots`: operator, role, alternatives, spawn, instructions;
-- `steps`: title, timing, description, operators involved, utility, notes;
-- `markers` and `paths`: board coordinates (0–100 × 0–64), each tied to a slot and a step.
+- `slots`: operator, operator category, **tactical role**, defuser carrier, alternatives, spawn, instructions;
+- `steps`: title, **round clock**, description, operators involved, **one action per operator**, utility, notes;
+- `markers`: point objects (player, enemy, utility with its gadget, breach with its type, note attached to a marker…), each with label, purpose, timing and instructions;
+- `paths`, `zones` and `crossfires`;
+- `family` + `version` + `versionNote` for versions, and `favorite`.
 
-The database stores that document in `strategies.doc` and copies the filter fields (map, site, floor, side, type, difficulty, operators, tags, source) into indexed columns. `strategy_assignments` maps (strategy, slot) → player. Saving one document at a time means a save can never half-apply. The document has a `schemaVersion`, so moving steps, markers and paths into their own tables later is a straightforward migration.
+Every board item has coordinates on a 100 × 64 board and can belong to a slot and a step. The database stores the document in `strategies.doc` and copies the filter fields (map, site, floor, side, type, difficulty, operators, tags, source) into indexed columns. `strategy_assignments` maps (strategy, slot) → player. Saving one document at a time means a save can never half-apply. Two whole strategies are enough to compare them, which is why comparison needs no extra storage.
 
 ## Tactics (quick tactics)
 
@@ -303,7 +337,7 @@ How they combine:
 - Deleting a built-in hides it for everyone.
 - Each tactic has an owner (a player, or *team*) and a **Shared with team** flag.
 
-Tabs on the Tactics screen:
+Tabs on the Quick tactics screen (Strategies → Quick tactics):
 
 | Tab | Shows |
 | --- | --- |
@@ -339,7 +373,7 @@ Tactic format:
 
 **Tactic diagrams.** Every tactic gets a picture, drawn automatically:
 
-- On the **Plan** screen, the diagram uses the rolled lineup. Each teammate's operator is placed where their role sets up around the two rooms of the chosen bomb site (hard breacher on the breach wall, soft breacher above the hatch, intel droning, anchors in site, roamers outside…). Required roles nobody covers show as red **?** spots. A numbered legend says who does what.
+- On the **Lineup roller** (Team → Lineup roller), the diagram uses the rolled lineup. Each teammate's operator is placed where their role sets up around the two rooms of the chosen bomb site (hard breacher on the breach wall, soft breacher above the hatch, intel droning, anchors in site, roamers outside…). Required roles nobody covers show as red **?** spots. A numbered legend says who does what.
 - On the **Tactics** screen, click **Diagram** on any card to see the roles' spots before rolling.
 - It's a schematic (two rooms, not the real floor plan), so it works on every map. For the exact layout, add a **Map image link** in the tactic editor: any `https://` image, such as a screenshot of the site with your setup drawn on it. It shows above the diagram.
 
@@ -357,23 +391,25 @@ The image link is stored in the `image_url` column. **If your database was set u
 
 ## Project layout
 
-Strategy library: `src/lib/strategies.js` (model, validation, adaptation), `src/lib/strategyMatch.js` (matching and ranking), `src/state/useStrategyData.js`, and `src/components/Strategy*.jsx`, `TacticsView.jsx`, `ReferenceForm.jsx`.
-
-
 ```
 src/
-  data/          operators.json, operatorProfiles.json, maps.json, tactics.json (+ data tests)
-  lib/           roll.js, fit.js, tactics.js, diagram.js, matches.js, roster.js, activity.js
-                 (pure + tests), api.js (all Supabase calls), passcode.js, config.js,
-                 constants.js, maps.js, operators.js
-  state/         useTeamData.js (roster, plan, tactics, notes, prefs: loading, realtime,
-                 optimistic writes, offline mode), useMatchData.js (matches, RSVPs, checklist),
-                 useHashRoute.js, roster-context.js, useNow.js
-  components/    UI. Screens: DashboardView, MatchesView, PlanView, TacticsView, TeamView.
-                 Shared pieces in ui.jsx (Card, Sheet, EmptyState, DataState, Badge…) and Icon.jsx
+  data/          operators.json, operatorProfiles.json, maps.json, strategies.json,
+                 synergies.json, tactics.json (+ data tests)
+  lib/           tactical.js (objects, zones, routes, roles, types, gadgets, clock,
+                 briefings, stats), strategies.js (model, versions, adaptation),
+                 strategyMatch.js, synergy.js, board.js (board geometry),
+                 roll.js, fit.js, tactics.js, diagram.js, roster.js (pure + tests),
+                 api.js (all Supabase calls), passcode.js, config.js, maps.js, operators.js
+  state/         useTeamData.js, useStrategyData.js, useHistory.js (undo/redo),
+                 useHashRoute.js, useSessionState.js, roster-context.js
+  components/    Screens: CommandView, StrategyBuilder, StrategiesView (library, detail,
+                 editor, CoachMode, PlayerMode, StrategyCompare), MapsView,
+                 OperatorLibraryView, TeamView, PlanView (lineup roller).
+                 Board: TacticalBoard, SiteBlueprint, BoardEditor, ObjectInspector.
+  styles.css, tactical.css
 supabase/schema.sql
 docs/DATA_REVIEW.md   data to verify by hand
-public/operators/     your operator images
+public/operators/     operator portraits (<id>.svg)
 ```
 
 ## Troubleshooting
@@ -384,7 +420,7 @@ public/operators/     your operator images
 | "Can't reach the database… project may be paused" | Check your connection. Free Supabase projects pause after inactivity; open the dashboard and click **Restore project**. |
 | "The database tables are missing" | Run `supabase/schema.sql`. |
 | "No team passcode has been set yet" | Run the passcode statement from step 3. |
-| "Database update needed" on Matches or the dashboard | Re-run `supabase/schema.sql` (see [Upgrading](#upgrading-an-existing-setup)). |
+| "Database update needed" when saving strategies or roster details | Re-run `supabase/schema.sql` (see [Upgrading](#upgrading-an-existing-setup)). |
 | "Adding players needs the latest database setup" | Same: re-run `supabase/schema.sql`. |
 | "Wrong passcode" | Re-run the statement from step 3 to reset it. |
 | Live dot says "Reconnecting…" | Realtime dropped. It reconnects automatically and catches up on missed changes. |

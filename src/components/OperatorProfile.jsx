@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
 import { useRoster } from '../state/roster-context.js';
-import { operatorProfile, operatorVideoUrl } from '../lib/operators.js';
+import { OPERATORS_BY_ID, operatorProfile, operatorVideoUrl } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
+import { synergiesFor } from '../lib/synergy.js';
 
 function Rating({ label, value }) {
   return (
@@ -99,6 +100,28 @@ export default function OperatorProfile({ operator, prefs = {}, onClose }) {
             </p>
           )}
         </section>
+
+        {synergiesFor(operator.id).length > 0 && (
+          <section className="profile__synergy">
+            <h3 className="profile__h">Works well with</h3>
+            <ul className="synergy-list">
+              {synergiesFor(operator.id).map((s) => (
+                <li key={s.partner} className="synergy">
+                  <span className="synergy__ops" aria-hidden="true">
+                    <OperatorIcon operator={OPERATORS_BY_ID[s.partner]} size="sm" />
+                  </span>
+                  <span className="synergy__body">
+                    <span className="synergy__names">
+                      {operator.name} + {OPERATORS_BY_ID[s.partner].name}
+                    </span>
+                    <span className="synergy__label">{s.label}</span>
+                    <span className="synergy__text">{s.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div className="profile__grid">
           <List title="Primary" items={p.primary} />

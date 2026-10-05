@@ -195,3 +195,22 @@ export const substitutionsFor = (match) => Object.fromEntries(match.substitutes.
 export const starsText = (n) => '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n);
 
 export { strategyOperators };
+
+/**
+ * How to turn a strategy into one for exactly our operators: substitutions
+ * for its slots (matches, then substitutes, then any operator left over for
+ * slots nobody fits) and new slots for operators it has no room for.
+ * @returns {{ subs: Record<string, string>, extras: string[] }}
+ */
+export function fitToComposition(strategy, ops) {
+  const ours = [...new Set(ops.filter((id) => OPERATORS_BY_ID[id]))];
+  const match = matchStrategy(strategy, ours);
+  const subs = substitutionsFor(match);
+  const used = new Set([...match.exact.map((e) => e.operatorId), ...Object.values(subs)]);
+  const left = ours.filter((id) => !used.has(id));
+  for (const m of match.missing) {
+    const id = left.shift();
+    if (id) subs[m.slotKey] = id;
+  }
+  return { subs, extras: left };
+}

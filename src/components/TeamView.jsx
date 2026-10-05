@@ -102,7 +102,7 @@ function Roster({ profile, prefs, addPlayer, updatePlayer }) {
             </button>
           }
         >
-          Add your team so you can roll lineups and track availability.
+          Add your players so you can assign them to strategies and give them roles.
         </EmptyState>
       )}
       {former.length > 0 && (
@@ -132,16 +132,20 @@ function Roster({ profile, prefs, addPlayer, updatePlayer }) {
   );
 }
 
-/** Team screen: roster management plus everyone's operator lists. */
+/** Players: the roster (roles, notes) plus everyone's operator pools. */
 export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, setOwned, setPreference }) {
   const tab = sub === 'operators' ? 'operators' : 'roster';
   return (
     <section className="page" aria-labelledby="team-title">
       <header className="page__head">
         <div>
+          <p className="page__kicker">Players</p>
           <h1 id="team-title" className="page__title">Team</h1>
-          <p className="page__sub">Who's on the team, their roles and the operators they play.</p>
+          <p className="page__sub">Who plays, their main roles and the operators they own, favour or avoid. Strategies assign players to operators.</p>
         </div>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('plan')}>
+          <Icon name="dice" size={16} /> Lineup roller
+        </button>
       </header>
       <div className="segmented segmented--full" role="group" aria-label="Team sections">
         <button type="button" className="segmented__btn" aria-pressed={tab === 'roster'} onClick={() => navigate('team')}>
@@ -153,7 +157,7 @@ export default function TeamView({ sub, navigate, profile, prefs, addPlayer, upd
           aria-pressed={tab === 'operators'}
           onClick={() => navigate('team/operators')}
         >
-          <Icon name="shield" size={16} /> Operators
+          <Icon name="shield" size={16} /> Operator pools
         </button>
       </div>
       {tab === 'roster' ? (

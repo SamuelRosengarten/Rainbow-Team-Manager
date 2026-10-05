@@ -12,13 +12,32 @@
 //            roster changes.
 //   steps    the execute in order (drone, clear, breach, plant, post-plant…).
 //   markers  points on the board (x 0-100, y 0-64), optionally tied to a slot
-//            and a step: positions, utility, breach points, drones, cameras.
-//   paths    movement/drone/rotation lines, tied to a slot and a step.
+//            and a step: players, enemies, utility, breaches, drones, notes…
+//   paths    movement/entry/clearing/drone/rotation lines, per slot and step.
+//   zones    translucent areas: hold, contest, danger, no entry, watch…
+//   crossfires  two players (A, B) covering one engagement area.
+//
+// Version 2 added zones, crossfires, step clocks and per-slot step actions,
+// tactical roles, and versions (`family` + `version`). Version 1 documents
+// are upgraded on read; nothing is lost.
 import { OPERATORS_BY_ID, operatorProfile } from './operators.js';
 import { ROLES } from './fit.js';
 import { parseSite } from './diagram.js';
+import {
+  BREACH_TYPES,
+  GADGETS,
+  OBJECTS,
+  PATHS,
+  STRATEGY_TYPES,
+  TACTICAL_ROLES,
+  ZONES,
+  defaultTacticalRole,
+  normalizeClock,
+  normalizeType,
+} from './tactical.js';
 
-export const SCHEMA_VERSION = 1;
+export { STRATEGY_TYPES };
+export const SCHEMA_VERSION = 2;
 export const BOARD_W = 100;
 export const BOARD_H = 64;
 
@@ -37,32 +56,10 @@ export const ORIGINS = {
   },
 };
 
-export const STRATEGY_TYPES = {
-  execute: 'Execute',
-  split: 'Split push',
-  vertical: 'Vertical play',
-  rush: 'Rush',
-  default: 'Default / slow',
-  hold: 'Site hold',
-  denial: 'Breach denial',
-  roam: 'Roam / delay',
-  retake: 'Retake',
-};
-
 export const DIFFICULTY = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
 
-export const MARKER_KINDS = {
-  position: 'Position',
-  utility: 'Utility',
-  breach: 'Breach',
-  drone: 'Drone / camera',
-  plant: 'Plant spot',
-  note: 'Note',
-};
-
-export const PATH_KINDS = { move: 'Movement', drone: 'Drone route', rotate: 'Rotation', utility: 'Utility throw' };
-
-export const SLOT_COLORS = ['#3d9bff', '#3ccf8e', '#f5c518', '#ff5a5f', '#b07cff', '#9fb4ff'];
+export const SLOT_COLORS = ['#3d9bff', '#3ccf8e', '#f5c518', '#ff6b9a', '#b07cff', '#5ee0e6'];
+export const LIMITS = { markers: 120, paths: 60, zones: 40, crossfires: 20, steps: 15 };
 
 /** Colour of a slot on the board and in lists (by slot order). */
 export function slotColor(strategy, slotKey) {
@@ -94,6 +91,8 @@ function normalizeSlot(raw, i) {
     operatorId,
     role,
     alternatives: list(raw.alternatives).filter((id) => OPERATORS_BY_ID[id] && id !== operatorId).slice(0, 6),
+    tacticalRole: TACTICAL_ROLES[raw.tacticalRole] ? raw.tacticalRole : defaultTacticalRole(role, OPERATORS_BY_ID[operatorId]?.side),
+    defuser: Boolean(raw.defuser),
     spawn: str(raw.spawn, 60),
     instructions: list(raw.instructions).map((t) => str(t, 300)).filter(Boolean).slice(0, 12),
     ...(raw.originalOperatorId && OPERATORS_BY_ID[raw.originalOperatorId] ? { originalOperatorId: raw.originalOperatorId } : {}),
@@ -101,11 +100,20 @@ function normalizeSlot(raw, i) {
 }
 
 function normalizeStep(raw, i, slotKeys) {
+  const actions = {};
+  if (raw.actions && typeof raw.actions === 'object') {
+    for (const [k, v] of Object.entries(raw.actions)) {
+      const t = str(v, 300);
+      if (slotKeys.has(k) && t) actions[k] = t;
+    }
+  }
   return {
     id: str(raw.id, 30) || `st${i + 1}`,
     title: str(raw.title, 80) || `Step ${i + 1}`,
     description: str(raw.description, 600),
     slots: list(raw.slots).filter((k) => slotKeys.has(k)),
+    actions,
+    clock: normalizeClock(raw.clock),
     timing: str(raw.timing, 40),
     utility: str(raw.utility, 200),
     notes: str(raw.notes, 400),
@@ -116,27 +124,76 @@ function normalizeMarker(raw, stepIds, slotKeys) {
   const x = num(raw.x, 0, BOARD_W);
   const y = num(raw.y, 0, BOARD_H);
   if (x === null || y === null) return null;
+  const kind = OBJECTS[raw.kind] ? raw.kind : 'position';
   return {
     id: str(raw.id, 30) || newId('m'),
-    kind: MARKER_KINDS[raw.kind] ? raw.kind : 'position',
+    kind,
     x,
     y,
     label: str(raw.label, 60),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
     slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
+    purpose: str(raw.purpose, 120),
+    timing: str(raw.timing, 30),
+    note: str(raw.note, 300),
+    ...(kind === 'utility' ? { gadget: GADGETS[raw.gadget] ? raw.gadget : 'ability' } : {}),
+    ...(kind === 'breach' ? { breachType: BREACH_TYPES[raw.breachType] ? raw.breachType : 'hard' } : {}),
+    ...(kind === 'note' && raw.anchorId ? { anchorId: str(raw.anchorId, 30) } : {}),
+  };
+}
+
+const point = (p) => {
+  const x = num(p?.[0], 0, BOARD_W);
+  const y = num(p?.[1], 0, BOARD_H);
+  return x === null || y === null ? null : [x, y];
+};
+
+function normalizeZone(raw, stepIds, slotKeys) {
+  const x = num(raw.x, 0, BOARD_W - 1);
+  const y = num(raw.y, 0, BOARD_H - 1);
+  if (x === null || y === null) return null;
+  return {
+    id: str(raw.id, 30) || newId('z'),
+    kind: ZONES[raw.kind] ? raw.kind : 'hold',
+    x,
+    y,
+    w: num(raw.w, 1, BOARD_W - x) ?? 10,
+    h: num(raw.h, 1, BOARD_H - y) ?? 8,
+    label: str(raw.label, 60),
+    stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
+    slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
+    note: str(raw.note, 300),
+  };
+}
+
+function normalizeCrossfire(raw, stepIds, slotKeys) {
+  const a = point(raw.a);
+  const b = point(raw.b);
+  const target = point(raw.target);
+  if (!a || !b || !target) return null;
+  return {
+    id: str(raw.id, 30) || newId('x'),
+    a,
+    b,
+    target,
+    radius: num(raw.radius, 1.5, 15) ?? 4,
+    slotA: slotKeys.has(raw.slotA) ? raw.slotA : null,
+    slotB: slotKeys.has(raw.slotB) ? raw.slotB : null,
+    label: str(raw.label, 60),
+    timing: str(raw.timing, 30),
+    note: str(raw.note, 300),
+    stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
   };
 }
 
 function normalizePath(raw, stepIds, slotKeys) {
-  const points = list(raw.points)
-    .map((p) => [num(p?.[0], 0, BOARD_W), num(p?.[1], 0, BOARD_H)])
-    .filter(([x, y]) => x !== null && y !== null)
-    .slice(0, 20);
+  const points = list(raw.points).map(point).filter(Boolean).slice(0, 30);
   if (points.length < 2) return null;
   return {
     id: str(raw.id, 30) || newId('p'),
-    kind: PATH_KINDS[raw.kind] ? raw.kind : 'move',
+    kind: PATHS[raw.kind] ? raw.kind : 'move',
     points,
+    label: str(raw.label, 60),
     stepId: stepIds.has(raw.stepId) ? raw.stepId : null,
     slotKey: slotKeys.has(raw.slotKey) ? raw.slotKey : null,
   };
@@ -158,15 +215,17 @@ export function normalizeStrategy(raw) {
     if (keys.has(s.key)) s.key = `s${i + 1}-${i}`;
     keys.add(s.key);
   });
-  const steps = list(raw.steps).slice(0, 15).map((s, i) => normalizeStep(s, i, keys));
+  const steps = list(raw.steps).slice(0, LIMITS.steps).map((s, i) => normalizeStep(s, i, keys));
   const stepIds = new Set(steps.map((s) => s.id));
   const url = str(raw.sourceUrl, 500);
   if (url && !/^https:\/\/\S+$/i.test(url)) throw new Error(`"${title}": source link must start with https://.`);
   const boardImageUrl = str(raw.boardImageUrl, 1000);
   if (boardImageUrl && !/^https:\/\/\S+$/i.test(boardImageUrl)) throw new Error(`"${title}": board image link must start with https://.`);
   const site = str(raw.site, 80);
+  const id = str(raw.id, 80) || newId('strat');
+  const version = Number.isInteger(raw.version) && raw.version > 0 ? Math.min(raw.version, 999) : 1;
   return {
-    id: str(raw.id, 80) || newId('strat'),
+    id,
     schemaVersion: SCHEMA_VERSION,
     origin,
     title,
@@ -174,7 +233,7 @@ export function normalizeStrategy(raw) {
     site,
     floor: str(raw.floor, 20) || parseSite(site).floor,
     side: raw.side,
-    type: STRATEGY_TYPES[raw.type] ? raw.type : raw.side === 'attack' ? 'execute' : 'hold',
+    type: normalizeType(raw.type, raw.side),
     difficulty: DIFFICULTY[raw.difficulty] ? Number(raw.difficulty) : 2,
     summary: str(raw.summary, 1000),
     timing: str(raw.timing, 200),
@@ -190,10 +249,16 @@ export function normalizeStrategy(raw) {
     boardImageUrl,
     owner: raw.owner || null,
     shared: raw.shared === undefined ? true : Boolean(raw.shared),
+    family: str(raw.family, 80) || id,
+    version,
+    versionNote: str(raw.versionNote, 120),
+    favorite: Boolean(raw.favorite),
     slots,
     steps,
-    markers: list(raw.markers).map((m) => normalizeMarker(m, stepIds, keys)).filter(Boolean).slice(0, 80),
-    paths: list(raw.paths).map((p) => normalizePath(p, stepIds, keys)).filter(Boolean).slice(0, 40),
+    markers: list(raw.markers).map((m) => normalizeMarker(m, stepIds, keys)).filter(Boolean).slice(0, LIMITS.markers),
+    paths: list(raw.paths).map((p) => normalizePath(p, stepIds, keys)).filter(Boolean).slice(0, LIMITS.paths),
+    zones: list(raw.zones).map((z) => normalizeZone(z, stepIds, keys)).filter(Boolean).slice(0, LIMITS.zones),
+    crossfires: list(raw.crossfires).map((c) => normalizeCrossfire(c, stepIds, keys)).filter(Boolean).slice(0, LIMITS.crossfires),
     updatedAt: raw.updatedAt ?? null,
     updatedBy: raw.updatedBy ?? null,
   };
@@ -284,8 +349,16 @@ export function adaptStrategy(strategy, subs) {
     slot.operatorId = toId;
     slot.alternatives = slot.alternatives.filter((id) => id !== toId);
     slot.instructions = slot.instructions.map(rename);
-    s.steps = s.steps.map((st) => ({ ...st, title: rename(st.title), description: rename(st.description), utility: rename(st.utility), notes: rename(st.notes) }));
-    s.markers = s.markers.map((m) => ({ ...m, label: rename(m.label) }));
+    s.steps = s.steps.map((st) => ({
+      ...st,
+      title: rename(st.title),
+      description: rename(st.description),
+      utility: rename(st.utility),
+      notes: rename(st.notes),
+      actions: Object.fromEntries(Object.entries(st.actions ?? {}).map(([k, v]) => [k, rename(v)])),
+    }));
+    s.markers = s.markers.map((m) => ({ ...m, label: rename(m.label), note: rename(m.note ?? ''), purpose: rename(m.purpose ?? '') }));
+    s.crossfires = (s.crossfires ?? []).map((c) => ({ ...c, label: rename(c.label) }));
     s.summary = rename(s.summary);
     if (fromId) {
       warnings.push(
@@ -312,9 +385,46 @@ export function duplicateStrategy(strategy, { owner = null, subs = {} } = {}) {
     adaptedFrom: root,
     owner,
     shared: true,
+    family: null,
+    version: 1,
+    versionNote: '',
+    favorite: false,
     updatedAt: null,
     updatedBy: null,
   });
+}
+
+/** All versions of a strategy's family, oldest first. */
+export const familyOf = (list, s) => list.filter((x) => x.family === s.family).sort((a, b) => a.version - b.version);
+
+/**
+ * Next version of a team strategy: same family and title, version number one
+ * above the highest in the family. The earlier version stays as it is.
+ */
+export function newVersion(strategy, all, { owner = null, note = '' } = {}) {
+  const top = Math.max(strategy.version, ...familyOf(all, strategy).map((x) => x.version));
+  return normalizeStrategy({
+    ...structuredClone(strategy),
+    id: newId('strat'),
+    origin: 'team',
+    family: strategy.family,
+    version: top + 1,
+    versionNote: note,
+    owner,
+    favorite: false,
+    updatedAt: null,
+    updatedBy: null,
+  });
+}
+
+/** Latest version of every family: what the library lists. */
+export function latestVersions(list) {
+  const best = new Map();
+  for (const s of list) {
+    const cur = best.get(s.family);
+    if (!cur || s.version > cur.version) best.set(s.family, s);
+  }
+  return [...best.values()];
 }
 
 /** One-line attribution for cards and the board header. */
@@ -332,4 +442,12 @@ export function attribution(s) {
 export function strategyDoc(s) {
   const { builtin: _builtin, updatedAt: _u, updatedBy: _b, ...rest } = s;
   return rest;
+}
+
+/** Clean an editor draft for saving: trim instruction lines, validate everything. */
+export function cleanDraft(draft) {
+  return normalizeStrategy({
+    ...draft,
+    slots: draft.slots.map((s) => ({ ...s, instructions: s.instructions.map((t) => t.trim()).filter(Boolean) })),
+  });
 }

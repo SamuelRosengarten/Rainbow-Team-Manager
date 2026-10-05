@@ -12,3 +12,8 @@ export function sitesFor(mapId, side) {
 export function defaultNotes(mapId) {
   return MAPS_BY_ID[mapId]?.notes ?? '';
 }
+
+/** Every bomb site of a map (attack and defense lists combined, in order). */
+export function allSites(mapId) {
+  return [...new Set([...sitesFor(mapId, 'attack'), ...sitesFor(mapId, 'defend')])];
+}

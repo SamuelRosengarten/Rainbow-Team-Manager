@@ -88,3 +88,28 @@ describe('strategies.json', async () => {
     expect(strategies.every((s) => ['reference', 'suggested'].includes(s.origin))).toBe(true);
   });
 });
+
+describe('synergies.json', async () => {
+  const { default: pairs } = await import('./synergies.json');
+  const { default: ops } = await import('./operators.json');
+  const byId = Object.fromEntries(ops.map((o) => [o.id, o]));
+
+  it('pairs two real operators from the same side, each with a label and text', () => {
+    pairs.forEach((p) => {
+      expect(p.ops).toHaveLength(2);
+      p.ops.forEach((id) => expect(byId[id], id).toBeTruthy());
+      expect(byId[p.ops[0]].side).toBe(byId[p.ops[1]].side);
+      expect(p.label && p.text).toBeTruthy();
+    });
+  });
+});
+
+describe('operator portraits', async () => {
+  const { existsSync } = await import('node:fs');
+  const { default: ops } = await import('./operators.json');
+
+  it('has a badge image in public/operators for every operator', () => {
+    const missing = ops.filter((o) => !existsSync(new URL(`../../public/operators/${o.id}.svg`, import.meta.url)));
+    expect(missing.map((o) => o.id)).toEqual([]);
+  });
+});
