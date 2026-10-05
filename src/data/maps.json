@@ -1,0 +1,215 @@
+[
+  {
+    "id": "bank",
+    "name": "Bank",
+    "sites": {
+      "attack": [
+        "2F Executive Lounge / CEO Office",
+        "1F Staff Room / Open Area",
+        "1F Tellers' Office / Archives",
+        "B Lockers / CCTV Room"
+      ],
+      "defend": [
+        "2F Executive Lounge / CEO Office",
+        "1F Staff Room / Open Area",
+        "1F Tellers' Office / Archives",
+        "B Lockers / CCTV Room"
+      ]
+    },
+    "notes": "Basement is the classic default; Lockers and CCTV hatches are key breach points. Roamers like the garage and square stairs. Watch the vault-side window peeks."
+  },
+  {
+    "id": "border",
+    "name": "Border",
+    "sites": {
+      "attack": [
+        "2F Armory Lockers / Archives",
+        "1F Ventilation Room / Workshop",
+        "1F Customs Inspection / Supply Room",
+        "1F Bathroom / Tellers"
+      ],
+      "defend": [
+        "2F Armory Lockers / Archives",
+        "1F Ventilation Room / Workshop",
+        "1F Customs Inspection / Supply Room",
+        "1F Bathroom / Tellers"
+      ]
+    },
+    "notes": "Main hallway connects most sites, so control it early. East and West balcony peeks are strong for attack. Workshop wall is a common hard-breach target."
+  },
+  {
+    "id": "calypso-casino",
+    "name": "Calypso Casino",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "chalet",
+    "name": "Chalet",
+    "sites": {
+      "attack": [
+        "2F Master Bedroom / Office",
+        "1F Bar / Gaming Room",
+        "1F Kitchen / Dining Room",
+        "B Wine Cellar / Snowmobile Garage"
+      ],
+      "defend": [
+        "2F Master Bedroom / Office",
+        "1F Bar / Gaming Room",
+        "1F Kitchen / Dining Room",
+        "B Wine Cellar / Snowmobile Garage"
+      ]
+    },
+    "notes": "Snowmobile Garage gives attackers easy vertical play onto Basement. Roamers often hold library stairs and the trophy hallway. Mainstairs is a busy rotate."
+  },
+  {
+    "id": "clubhouse",
+    "name": "Clubhouse",
+    "sites": {
+      "attack": [
+        "2F Gym / Bedroom",
+        "2F CCTV Room / Cash Room",
+        "1F Bar / Stage",
+        "B Church / Arsenal Room"
+      ],
+      "defend": [
+        "2F Gym / Bedroom",
+        "2F CCTV Room / Cash Room",
+        "1F Bar / Stage",
+        "B Church / Arsenal Room"
+      ]
+    },
+    "notes": "Basement and CCTV/Cash are most common. Garage wall into Church and the Cash wall are key hard breaches. Roamers favour the construction side and Bedroom."
+  },
+  {
+    "id": "coastline",
+    "name": "Coastline",
+    "sites": {
+      "attack": [
+        "2F Hookah Lounge / Billiards Room",
+        "2F Penthouse / Theater",
+        "1F Kitchen / Service Entrance",
+        "1F Blue Bar / Sunrise Bar"
+      ],
+      "defend": [
+        "2F Hookah Lounge / Billiards Room",
+        "2F Penthouse / Theater",
+        "1F Kitchen / Service Entrance",
+        "1F Blue Bar / Sunrise Bar"
+      ]
+    },
+    "notes": "Hookah / Billiards is the most played site; Billiards and Hookah walls are breach targets. Roamers sit around Aquarium and VIP. Rooftop gives vertical pressure."
+  },
+  {
+    "id": "consulate",
+    "name": "Consulate",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "fortress",
+    "name": "Fortress",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "kafe-dostoyevsky",
+    "name": "Kafe Dostoyevsky",
+    "sites": {
+      "attack": [
+        "3F Cocktail Lounge / Bar",
+        "2F Mining Room / Train Museum",
+        "2F Reading Room / Fireplace Hall",
+        "1F Kitchen Service / Kitchen Cooking"
+      ],
+      "defend": [
+        "3F Cocktail Lounge / Bar",
+        "2F Mining Room / Train Museum",
+        "2F Reading Room / Fireplace Hall",
+        "1F Kitchen Service / Kitchen Cooking"
+      ]
+    },
+    "notes": "3F Bar is a strong default with vertical denial from roof. Fireplace hall and Train Museum rotate fast through the middle. White stairs and red stairs are key roam spots."
+  },
+  {
+    "id": "kanal",
+    "name": "Kanal",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "lair",
+    "name": "Lair",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "nighthaven-labs",
+    "name": "Nighthaven Labs",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "oregon",
+    "name": "Oregon",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "outback",
+    "name": "Outback",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "skyscraper",
+    "name": "Skyscraper",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "theme-park",
+    "name": "Theme Park",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  },
+  {
+    "id": "villa",
+    "name": "Villa",
+    "sites": {
+      "attack": [],
+      "defend": []
+    },
+    "notes": ""
+  }
+]
