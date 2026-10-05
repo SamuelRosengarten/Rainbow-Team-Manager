@@ -1,0 +1,156 @@
+[
+  {
+    "id": "example-bank-atk-basement",
+    "name": "[Example] Basement split push",
+    "side": "attack",
+    "mapId": "bank",
+    "site": "B Lockers / CCTV Room",
+    "description": "Drone Lockers and CCTV from garage and the square. Support clears anti-breach utility on the Lockers wall, then the hard breacher opens it. Intel player watches the vault rotate and calls the plant once the wall is down.",
+    "requiredRoles": ["hard-breacher", "support", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-bank-atk-ceo",
+    "name": "[Example] CEO vertical squeeze",
+    "side": "attack",
+    "mapId": "bank",
+    "site": "2F Executive Lounge / CEO Office",
+    "description": "Two players take roof and open the CEO ceiling for vertical pressure while a hard breacher works the Executive Lounge wall from the balcony. Fifth player cuts off rotations from main stairs.",
+    "requiredRoles": ["soft-breacher", "hard-breacher", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-bank-def-basement",
+    "name": "[Example] Basement double anchor",
+    "side": "defend",
+    "mapId": "bank",
+    "site": "B Lockers / CCTV Room",
+    "description": "Two anchors reinforce and deny the Lockers wall and CCTV hatches. One roamer delays in garage and the square, falling back through the vault once the attack commits.",
+    "requiredRoles": ["anchor", "anchor", "roamer"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-bank-def-tellers",
+    "name": "[Example] Tellers with garage roam",
+    "side": "defend",
+    "mapId": "bank",
+    "site": "1F Tellers' Office / Archives",
+    "description": "Anchor holds Archives with an intel player tracking drones and cameras. Roamer contests the garage and lobby early, then collapses to Tellers for the last 60 seconds.",
+    "requiredRoles": ["anchor", "intel", "roamer"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-clubhouse-atk-church",
+    "name": "[Example] Church wall breach",
+    "side": "attack",
+    "mapId": "clubhouse",
+    "site": "B Church / Arsenal Room",
+    "description": "Clear the garage and drone the Church wall. Support removes anti-breach utility, hard breacher opens the wall. Intel player holds the basement stairs and watches for flanks from the sewer.",
+    "requiredRoles": ["hard-breacher", "support", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-clubhouse-atk-cash",
+    "name": "[Example] Cash wall take",
+    "side": "attack",
+    "mapId": "clubhouse",
+    "site": "2F CCTV Room / Cash Room",
+    "description": "Hard breacher opens the Cash wall from the outside while a soft breacher makes extra lines into CCTV from Gym. The rest trade into site together once both are open.",
+    "requiredRoles": ["hard-breacher", "soft-breacher"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-clubhouse-def-basement",
+    "name": "[Example] Basement anchor stack",
+    "side": "defend",
+    "mapId": "clubhouse",
+    "site": "B Church / Arsenal Room",
+    "description": "Two anchors deny the Church and garage walls with a support player covering the stairs with utility. Remaining players slow-roam upstairs and rotate down late.",
+    "requiredRoles": ["anchor", "anchor", "support"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-clubhouse-def-cctv",
+    "name": "[Example] CCTV/Cash with construction roam",
+    "side": "defend",
+    "mapId": "clubhouse",
+    "site": "2F CCTV Room / Cash Room",
+    "description": "Anchor holds Cash and denies the wall. Roamer works the construction side and Bedroom. Intel player keeps cameras alive and calls the push direction for rotations.",
+    "requiredRoles": ["anchor", "roamer", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-chalet-atk-garage",
+    "name": "[Example] Garage vertical on basement",
+    "side": "attack",
+    "mapId": "chalet",
+    "site": "B Wine Cellar / Snowmobile Garage",
+    "description": "Take the garage early and use a soft breacher to open floors above the wine cellar. Support player clears trap utility while intel watches the stairs from the main hallway.",
+    "requiredRoles": ["soft-breacher", "support", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-chalet-atk-bar",
+    "name": "[Example] Library pinch on Bar",
+    "side": "attack",
+    "mapId": "chalet",
+    "site": "1F Bar / Gaming Room",
+    "description": "Hard breacher opens the Bar wall while a soft breacher makes lines from the library side. Intel player tracks roamers on the trophy stairs before the team commits.",
+    "requiredRoles": ["hard-breacher", "soft-breacher", "intel"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-chalet-def-cellar",
+    "name": "[Example] Wine cellar deep hold",
+    "side": "defend",
+    "mapId": "chalet",
+    "site": "B Wine Cellar / Snowmobile Garage",
+    "description": "Two anchors hold deep cellar angles and deny vertical. A roamer delays in the garage and on the stairs, then falls back into site as the attack commits.",
+    "requiredRoles": ["anchor", "anchor", "roamer"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-chalet-def-bar",
+    "name": "[Example] Bar with library roam",
+    "side": "defend",
+    "mapId": "chalet",
+    "site": "1F Bar / Gaming Room",
+    "description": "Anchor holds Bar and denies the wall; support player sets utility on the Gaming Room doors. Roamer plays library and the main stairs to cut off the pinch.",
+    "requiredRoles": ["anchor", "support", "roamer"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-any-atk-default",
+    "name": "[Example] Slow default",
+    "side": "attack",
+    "mapId": "any",
+    "site": "",
+    "description": "Drone out site and the roamers, take map control from two directions, and keep the hard breacher alive until support clears their wall. Push together in the last minute.",
+    "requiredRoles": ["intel", "hard-breacher", "support"],
+    "shared": true,
+    "example": true
+  },
+  {
+    "id": "example-any-def-default",
+    "name": "[Example] Two anchors, two roamers",
+    "side": "defend",
+    "mapId": "any",
+    "site": "",
+    "description": "Two anchors deny breaches on site, two roamers delay on opposite sides of the map, and the fifth player flexes between them with cameras.",
+    "requiredRoles": ["anchor", "anchor", "roamer", "roamer"],
+    "shared": true,
+    "example": true
+  }
+]

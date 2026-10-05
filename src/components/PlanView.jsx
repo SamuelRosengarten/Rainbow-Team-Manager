@@ -6,12 +6,13 @@ import CopyButton from './CopyButton.jsx';
 import Notice from './Notice.jsx';
 import MapPicker from './MapPicker.jsx';
 import MapNotes from './MapNotes.jsx';
+import TacticPanel from './TacticPanel.jsx';
 import { PLAYERS } from '../lib/constants.js';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { formatLineupText, rerollPlayer, rollLineup } from '../lib/roll.js';
 
-export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes }) {
+export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics }) {
   const [error, setError] = useState('');
   const [changed, setChanged] = useState([]);
   const { side, bans, mapId, site } = team;
@@ -55,6 +56,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
       side,
       mapName: MAPS_BY_ID[mapId]?.name,
       site,
+      tacticName: tactics.find((t) => t.id === team.tacticId)?.name,
     });
 
   return (
@@ -82,6 +84,21 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
             <CopyButton getText={shareText} disabled={!lineup} />
           </div>
         </section>
+
+        <TacticPanel
+          team={team}
+          updateTeam={updateTeam}
+          tactics={tactics}
+          lineup={lineup}
+          players={PLAYERS}
+          operators={OPERATORS}
+          operatorsById={OPERATORS_BY_ID}
+          rollOptions={rollOptions}
+          onRerolled={(next, rerolled) => {
+            setChanged(rerolled);
+            updateTeam({ lineup: { side, players: next } });
+          }}
+        />
       </div>
 
       <div className="plan__col">

@@ -1,10 +1,23 @@
+import { useState } from 'react';
 import PlanView from './components/PlanView.jsx';
+import TacticsView from './components/TacticsView.jsx';
 import { useTeamState } from './state/useTeamState.js';
 import { useMapNotes } from './state/useMapNotes.js';
+import { useTactics } from './state/useTactics.js';
+import { rollableTactics } from './lib/tactics.js';
+
+const VIEWS = [
+  { id: 'plan', label: 'Plan' },
+  { id: 'tactics', label: 'Tactics' },
+];
 
 export default function App() {
+  const [view, setView] = useState('plan');
   const { state: team, update } = useTeamState();
   const notes = useMapNotes();
+  const tacticsStore = useTactics();
+  const profile = null;
+
   return (
     <div className="app">
       <a className="skip-link" href="#main">Skip to content</a>
@@ -16,9 +29,32 @@ export default function App() {
           </svg>
           <span className="brand__name">R6 Team Planner</span>
         </div>
+        <nav className="nav" aria-label="Main">
+          {VIEWS.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              className="nav__link"
+              aria-current={view === v.id ? 'page' : undefined}
+              onClick={() => setView(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </nav>
       </header>
       <main id="main" className="main">
-        <PlanView team={team} updateTeam={update} notes={notes} />
+        {view === 'plan' ? (
+          <PlanView
+            team={team}
+            updateTeam={update}
+            notes={notes}
+            currentProfile={profile}
+            tactics={rollableTactics(tacticsStore.tactics, profile)}
+          />
+        ) : (
+          <TacticsView profile={profile} tacticsStore={tacticsStore} />
+        )}
       </main>
     </div>
   );
