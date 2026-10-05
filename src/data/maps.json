@@ -171,10 +171,20 @@
     "id": "oregon",
     "name": "Oregon",
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Kids' Dorms / Dorms Main Hall",
+        "1F Kitchen / Dining Hall",
+        "1F Meeting Hall / Kitchen",
+        "B Laundry Room / Supply Room"
+      ],
+      "defend": [
+        "2F Kids' Dorms / Dorms Main Hall",
+        "1F Kitchen / Dining Hall",
+        "1F Meeting Hall / Kitchen",
+        "B Laundry Room / Supply Room"
+      ]
     },
-    "notes": ""
+    "notes": "Basement (Laundry / Supply) is the most common site. Big Tower and the blue stairs are key areas. Expect vertical play from Kitchen and Meeting Hall."
   },
   {
     "id": "outback",

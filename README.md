@@ -7,7 +7,7 @@ Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.
 - **Home**: the team dashboard. Next match with a countdown and one-tap RSVP, matches waiting for a result, win/loss record and recent form, the current plan and lineup, roster availability, recent activity and quick actions.
 - **Matches**: schedule scrims and league games (opponent, date and time, competition, map, notes). Upcoming, live, "needs result", completed and cancelled matches look different. Each match has RSVPs (In / Maybe / Out), a prep checklist and a quick score form. **Plan it** jumps to the Plan screen with the match's map.
 - **Plan**: the lineup roller, map and site, tactic and bans (below).
-- **Tactics**: the team's strats with diagrams.
+- **Tactics**: the **strategy library**. Pick map, site, side and your five players' operators, get strategies ranked by how well they fit, adapt them to your operators, see the tactical board step by step with each operator's instructions, and save your team's version. The original role-based **Quick tactics** are in the second tab.
 - **Team**: the roster (Ubisoft username, main role incl. IGL, starter / substitute / former, availability, notes, favourite operators, R6 Tracker link) and everyone's operator lists. The lineup roller uses the **starters** (up to five).
 
 The Plan screen:
@@ -33,7 +33,7 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 5. [Setup: Vercel](#5-deploy-on-vercel)
 6. [Running tests](#running-tests)
 7. [Adding operators, images and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
-8. [Tactics: editing and committing to the repo](#tactics)
+8. [Strategy library](#strategy-library) and [quick tactics](#tactics-quick-tactics)
 9. [How rolling works](#how-rolling-works)
 10. [Troubleshooting](#troubleshooting)
 
@@ -49,6 +49,8 @@ If your Supabase project was set up before the Matches and Roster features, do t
    - lets the website add players (new rows in `profiles`, names 1–24 characters). Renaming or deleting players from the website isn't allowed;
    - **hides the passcode hash** from the website and adds `check_team_passcode()` / `team_passcode_is_set()`, so the passcode is checked on the server;
    - turns on Realtime for the new tables.
+
+The strategy library adds two more tables the same way (`strategies`, `strategy_assignments`). Until you re-run the schema, the built-in strategies still work; saving team strategies, references and player assignments is switched off.
 
 Don't do step 2 before step 1: the old app reads the passcode hash directly, so it would show an error at the passcode screen until the new version is live. Your passcode doesn't change.
 
@@ -249,9 +251,48 @@ Several maps currently have **empty site lists on purpose**. See [`docs/DATA_REV
 
 ---
 
-## Tactics
+## Strategy library
 
-Tactics come from two places:
+The **Tactics → Strategies** tab is built around your composition:
+
+1. **Map → floor / site → attack or defense.**
+2. **Players and operators:** five rows, each a player and the operator they'll play (**Use Plan lineup** copies the Plan screen).
+3. **Results** are ranked by fit: ★★★★★ *Perfect operator match*, or e.g. ★★★☆☆ *3/5 operators match · 1 substitute*. Green pills are exact matches, yellow ones substitutes ("Ace ↔ Thermite"), red ones operators you're missing. Filters: search, type, difficulty, source, required role.
+4. **Open a strategy** for:
+   - its source and fit;
+   - **Adapt to your operators**: "Thermite is in the original strategy. You picked Ace…" → **Use Ace**. The strategy updates: the slot, instructions, steps and board labels now say Ace and Ace's gadget, with a reminder to check the gadget differences;
+   - the **tactical board**: positions, utility, breach points, drones and paths, coloured per operator. Step chips show one step at a time;
+   - **Players and operators**: who plays which slot. These are stored separately from the strategy, so it survives roster changes. Tap an operator for their step-by-step instructions;
+   - the strategy **steps** with timing, utility and notes.
+5. **Duplicate & customize** (or **Save adapted copy**) creates a team-owned copy and opens the editor: details, operators (alternatives, spawn, instructions), steps, and the board (tap to place markers, drag to move, draw paths per step and operator). The original is never changed. **Load into Plan** sets the Plan screen's map, site, side and lineup.
+
+### Where strategies come from
+
+Every strategy shows one of three labels, and they're never mixed up:
+
+| Label | What it is |
+| --- | --- |
+| **AI suggestion** | Starting points shipped in `src/data/strategies.json` (21 across Bank, Border, Chalet, Clubhouse, Coastline, Kafe, Oregon and two generic). Written by an AI from general Siege knowledge, **not verified or pro strategies**. Positions are schematic, not exact map spots. |
+| **Online reference** | A link to a strategy someone published (website, coach, video), with a summary in your own words and, optionally, the operators it uses so it can be matched. Only metadata is stored; the text and images stay on the original page, which the strategy links to (*Source: … / Original strategy: …*). |
+| **Team** / **Adapted by team** | Your own strategies, or copies of the above. A copy keeps a link to what it was adapted from. |
+
+**About importing online strategies:** I couldn't find any R6 strategy source with a public API, feed or licence that allows copying its content. Liquipedia's text is CC BY-SA, but it covers maps and competitive history rather than step-by-step strats. So the app doesn't scrape or copy anything: references are links plus metadata, and your team writes its own adapted version. If a source gives you permission or publishes structured data under an open licence, it can be imported into `strategies.json` with its source and licence fields filled in.
+
+The board uses a schematic of the site's two rooms because the real floor plans are Ubisoft's artwork. In the editor you can set **Board image link** to your own floor-plan screenshot.
+
+### Data model
+
+A strategy is one document (see `src/lib/strategies.js`):
+
+- `slots`: operator, role, alternatives, spawn, instructions;
+- `steps`: title, timing, description, operators involved, utility, notes;
+- `markers` and `paths`: board coordinates (0–100 × 0–64), each tied to a slot and a step.
+
+The database stores that document in `strategies.doc` and copies the filter fields (map, site, floor, side, type, difficulty, operators, tags, source) into indexed columns. `strategy_assignments` maps (strategy, slot) → player. Saving one document at a time means a save can never half-apply. The document has a `schemaVersion`, so moving steps, markers and paths into their own tables later is a straightforward migration.
+
+## Tactics (quick tactics)
+
+Quick tactics come from two places:
 
 - `src/data/tactics.json`: built-in tactics committed to the repo. It ships with clearly marked **[Example]** tactics (2 per side for Bank, Clubhouse and Chalet, plus one generic per side) for you to edit or replace.
 - The Supabase `tactics` table: everything created or edited in the app.
@@ -315,6 +356,9 @@ The image link is stored in the `image_url` column. **If your database was set u
 - **Re-roll to fit** keeps the players who already cover required roles, and re-rolls the fewest remaining players into the missing roles. It only widens to more players when that's the only way.
 
 ## Project layout
+
+Strategy library: `src/lib/strategies.js` (model, validation, adaptation), `src/lib/strategyMatch.js` (matching and ranking), `src/state/useStrategyData.js`, and `src/components/Strategy*.jsx`, `TacticsView.jsx`, `ReferenceForm.jsx`.
+
 
 ```
 src/

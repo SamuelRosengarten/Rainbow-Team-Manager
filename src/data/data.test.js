@@ -47,3 +47,44 @@ describe('operatorProfiles.json', () => {
     });
   });
 });
+
+describe('strategies.json', async () => {
+  const { default: strategies } = await import('./strategies.json');
+  const { normalizeStrategy } = await import('../lib/strategies.js');
+  const byId = Object.fromEntries(operators.map((o) => [o.id, o]));
+
+  it('has unique ids and only valid, complete entries', () => {
+    expect(new Set(strategies.map((s) => s.id)).size).toBe(strategies.length);
+    strategies.forEach((raw) => {
+      const s = normalizeStrategy(raw);
+      expect(s.markers).toHaveLength(raw.markers.length);
+      expect(s.paths).toHaveLength(raw.paths.length);
+      expect(s.slots.map((x) => x.operatorId)).toEqual(raw.slots.map((x) => x.operatorId));
+    });
+  });
+
+  it('uses real sites and operators from the right side', () => {
+    strategies.forEach((s) => {
+      if (s.mapId !== 'any') {
+        const map = maps.find((m) => m.id === s.mapId);
+        expect(map, s.id).toBeTruthy();
+        if (s.site) expect(map.sites[s.side], s.id).toContain(s.site);
+      }
+      s.slots.forEach((x) => expect(byId[x.operatorId]?.side, `${s.id} ${x.operatorId}`).toBe(s.side));
+    });
+  });
+
+  it('keeps references link-only and labels AI suggestions', () => {
+    strategies.filter((s) => s.origin === 'reference').forEach((s) => {
+      expect(s.sourceUrl).toMatch(/^https:\/\//);
+      expect(s.sourceName).toBeTruthy();
+      expect(s.slots).toHaveLength(0);
+      expect(s.steps).toHaveLength(0);
+    });
+    strategies.filter((s) => s.origin === 'suggested').forEach((s) => {
+      expect(s.notes).toMatch(/AI-generated/);
+      expect(s.sourceUrl ?? '').toBe('');
+    });
+    expect(strategies.every((s) => ['reference', 'suggested'].includes(s.origin))).toBe(true);
+  });
+});
