@@ -4,6 +4,7 @@ import * as api from '../lib/api.js';
 import { EMPTY_TEAM_STATE, PLAYERS } from '../lib/constants.js';
 import { defaultNotes } from '../lib/maps.js';
 import { buildRoster } from '../lib/roster.js';
+import { REALTIME_TABLES, liveFromChannels } from '../lib/live.js';
 import { lookupPlayer } from '../lib/statsProvider.js';
 import { mergeTactics, normalizeTactic } from '../lib/tactics.js';
 
@@ -52,6 +53,13 @@ export function useTeamData({ online, profile }) {
     const unsubs = [];
     let prefsTimer = null;
     let wasDisconnected = false;
+    // Realtime status per table: 'Live' only while every channel is subscribed.
+    const channels = {};
+    const track = (table) => (st) => {
+      if (cancelled) return;
+      channels[table] = st;
+      setLive(liveFromChannels(Object.values(channels), REALTIME_TABLES));
+    };
 
     const fail = (e) => {
       if (cancelled) return;
@@ -96,7 +104,7 @@ export function useTeamData({ online, profile }) {
             },
             (s) => {
               if (cancelled) return;
-              setLive(s);
+              track('team_state')(s);
               if (s === 'reconnecting') wasDisconnected = true;
               if (s === 'live' && wasDisconnected) {
                 // Catch up on anything we missed while the socket was down.
@@ -112,12 +120,12 @@ export function useTeamData({ online, profile }) {
               }
             },
           ),
-          api.subscribe('tactics', () => api.fetchTactics(idsRef.current).then((r) => !cancelled && setSavedTactics(r)).catch(reportWrite)),
-          api.subscribe('map_notes', () => api.fetchMapNotes(idsRef.current).then((r) => !cancelled && setNoteRows(r)).catch(reportWrite)),
-          api.subscribe('owned_operators', () => refreshPrefs()),
-          api.subscribe('preferred_operators', () => refreshPrefs()),
-          api.subscribe('profiles', () => refreshRoster()),
-          api.subscribe('player_details', () => refreshRoster()),
+          api.subscribe('tactics', () => api.fetchTactics(idsRef.current).then((r) => !cancelled && setSavedTactics(r)).catch(reportWrite), track('tactics')),
+          api.subscribe('map_notes', () => api.fetchMapNotes(idsRef.current).then((r) => !cancelled && setNoteRows(r)).catch(reportWrite), track('map_notes')),
+          api.subscribe('owned_operators', () => refreshPrefs(), track('owned_operators')),
+          api.subscribe('preferred_operators', () => refreshPrefs(), track('preferred_operators')),
+          api.subscribe('profiles', () => refreshRoster(), track('profiles')),
+          api.subscribe('player_details', () => refreshRoster(), track('player_details')),
         );
       } catch (e) {
         fail(e);

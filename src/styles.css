@@ -3266,3 +3266,7 @@ button.op-pill {
 .owned-status--on {
   border-color: var(--accent);
 }
+
+.live--disconnected .live__dot {
+  background: var(--danger);
+}

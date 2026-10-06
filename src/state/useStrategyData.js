@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '../lib/api.js';
+import { liveFromChannels } from '../lib/live.js';
 import { mergeStrategies, normalizeStrategy, strategyDoc } from '../lib/strategies.js';
 
 // The built-in library is ~160 kB of JSON, so it's loaded as its own file the
@@ -44,6 +45,8 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
   const [status, setStatus] = useState(online ? 'loading' : 'ready');
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  // Realtime status of the strategy channels: 'idle' until they exist.
+  const [live, setLive] = useState('idle');
   const [saved, setSaved] = useState([]);
   const [assignmentRows, setAssignmentRows] = useState([]);
   const [builtins, setBuiltins] = useState(null);
@@ -74,6 +77,12 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
     let cancelled = false;
     let timer = null;
     const unsubs = [];
+    const channels = {};
+    const track = (table) => (st) => {
+      if (cancelled) return;
+      channels[table] = st;
+      setLive(liveFromChannels(Object.values(channels), 2));
+    };
     const load = () =>
       Promise.all([api.fetchStrategies(idsRef.current), api.fetchStrategyAssignments(idsRef.current)]).then(([rows, assigns]) => {
         if (cancelled) return null;
@@ -94,7 +103,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
     load()
       .then((ok) => {
         if (!ok || cancelled) return;
-        unsubs.push(api.subscribe('strategies', refresh), api.subscribe('strategy_assignments', refresh));
+        unsubs.push(api.subscribe('strategies', refresh, track('strategies')), api.subscribe('strategy_assignments', refresh, track('strategy_assignments')));
       })
       .catch((e) => {
         if (cancelled) return;
@@ -185,6 +194,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
     status: shownStatus,
     error: builtinError || error,
     retry,
+    live,
     canSave,
     strategies,
     assignments,

@@ -20,6 +20,7 @@ import { useStrategyData } from './state/useStrategyData.js';
 import { useOnline } from './state/useOnline.js';
 import { useHashRoute } from './state/useHashRoute.js';
 import { RosterContext } from './state/roster-context.js';
+import { combineLive } from './lib/live.js';
 import { isConfigured } from './lib/api.js';
 import { MAPS_BY_ID, allSites } from './lib/maps.js';
 import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, storeProfile } from './lib/config.js';
@@ -46,6 +47,7 @@ function builderPreset(sub) {
 }
 
 const LIVE_LABEL = {
+  disconnected: 'No connection',
   live: 'Live',
   connecting: 'Connecting…',
   reconnecting: 'Reconnecting…',
@@ -78,6 +80,9 @@ function TeamApp({ online, onOffline }) {
   const ready = data.status === 'ready';
   const strategyData = useStrategyData({ online, idByName: data.idByName, profile: storedProfile, rosterLoaded: ready });
   const browserOnline = useOnline();
+  // One honest indicator: every realtime channel (team data and strategies) must be
+  // subscribed, and the browser must be online.
+  const live = !online ? 'offline' : !browserOnline ? 'disconnected' : combineLive(data.live, strategyData.live);
 
   const rosterValue = useMemo(
     () => ({
@@ -154,9 +159,9 @@ function TeamApp({ online, onOffline }) {
             <button type="button" className="btn btn--primary btn--sm topbar__create" onClick={() => navigate('build')}>
               <Icon name="plus" size={16} /> <span>New strategy</span>
             </button>
-            <span className={`live live--${data.live}`} role="status" title={LIVE_LABEL[data.live]}>
+            <span className={`live live--${live}`} role="status" title={LIVE_LABEL[live]}>
               <span className="live__dot" aria-hidden="true" />
-              <span className="live__label">{LIVE_LABEL[data.live]}</span>
+              <span className="live__label">{LIVE_LABEL[live]}</span>
             </span>
             <button
               type="button"

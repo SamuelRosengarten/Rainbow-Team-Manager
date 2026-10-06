@@ -3,7 +3,7 @@ import PlayerStats from './PlayerStats.jsx';
 import { Sheet } from './ui.jsx';
 import { AVAILABILITY, LINEUP_SIZE, MAIN_ROLES, PLAYER_STATUS, nameError } from '../lib/roster.js';
 import { PLATFORMS } from '../lib/playerStats.js';
-import { STATS_REASON, lookupPlayer } from '../lib/statsProvider.js';
+import { STATS_CONFIGURED, STATS_REASON, lookupPlayer } from '../lib/statsProvider.js';
 
 function Choice({ label, options, value, onChange }) {
   return (
@@ -152,10 +152,13 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
                 ))}
               </select>
             </label>
-            <button type="button" className="btn btn--secondary" onClick={find} disabled={finding || !form.username.trim()}>
-              {finding ? 'Searching…' : 'Find Player'}
-            </button>
+            {STATS_CONFIGURED && (
+              <button type="button" className="btn btn--secondary" onClick={find} disabled={finding || !form.username.trim()}>
+                {finding ? 'Searching…' : 'Find Player'}
+              </button>
+            )}
           </div>
+          {!STATS_CONFIGURED && <p className="muted small">{STATS_REASON['not-configured']} The username is still saved, and stats aren't needed to use the team manager.</p>}
           {lookup && !lookup.ok && (
             <p className="notice notice--warn" role="status">
               Stats unavailable. {STATS_REASON[lookup.reason]} {isNew ? 'You can still add the player without stats.' : 'The player is unaffected.'}

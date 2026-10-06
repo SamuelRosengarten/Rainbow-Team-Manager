@@ -41,7 +41,7 @@ Return `404` for an unknown player and `429` when rate limited. Unknown operator
 - The app only ever sends a public Ubisoft username and a platform. It never asks for, receives or stores Ubisoft credentials.
 - Changing source means changing `statsProvider.js` (or the endpoint). Nothing else in the app depends on it.
 
-Without `VITE_STATS_API_URL`, **Find Player** and **Refresh** report "Stats unavailable" and the app carries on.
+Without `VITE_STATS_API_URL`, Find Player and Refresh are hidden and each player shows "Stats unavailable: no stats source is connected", and the app carries on.
 
 ## Database
 

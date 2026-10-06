@@ -15,11 +15,13 @@
 import { normalizeStats, PLATFORMS } from './playerStats.js';
 
 export const STATS_API_URL = String(import.meta.env?.VITE_STATS_API_URL ?? '').trim();
+/** False when no endpoint is configured: lookups can't work, so the UI says so and hides Refresh. */
+export const STATS_CONFIGURED = Boolean(STATS_API_URL);
 const TIMEOUT_MS = 10000;
 
 /** Why a lookup produced no stats, in words a coach can read. */
 export const STATS_REASON = {
-  'not-configured': 'Stats lookup isn’t set up for this app.',
+  'not-configured': 'No stats source is connected to this app yet.',
   'no-username': 'Add a Ubisoft username first.',
   'not-found': 'Player not found on that platform.',
   empty: 'Player found, but no public stats are available.',

@@ -3,7 +3,7 @@ import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID } from '../lib/maps.js';
-import { STATS_REASON } from '../lib/statsProvider.js';
+import { STATS_CONFIGURED, STATS_REASON } from '../lib/statsProvider.js';
 import {
   PLATFORMS,
   PLAYER_ROLES,
@@ -69,7 +69,7 @@ export default function PlayerStats({ player, onRefresh }) {
     }
   }
 
-  const refreshRow = player.username && onRefresh && (
+  const refreshRow = STATS_CONFIGURED && player.username && onRefresh && (
     <div className="pstats__refresh">
       {stats && player.statsUpdatedAt && (
         <span className="muted small">Stats updated {timeAgo(player.statsUpdatedAt) || 'earlier'}</span>
@@ -85,7 +85,9 @@ export default function PlayerStats({ player, onRefresh }) {
     if (!player.username) return null;
     return (
       <div className="pstats pstats--empty">
-        <span className="muted small">Stats unavailable</span>
+        <span className="muted small">
+          {STATS_CONFIGURED ? 'Stats unavailable' : `Stats unavailable: ${STATS_REASON['not-configured']} Nothing is wrong with this player.`}
+        </span>
         {refreshRow}
         {problem && (
           <p className="muted small" role="status">
