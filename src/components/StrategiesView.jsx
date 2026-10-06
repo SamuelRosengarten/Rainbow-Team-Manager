@@ -53,9 +53,9 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
     </header>
   );
   const tabs = (
-    <div className="segmented segmented--full" role="group" aria-label={t('strategiesView.librarySections')}>
+    <div className="tabs" role="group" aria-label={t('strategiesView.librarySections')}>
       {TABS.map(([to, label, icon]) => (
-        <button key={to || 'lib'} type="button" className="segmented__btn" aria-pressed={(mode === 'library' && !to) || mode === to} onClick={() => navigate(to ? `strategies/${to}` : 'strategies')}>
+        <button key={to || 'lib'} type="button" className="tabs__btn" aria-pressed={(mode === 'library' && !to) || mode === to} onClick={() => navigate(to ? `strategies/${to}` : 'strategies')}>
           <Icon name={icon} size={16} /> {t(`strategiesView.tab.${label}`)}
         </button>
       ))}

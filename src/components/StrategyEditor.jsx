@@ -57,9 +57,9 @@ export default function StrategyEditor({ initial, isNew, strategyData, onSaved, 
           {error}
         </p>
       )}
-      <div className="segmented segmented--full editor-tabs" role="group" aria-label={t('strategyEditor.editorSections')}>
+      <div className="tabs editor-tabs" role="group" aria-label={t('strategyEditor.editorSections')}>
         {TABS.map((tb) => (
-          <button key={tb.id} type="button" className="segmented__btn" aria-pressed={tab === tb.id} onClick={() => setTab(tb.id)}>
+          <button key={tb.id} type="button" className="tabs__btn" aria-pressed={tab === tb.id} onClick={() => setTab(tb.id)}>
             <Icon name={tb.icon} size={16} /> {t(`editor.tab.${tb.id}`)}
           </button>
         ))}

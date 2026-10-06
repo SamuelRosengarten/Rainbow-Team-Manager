@@ -49,6 +49,31 @@ function builderPreset(sub) {
 }
 
 
+function Brand({ onClick, label, sub }) {
+  return (
+    <button type="button" className="brand" onClick={onClick} aria-label={label}>
+      <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 3 27 8.5v8.5c0 6-4.5 9.5-11 12-6.5-2.5-11-6-11-12V8.5z" fill="none" stroke="currentColor" strokeWidth="2.5" />
+        <circle cx="16" cy="16" r="3.5" fill="currentColor" />
+      </svg>
+      <span className="brand__name">
+        <span className="brand__title">R6 Tactical Command</span>
+        <span className="brand__sub">{sub}</span>
+      </span>
+    </button>
+  );
+}
+
+function LiveStatus({ live }) {
+  const { t } = useI18n();
+  return (
+    <span className={`live live--${live}`} role="status" title={t(`live.${live}`)}>
+      <span className="live__dot" aria-hidden="true" />
+      <span className="live__label">{t(`live.${live}`)}</span>
+    </span>
+  );
+}
+
 export default function App() {
   const [mode, setMode] = useState(isConfigured ? 'online' : 'unconfigured');
   const [passed, setPassed] = useState(() => !REQUIRE_PASSCODE || passcodePassed());
@@ -127,22 +152,17 @@ function TeamApp({ online, onOffline }) {
         }}>
           {t('app.skipToContent')}
         </a>
-        <header className="topbar">
-          <button type="button" className="brand" onClick={() => navigate('')} aria-label={t('app.r6TacticalCommandGoHome')}>
-            <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-              <path d="M16 3 27 8.5v8.5c0 6-4.5 9.5-11 12-6.5-2.5-11-6-11-12V8.5z" fill="none" stroke="currentColor" strokeWidth="2.5" />
-              <circle cx="16" cy="16" r="3.5" fill="currentColor" />
-            </svg>
-            <span className="brand__name">
-              R6 <span className="brand__accent">Tactical</span> Command
-            </span>
+        <aside className="sidebar">
+          <Brand onClick={() => navigate('')} label={t('app.r6TacticalCommandGoHome')} sub={t('app.brandSub')} />
+          <button type="button" className="btn btn--primary btn--block" onClick={() => navigate('build')}>
+            <Icon name="plus" size={16} /> {t('app.newStrategy')}
           </button>
-          <nav className="nav nav--top" aria-label={t('app.main')}>
+          <nav className="sidenav" aria-label={t('app.main')}>
             {VIEWS.map((v) => (
               <button
                 key={v.id}
                 type="button"
-                className="nav__link"
+                className="sidenav__link"
                 aria-current={view === v.id || v.also?.includes(view) ? 'page' : undefined}
                 onClick={() => navigate(v.id === 'home' ? '' : v.id)}
               >
@@ -151,23 +171,33 @@ function TeamApp({ online, onOffline }) {
               </button>
             ))}
           </nav>
+          <div className="sidebar__foot">
+            <div className="sidebar__row">
+              <LiveStatus live={live} />
+              <LanguageToggle />
+            </div>
+            <button type="button" className="whoami" onClick={() => setPicking(true)} aria-label={t('app.signedIn', { name: profile })}>
+              <span className="avatar avatar--md avatar--accent" aria-hidden="true">{profile[0]}</span>
+              <span className="whoami__text">
+                <span className="whoami__name">{profile}</span>
+                <span className="whoami__hint">{t('app.switchProfile')}</span>
+              </span>
+              <Icon name="chevron" size={16} />
+            </button>
+          </div>
+        </aside>
+
+        <div className="app__body">
+        <header className="topbar">
+          <Brand onClick={() => navigate('')} label={t('app.r6TacticalCommandGoHome')} sub={t('app.brandSub')} />
           <div className="topbar__right">
-            <button type="button" className="btn btn--primary btn--sm topbar__create" onClick={() => navigate('build')}>
-              <Icon name="plus" size={16} /> <span>{t('app.newStrategy')}</span>
+            <button type="button" className="btn btn--primary btn--sm btn--icon" onClick={() => navigate('build')} aria-label={t('app.newStrategy')} title={t('app.newStrategy')}>
+              <Icon name="plus" size={18} />
             </button>
             <LanguageToggle />
-            <span className={`live live--${live}`} role="status" title={t(`live.${live}`)}>
-              <span className="live__dot" aria-hidden="true" />
-              <span className="live__label">{t(`live.${live}`)}</span>
-            </span>
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm profile-switch"
-              onClick={() => setPicking(true)}
-              aria-label={t('app.signedIn', { name: profile })}
-            >
-              <span className="profile-switch__initial" aria-hidden="true">{profile[0]}</span>
-              <span className="profile-switch__name">{profile}</span>
+            <LiveStatus live={live} />
+            <button type="button" className="profile-switch" onClick={() => setPicking(true)} aria-label={t('app.signedIn', { name: profile })}>
+              <span className="avatar avatar--md avatar--accent" aria-hidden="true">{profile[0]}</span>
             </button>
           </div>
         </header>
@@ -247,6 +277,7 @@ function TeamApp({ online, onOffline }) {
             />
           )}
         </main>
+        </div>
 
         <nav className={`tabbar${fullBleed ? ' tabbar--hidden' : ''}`} aria-label={t('app.main')}>
           {VIEWS.map((v) => (

@@ -19,7 +19,6 @@ export default {
   "commandView.openPlan": "Open plan",
   "commandView.yourPlansShowHereOnce": "Your plans show here once you build one.",
   "commandView.maps": "Maps",
-  "commandView.browseMapsSitesAndTactical": "Browse maps, sites and tactical plans",
   "commandView.operatorLibrary": "Operator library",
   "commandView.operatorsRolesUtilityAndSynergy": "Operators, roles, utility and synergy",
 };
