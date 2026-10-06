@@ -8,34 +8,16 @@
 // size, zoom or orientation.
 import manifest from '../data/floorPlans.json';
 import { MAPS, MAPS_BY_ID, allSites } from './maps.js';
+import { labelTable } from '../i18n/index.js';
 
 export const FLOOR_ORDER = ['b2', 'b', '1f', '2f', '3f', '4f', 'roof'];
-export const FLOOR_LABEL = { b2: 'Basement 2', b: 'Basement', '1f': '1F', '2f': '2F', '3f': '3F', '4f': '4F', roof: 'Roof' };
+export const FLOOR_LABEL = labelTable('floor', ['b2', 'b', '1f', '2f', '3f', '4f', 'roof']);
 
 /** Kinds of structured callout. Rooms are labels; the rest are drawn as symbols. */
-export const CALLOUT_KINDS = {
-  room: 'Room',
-  objective: 'Objective',
-  stairs: 'Stairs',
-  hatch: 'Hatch',
-  elevator: 'Elevator',
-  door: 'Door',
-  window: 'Window',
-  'destructible-floor': 'Destructible floor',
-};
+export const CALLOUT_KINDS = labelTable('callout', ['room', 'objective', 'stairs', 'hatch', 'elevator', 'door', 'window', 'destructible-floor']);
 
-/** What a reviewer checks before marking a plan verified. */
-export const VERIFY_CHECKS = [
-  ['shape', 'Overall building shape'],
-  ['rooms', 'Room positions'],
-  ['halls', 'Hallways'],
-  ['stairs', 'Stairs'],
-  ['doors', 'Doors'],
-  ['windows', 'Windows'],
-  ['hatches', 'Hatches'],
-  ['objectives', 'Objective and site locations'],
-  ['walls', 'Major walls'],
-];
+/** What a reviewer checks before marking a plan verified (names: verify.<id>). */
+export const VERIFY_CHECKS = ['shape', 'rooms', 'halls', 'stairs', 'doors', 'windows', 'hatches', 'objectives', 'walls'];
 
 /** "2F Executive Lounge / CEO Office" -> '2f'; "B Lockers / CCTV" -> 'b'; '' when the site has no floor prefix. */
 export function floorIdFromSite(site = '') {
@@ -100,7 +82,7 @@ export function normalizePlan(raw) {
     verified: raw.verified === true,
     verifiedBy: String(raw.verifiedBy ?? '').slice(0, 60),
     verifiedAt: String(raw.verifiedAt ?? '').slice(0, 20),
-    checks: Array.isArray(raw.checks) ? raw.checks.filter((c) => VERIFY_CHECKS.some(([id]) => id === c)) : [],
+    checks: Array.isArray(raw.checks) ? raw.checks.filter((c) => VERIFY_CHECKS.includes(c)) : [],
     callouts: (Array.isArray(raw.callouts) ? raw.callouts : []).map(normalizeCallout).filter(Boolean),
     local: urlOk,
   };

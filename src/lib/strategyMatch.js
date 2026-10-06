@@ -3,6 +3,7 @@
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
 import { strategyOperators } from './strategies.js';
 import { isUsable } from './recommend.js';
+import { msg } from '../i18n/index.js';
 
 /**
  * Maximum matching that respects preference order: slots are tried in order
@@ -68,7 +69,7 @@ export function matchStrategy(strategy, composition, pref = null) {
   const slots = strategy.slots;
   const result = { scored: false, exact: [], substitutes: [], missing: [], unused: ours, roleCoverage: 0, score: 0, stars: 0, label: '' };
   if (slots.length === 0) {
-    result.label = 'Operators not listed';
+    result.label = msg('match.notListed');
     return result;
   }
   result.scored = true;
@@ -133,8 +134,8 @@ export function matchStrategy(strategy, composition, pref = null) {
   result.stars = result.exact.length === slots.length ? 5 : Math.min(4, Math.round(result.score * 5));
   result.label =
     result.exact.length === slots.length
-      ? 'Perfect operator match'
-      : `${result.exact.length}/${slots.length} operators match${result.substitutes.length ? ` · ${result.substitutes.length} substitute${result.substitutes.length === 1 ? '' : 's'}` : ''}`;
+      ? msg('match.perfect')
+      : msg(result.substitutes.length ? 'match.partial.subs' : 'match.partial', { exact: result.exact.length, total: slots.length, subs: result.substitutes.length });
   return result;
 }
 

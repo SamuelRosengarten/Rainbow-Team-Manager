@@ -1,6 +1,8 @@
 // Reusable building blocks shared by every screen.
 import { useEffect, useRef } from 'react';
 import Icon from './Icon.jsx';
+import { tx, useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
 /** Intentional empty state with an optional call to action. */
 export function EmptyState({ icon = 'list', title, children, action }) {
@@ -32,18 +34,18 @@ export function Skeleton({ lines = 3 }) {
  * Renders children only when status is 'ready'.
  */
 export function DataState({ status, error, onRetry, lines = 3, children }) {
+  const { t } = useI18n();
   if (status === 'loading') {
     return (
-      <div role="status" aria-label="Loading">
+      <div role="status" aria-label={t('ui.loading')}>
         <Skeleton lines={lines} />
       </div>
     );
   }
   if (status === 'missing') {
     return (
-      <EmptyState icon="alert" title="Database update needed">
-        Re-run <code>supabase/schema.sql</code> in the Supabase SQL editor to turn this on. It's safe to run again and
-        keeps all your data.
+      <EmptyState icon="alert" title={t('ui.dbUpdate.title')}>
+        <T id="ui.dbUpdate.body" />
       </EmptyState>
     );
   }
@@ -51,16 +53,16 @@ export function DataState({ status, error, onRetry, lines = 3, children }) {
     return (
       <EmptyState
         icon="alert"
-        title="Couldn't load this"
+        title={t('ui.couldntLoad')}
         action={
           onRetry && (
             <button type="button" className="btn btn--secondary btn--sm" onClick={onRetry}>
-              <Icon name="refresh" size={16} /> Try again
+              <Icon name="refresh" size={16} /> {t('ui.tryAgain')}
             </button>
           )
         }
       >
-        {error}
+        {tx(error)}
       </EmptyState>
     );
   }
@@ -91,6 +93,7 @@ export function Avatar({ name, size = 'md', tone }) {
  * Uses <dialog> for focus trapping and Escape to close.
  */
 export function Sheet({ title, onClose, children, footer, labelId = 'sheet-title' }) {
+  const { t } = useI18n();
   const ref = useRef(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -115,7 +118,7 @@ export function Sheet({ title, onClose, children, footer, labelId = 'sheet-title
       <div className="sheet__inner">
         <header className="sheet__head">
           <h2 id={labelId} className="sheet__title">{title}</h2>
-          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label="Close">
+          <button type="button" className="btn btn--ghost btn--icon" onClick={onClose} aria-label={t('ui.close')}>
             <Icon name="close" />
           </button>
         </header>

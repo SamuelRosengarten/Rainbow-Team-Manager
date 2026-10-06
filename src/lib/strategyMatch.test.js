@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import { normalizeStrategy } from './strategies.js';
 import { autoAssign, matchStrategy, rankStrategies, starsText, substitutionsFor, suggestAlternatives } from './strategyMatch.js';
@@ -17,7 +18,8 @@ const COMP = ['thermite', 'buck', 'twitch', 'zofia', 'dokkaebi'];
 describe('matchStrategy', () => {
   it('gives a perfect match five stars', () => {
     const m = matchStrategy(strat('a', COMP), COMP);
-    expect(m).toMatchObject({ scored: true, stars: 5, label: 'Perfect operator match', score: 1 });
+    expect(m).toMatchObject({ scored: true, stars: 5, score: 1 });
+    expect(en(m.label)).toBe('Perfect operator match');
     expect(m.missing).toEqual([]);
   });
 
@@ -32,7 +34,7 @@ describe('matchStrategy', () => {
     );
     expect(m.missing).toEqual([expect.objectContaining({ required: 'ace', role: 'hard-breacher' })]);
     expect(m.missing[0].suggestions.length).toBeGreaterThan(0);
-    expect(m.label).toBe('2/5 operators match · 2 substitutes');
+    expect(en(m.label)).toBe('2/5 operators match · 2 substitutes');
     expect(m.stars).toBeLessThan(5);
   });
 
@@ -49,7 +51,9 @@ describe('matchStrategy', () => {
   });
 
   it('does not score strategies without operators', () => {
-    expect(matchStrategy(strat('e', []), COMP)).toMatchObject({ scored: false, label: 'Operators not listed' });
+    const none = matchStrategy(strat('e', []), COMP);
+    expect(none.scored).toBe(false);
+    expect(en(none.label)).toBe('Operators not listed');
   });
 });
 

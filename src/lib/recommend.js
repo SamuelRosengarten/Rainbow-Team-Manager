@@ -4,7 +4,7 @@
 //   1. BLOCKED operators (any involved player's blocks, plus team bans) are a
 //      hard exclusion. They are never recommended, assigned or suggested. A
 //      strategy written around a blocked operator is shown only when a
-//      replacement exists, and always says so ("Requires blocked operator").
+//      replacement exists, and always says so (see the rec.* messages).
 //   2. FAVORITE operators are the strongest preference: each slot is filled
 //      with a favorite whenever the favorite can do that slot's job.
 //   3. The team's SELECTED operators (the composition) come next.
@@ -18,7 +18,7 @@
 // Who plays which operator, and why, is lineup.js; it applies the same rules
 // and adds the players (roles, stats) underneath them.
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
-import { ROLE_LABEL } from './fit.js';
+import { msg } from '../i18n/index.js';
 
 // Weights for a candidate operator in a slot. Favorites outweigh everything so
 // a favorite that can do the job always wins the slot.
@@ -152,7 +152,7 @@ function bestAssignment(slots, candidates) {
   return best.pick;
 }
 
-const starsFrom = (ratio) => Math.max(0, Math.min(5, Math.round(ratio * 5)));
+export const starsFrom = (ratio) => Math.max(0, Math.min(5, Math.round(ratio * 5)));
 
 /**
  * Recommend one strategy for these preferences and selected operators.
@@ -164,7 +164,7 @@ const starsFrom = (ratio) => Math.max(0, Math.min(5, Math.round(ratio * 5)));
  *   favoritesUsed: string[], favoritesIdle: {id, why}[],
  *   favoriteCoverage: number, favoriteStars: number|null (null below MIN_FAVORITES_FOR_STARS), favoriteLabel: string,
  *   compatibility: number, compatStars: number, quality: number, qualityStars: number,
- *   reasons: {ok: boolean, text: string}[]
+ *   reasons: {ok: boolean, msg: {id, values}}[]   (message descriptors: the screen translates them)
  * }}
  */
 export function recommendStrategy(strategy, { pref = emptyPreferences(), selected = [], picks = [], mapId = '', site = '' } = {}) {
@@ -183,18 +183,19 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     favoritesIdle: [],
     favoriteCoverage: 0,
     favoriteStars: null,
-    favoriteLabel: '',
+    favoriteLabel: null,
     compatibility: 0,
     compatStars: null,
-    compatLabel: '',
-    qualityLabel: '',
+    compatLabel: null,
+    qualityLabel: null,
     quality: 0,
     qualityStars: 0,
+    fidelity: 0,
     reasons: [],
   };
   const favs = sideFavorites(pref, side);
   if (!slots.length) {
-    out.reasons.push({ ok: false, text: 'Operators not listed: open the source to check them against your blocks' });
+    out.reasons.push({ ok: false, msg: msg('rec.notListed') });
     return out;
   }
 
@@ -234,7 +235,7 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   const denom = Math.min(relevant.length, slots.length);
   out.favoriteCoverage = favs.length === 0 ? 0 : denom ? used.length / denom : 0;
   out.favoriteStars = denom >= MIN_FAVORITES_FOR_STARS ? starsFrom(out.favoriteCoverage) : null;
-  out.favoriteLabel = favs.length ? `${used.length} of ${denom || 0} favorite operator${denom === 1 ? '' : 's'}` : 'No favorites set';
+  out.favoriteLabel = favs.length ? msg('rec.favLabel', { used: used.length, total: denom || 0 }) : msg('rec.favLabel.none');
 
   // Favorites that have no job in this plan, with the reason.
   const neededRoles = new Set(slots.flatMap((s) => (s.operatorId ? rolesOf(s.operatorId) : [s.role])));
@@ -242,10 +243,10 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     if (used.includes(id)) continue;
     const name = OPERATORS_BY_ID[id].name;
     if (relevant.includes(id)) {
-      out.favoritesIdle.push({ id, why: `${name} could fit, but another favorite took the slot` });
+      out.favoritesIdle.push({ id, msg: msg('rec.idle.taken', { operator: name }) });
     } else {
       const role = rolesOf(id).find((r) => !neededRoles.has(r)) ?? rolesOf(id)[0];
-      out.favoritesIdle.push({ id, why: `${name} is a favorite, but this plan has no ${ROLE_LABEL[role]?.toLowerCase() ?? 'matching'} job` });
+      out.favoritesIdle.push({ id, msg: msg(role ? 'rec.idle.noJob' : 'rec.idle.noJob.any', { operator: name, role: role ? msg(`role.lower.${role}`) : '' }) });
     }
   }
 
@@ -256,10 +257,11 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     const keptSelected = out.lineup.filter((l) => l.selected).length;
     out.compatibility = Math.round(((keptSelected / Math.min(chosen.size, slots.length)) * 0.7 + fidelity * 0.3) * 100) / 100;
   } else out.compatibility = Math.round(fidelity * 100) / 100;
+  out.fidelity = fidelity;
   // Stars only with a real sample: "1 of 1 picked operators kept" is not a 5-star match.
   const keptCount = out.lineup.filter((l) => l.selected).length;
   out.compatStars = chosen.size >= MIN_PICKS_FOR_STARS ? starsFrom(out.compatibility) : null;
-  out.compatLabel = chosen.size ? `${keptCount} of ${chosen.size} picked operator${chosen.size === 1 ? '' : 's'} kept` : 'pick operators to rate this';
+  out.compatLabel = chosen.size ? msg('rec.compat', { kept: keptCount, total: chosen.size }) : msg('rec.compat.none');
 
   // Strategy match: right map and site, real positions, a team-tested plan.
   // A site-less plan fits any site a little; a general (any-map) plan less than one written for the map.
@@ -269,48 +271,56 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   const content = Math.min(1, (strategy.markers.length + strategy.steps.length * 2) / 16);
   out.quality = Math.round((0.35 * siteMatch + 0.15 * mapMatch + 0.3 * fidelity + 0.2 * content) * 100) / 100;
   out.qualityStars = starsFrom(out.quality);
-  out.qualityLabel = strategy.mapId === 'any' ? 'general plan' : otherMap ? 'another map' : siteMatch === 1 ? (site ? 'this map and site' : 'this map') : siteMatch === 0.5 ? 'this map, no fixed site' : 'this map, another site';
+  out.qualityLabel = msg(
+    strategy.mapId === 'any' ? 'rec.quality.general' : otherMap ? 'rec.quality.otherMap' : siteMatch === 1 ? (site ? 'rec.quality.mapSite' : 'rec.quality.map') : siteMatch === 0.5 ? 'rec.quality.noFixedSite' : 'rec.quality.otherSite',
+  );
 
   // Transparency: why this was (or wasn't) recommended.
   if (favs.length) {
-    out.reasons.push({ ok: used.length > 0, text: `Uses ${used.length} of your ${denom} relevant favorite operator${denom === 1 ? '' : 's'}` });
+    out.reasons.push({ ok: used.length > 0, msg: msg('rec.usesFavorites', { used: used.length, total: denom }) });
   }
-  if (out.status === 'ok' && !out.lineup.some((l) => l.blockedBy.length)) out.reasons.push({ ok: true, text: 'Nobody has blocked these operators' });
+  if (out.status === 'ok' && !out.lineup.some((l) => l.blockedBy.length)) out.reasons.push({ ok: true, msg: msg('rec.noBlocks') });
   // Personal blocks: say whose, and that someone else plays it.
   for (const l of out.lineup) {
     if (!l.blockedBy.length) continue;
     const others = pref.players.filter((p) => !l.blockedBy.includes(p));
     out.reasons.push({
       ok: true,
-      text: `${joinNames(l.blockedBy)} blocked ${OPERATORS_BY_ID[l.operatorId].name}${others.length ? `, so ${joinNames(others)} would play it` : ''}`,
+      msg: msg(others.length ? 'rec.personalBlock' : 'rec.personalBlock.nobody', { blockers: l.blockedBy, count: l.blockedBy.length, operator: OPERATORS_BY_ID[l.operatorId].name, others, otherCount: others.length }),
     });
   }
   // Whole-lineup exclusions: a team ban, or every player blocked it.
-  const why = (by) => (by.every((x) => x === 'team ban') ? 'is banned' : by.includes('team ban') ? `is banned and blocked by ${joinNames(by.filter((x) => x !== 'team ban'))}` : `is blocked by everyone in the lineup (${joinNames(by)})`);
-  for (const b of out.blockedReplaced) {
-    out.reasons.push({ ok: false, text: `${OPERATORS_BY_ID[b.blocked].name} ${why(b.by)}: adapted with ${OPERATORS_BY_ID[b.replacement].name}` });
-  }
-  for (const b of out.blockedMissing) {
-    out.reasons.push({ ok: false, text: `${OPERATORS_BY_ID[b.blocked].name} ${why(b.by)}: no usable replacement` });
-  }
+  const unavailable = (b, replaced) => {
+    const banned = b.by.includes('team ban');
+    const people = b.by.filter((x) => x !== 'team ban');
+    const kind = banned && !people.length ? 'banned' : banned ? 'bannedBlocked' : 'allBlocked';
+    return msg(`rec.${replaced ? 'replaced' : 'missing'}.${kind}`, {
+      operator: OPERATORS_BY_ID[b.blocked].name,
+      by: people,
+      count: people.length,
+      replacement: replaced ? OPERATORS_BY_ID[b.replacement].name : '',
+    });
+  };
+  for (const b of out.blockedReplaced) out.reasons.push({ ok: false, msg: unavailable(b, true) });
+  for (const b of out.blockedMissing) out.reasons.push({ ok: false, msg: unavailable(b, false) });
   for (const p of unownedPicks) {
-    out.reasons.push({ ok: false, text: `${p.player} doesn't own ${OPERATORS_BY_ID[p.operatorId].name} (owned operators only is on): not counted as kept` });
+    out.reasons.push({ ok: false, msg: msg('rec.unownedPick', { player: p.player, operator: OPERATORS_BY_ID[p.operatorId].name }) });
   }
   for (const { slot, c } of unowned) {
     out.reasons.push({
       ok: false,
-      text: `Nobody in the lineup owns ${OPERATORS_BY_ID[slot.operatorId].name}: ${c ? `swapped for ${OPERATORS_BY_ID[c.id].name}` : 'no owned replacement'}`,
+      msg: msg(c ? 'rec.unownedNobody' : 'rec.unownedNobody.none', { operator: OPERATORS_BY_ID[slot.operatorId].name, replacement: c ? OPERATORS_BY_ID[c.id].name : '' }),
     });
   }
   if (site) {
-    if (!strategy.site) out.reasons.push({ ok: true, text: strategy.mapId === 'any' ? 'A general plan: works on any map and site' : 'Not tied to a single site' });
-    else if (otherMap) out.reasons.push({ ok: false, text: 'Different map' });
-    else out.reasons.push({ ok: siteMatch === 1, text: siteMatch ? 'Matches the selected site' : 'Different site' });
+    if (!strategy.site) out.reasons.push({ ok: true, msg: msg(strategy.mapId === 'any' ? 'rec.site.general' : 'rec.site.notTied') });
+    else if (otherMap) out.reasons.push({ ok: false, msg: msg('rec.site.differentMap') });
+    else out.reasons.push({ ok: siteMatch === 1, msg: msg(siteMatch ? 'rec.site.match' : 'rec.site.different') });
   }
-  if (strategy.markers.length || strategy.steps.length) out.reasons.push({ ok: true, text: 'Existing strategy with positions and steps' });
+  if (strategy.markers.length || strategy.steps.length) out.reasons.push({ ok: true, msg: msg('rec.hasPlan') });
   if (chosen.size) {
     const kept = out.lineup.filter((l) => l.selected).length;
-    out.reasons.push({ ok: kept > 0, text: `Keeps ${kept} of your ${chosen.size} selected operator${chosen.size === 1 ? '' : 's'}` });
+    out.reasons.push({ ok: kept > 0, msg: msg('rec.keeps', { kept, total: chosen.size }) });
   }
   return out;
 }
@@ -324,21 +334,29 @@ const ORIGIN_RANK = { team: 0, suggested: 1, reference: 2 };
  * team plans first.
  * @returns {{ ranked: {strategy, rec}[], excluded: {strategy, rec}[] }}
  */
+/** The criteria that order strategies, strongest first (the finder also explains the first one that differs). */
+export const RANK_CRITERIA = [
+  ['scored', (x) => Number(x.rec.status !== 'unscored')],
+  ['favorites', (x) => x.rec.favoriteCoverage],
+  ['favoriteCount', (x) => x.rec.favoritesUsed.length],
+  ['replacement', (x) => -Number(x.rec.status === 'adapted')],
+  ['score', (x) => x.rec.quality + x.rec.compatibility],
+  ['origin', (x) => -ORIGIN_RANK[x.strategy.origin]],
+];
+
+/** Sort comparator over { strategy, rec } items. */
+export function rankCompare(a, b) {
+  for (const [, key] of RANK_CRITERIA) {
+    const d = key(b) - key(a);
+    if (d) return d;
+  }
+  return a.strategy.title.localeCompare(b.strategy.title);
+}
+
 export function recommendStrategies(strategies, opts = {}) {
   const all = strategies.map((strategy) => ({ strategy, rec: recommendStrategy(strategy, opts) }));
   const excluded = all.filter((x) => x.rec.status === 'excluded');
-  const ranked = all
-    .filter((x) => x.rec.status !== 'excluded')
-    .sort(
-      (a, b) =>
-        Number(b.rec.status !== 'unscored') - Number(a.rec.status !== 'unscored') ||
-        b.rec.favoriteCoverage - a.rec.favoriteCoverage ||
-        b.rec.favoritesUsed.length - a.rec.favoritesUsed.length ||
-        Number(a.rec.status === 'adapted') - Number(b.rec.status === 'adapted') ||
-        b.rec.quality + b.rec.compatibility - (a.rec.quality + a.rec.compatibility) ||
-        ORIGIN_RANK[a.strategy.origin] - ORIGIN_RANK[b.strategy.origin] ||
-        a.strategy.title.localeCompare(b.strategy.title),
-    );
+  const ranked = all.filter((x) => x.rec.status !== 'excluded').sort(rankCompare);
   return { ranked, excluded };
 }
 
@@ -374,35 +392,34 @@ export function prefState(pref, id) {
   return null;
 }
 
-/** Who marked it, for tooltips: "Blocked by Samuel, Xavier". */
+/** Who marked it, for tooltips, as a message descriptor (or null): "Blocked by Samuel, Xavier". */
 export function prefWho(pref, id) {
   const state = prefState(pref, id);
   if (state === 'blocked') {
-    const by = [...(pref.blocked.get(id) ?? []), ...(pref.banned.has(id) ? ['team ban'] : [])];
-    return `Blocked${by.length ? ` by ${by.join(', ')}` : ''}`;
+    const by = pref.blocked.get(id) ?? [];
+    const banned = pref.banned.has(id);
+    if (banned && !by.length) return msg('pref.who.banned');
+    return msg(banned ? 'pref.who.bannedBlocked' : 'pref.who.blocked', { by, count: by.length });
   }
   if (state === 'favorite') {
     const by = pref.favorites.get(id) ?? [];
     const blockedBy = pref.blocked.get(id) ?? [];
-    return `Favorite${by.length ? ` of ${by.join(', ')}` : ''}${blockedBy.length ? `; blocked by ${blockedBy.join(', ')}` : ''}`;
+    return msg(blockedBy.length ? 'pref.who.favoriteBlocked' : 'pref.who.favorite', { by, blockers: blockedBy, count: by.length, blockerCount: blockedBy.length });
   }
-  if (state === 'partial') return `Blocked by ${pref.blocked.get(id).join(', ')} only`;
-  return '';
+  if (state === 'partial') return msg('pref.who.partial', { by: pref.blocked.get(id), count: pref.blocked.get(id).length });
+  return null;
 }
-
-/** "Anthony and Mathis", "A, B and C". */
-export const joinNames = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
 
 /**
  * Operators that two or more of the lineup's players favorite. The engine does
  * not settle these here: it only reports them (lineup.js decides who gets the
  * operator, by best fit, then roster order).
- * @returns {{ id: string, players: string[], text: string }[]}
+ * @returns {{ id: string, players: string[], msg: {id, values} }[]}
  */
 export function sharedFavorites(pref, ids = null) {
   return [...pref.favorites]
     .filter(([id, who]) => who.length > 1 && isUsable(pref, id) && (!ids || ids.includes(id)))
-    .map(([id, players]) => ({ id, players, text: `${joinNames(players)} ${players.length > 2 ? 'all' : 'both'} favour ${OPERATORS_BY_ID[id].name}` }));
+    .map(([id, players]) => ({ id, players, msg: msg('rec.shared', { players, count: players.length, operator: OPERATORS_BY_ID[id].name }) }));
 }
 
 /**

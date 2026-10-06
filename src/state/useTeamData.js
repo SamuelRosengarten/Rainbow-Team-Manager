@@ -6,6 +6,8 @@ import { defaultNotes } from '../lib/maps.js';
 import { buildRoster } from '../lib/roster.js';
 import { REALTIME_TABLES, liveFromChannels } from '../lib/live.js';
 import { lookupPlayer } from '../lib/statsProvider.js';
+import { CodedError, errorMsg } from '../lib/errors.js';
+import { msg } from '../i18n/index.js';
 import { mergeTactics, normalizeTactic } from '../lib/tactics.js';
 
 const BUILTINS = builtinList.map((t) => normalizeTactic(t));
@@ -24,9 +26,10 @@ const idsOf = (profiles) => Object.fromEntries(profiles.map((p) => [p.name, p.id
  */
 export function useTeamData({ online, profile }) {
   const [status, setStatus] = useState(online ? 'loading' : 'ready');
-  const [loadError, setLoadError] = useState('');
+  // Errors are message descriptors (not strings) so they follow the language.
+  const [loadError, setLoadError] = useState(null);
   const [live, setLive] = useState(online ? 'connecting' : 'offline');
-  const [writeError, setWriteError] = useState('');
+  const [writeError, setWriteError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const [profiles, setProfiles] = useState(online ? [] : OFFLINE_PROFILES);
@@ -63,15 +66,15 @@ export function useTeamData({ online, profile }) {
 
     const fail = (e) => {
       if (cancelled) return;
-      setLoadError(e.message || 'Could not load team data.');
+      setLoadError(errorMsg(e, 'error.loadTeam'));
       setStatus('error');
     };
-    const reportWrite = (e) => !cancelled && setWriteError(e.message || 'Could not refresh data.');
+    const reportWrite = (e) => !cancelled && setWriteError(errorMsg(e, 'error.refresh'));
 
     (async () => {
       try {
         const profileList = await api.fetchProfiles();
-        if (profileList.length === 0) throw new Error('No players found in the database. Re-run supabase/schema.sql.');
+        if (profileList.length === 0) throw new CodedError('error.noPlayers');
         const ids = idsOf(profileList);
         const [teamState, tactics, notes, allPrefs, playerDetails] = await Promise.all([
           api.fetchTeamState(),
@@ -167,7 +170,7 @@ export function useTeamData({ online, profile }) {
 
   const retry = useCallback(() => {
     setStatus('loading');
-    setLoadError('');
+    setLoadError(null);
     setReloadKey((k) => k + 1);
   }, []);
 
@@ -187,8 +190,8 @@ export function useTeamData({ online, profile }) {
       pendingTeamWrites.current += 1;
       api
         .saveTeamState(next, profileRef.current)
-        .then(() => setWriteError(''))
-        .catch((e) => setWriteError(`Your change wasn't shared with the team. ${e.message}`))
+        .then(() => setWriteError(null))
+        .catch((e) => setWriteError(msg('error.notShared', { detail: errorMsg(e) })))
         .finally(() => {
           pendingTeamWrites.current -= 1;
         });
@@ -276,7 +279,7 @@ export function useTeamData({ online, profile }) {
       });
       if (!online) return;
       api.setOwned(idsRef.current[player], operatorIds, owned).catch((e) => {
-        setWriteError(`Couldn't save owned operators. ${e.message}`);
+        setWriteError(msg('error.ownedNotSaved', { detail: errorMsg(e) }));
         reloadPrefs();
       });
     },
@@ -295,7 +298,7 @@ export function useTeamData({ online, profile }) {
       });
       if (!online) return;
       api.setPreference(idsRef.current[player], operatorId, kind).catch((e) => {
-        setWriteError(`Couldn't save preference. ${e.message}`);
+        setWriteError(msg('error.prefNotSaved', { detail: errorMsg(e) }));
         reloadPrefs();
       });
     },
@@ -309,11 +312,11 @@ export function useTeamData({ online, profile }) {
   const updatePlayer = useCallback(
     async (name, patch) => {
       const id = idsRef.current[name];
-      if (!id) throw new Error(`Unknown player "${name}".`);
+      if (!id) throw new CodedError('error.unknownPlayer', { name });
       const current = roster.find((p) => p.name === name);
       const next = { ...current, ...patch };
       if (online) {
-        if (!rosterReady) throw new Error('Player details need the latest database setup. Re-run supabase/schema.sql.');
+        if (!rosterReady) throw new CodedError('error.playerDetailsSchema');
         await api.savePlayerDetails(id, next);
       }
       setDetails((prev) => ({ ...(prev ?? {}), [id]: next }));
@@ -354,7 +357,7 @@ export function useTeamData({ online, profile }) {
     retry,
     live,
     writeError,
-    clearWriteError: () => setWriteError(''),
+    clearWriteError: () => setWriteError(null),
     team,
     updateTeam,
     tacticsStore: { tactics, saveTactic, deleteTactic, importTactics },

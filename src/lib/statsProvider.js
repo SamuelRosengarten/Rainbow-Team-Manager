@@ -13,6 +13,7 @@
 // { ok: false, reason } and the app shows "Stats unavailable". Nothing here
 // throws and nothing is ever made up.
 import { normalizeStats, PLATFORMS } from './playerStats.js';
+import { labelTable } from '../i18n/index.js';
 
 export const STATS_API_URL = String(import.meta.env?.VITE_STATS_API_URL ?? '').trim();
 /** False when no endpoint is configured: lookups can't work, so the UI says so and hides Refresh. */
@@ -20,14 +21,7 @@ export const STATS_CONFIGURED = Boolean(STATS_API_URL);
 const TIMEOUT_MS = 10000;
 
 /** Why a lookup produced no stats, in words a coach can read. */
-export const STATS_REASON = {
-  'not-configured': 'No stats source is connected to this app yet.',
-  'no-username': 'Add a Ubisoft username first.',
-  'not-found': 'Player not found on that platform.',
-  empty: 'Player found, but no public stats are available.',
-  'rate-limited': 'The stats source is busy. Try again in a minute.',
-  unavailable: 'The stats source couldn’t be reached.',
-};
+export const STATS_REASON = labelTable('stats.reason', ['not-configured', 'no-username', 'not-found', 'empty', 'rate-limited', 'unavailable']);
 
 /**
  * Look a player up.

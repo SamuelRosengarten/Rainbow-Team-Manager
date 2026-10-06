@@ -1,6 +1,7 @@
 // Every Supabase call lives in this file. Components and hooks talk to these
 // functions; the roll/fit logic never touches the network.
 import { createClient } from '@supabase/supabase-js';
+import { CodedError } from './errors.js';
 
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,7 +10,7 @@ export const isConfigured = Boolean(URL && ANON_KEY);
 
 let client = null;
 function db() {
-  if (!isConfigured) throw new ApiError('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  if (!isConfigured) throw new ApiError('error.notConfigured');
   if (!client) {
     client = createClient(URL, ANON_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -19,9 +20,10 @@ function db() {
   return client;
 }
 
-export class ApiError extends Error {
-  constructor(message, cause) {
-    super(message);
+/** A failed call: `id` is a message id (error.*) the screen translates; `cause` is the original error. */
+export class ApiError extends CodedError {
+  constructor(id, cause, values) {
+    super(id, values);
     this.name = 'ApiError';
     this.cause = cause;
   }
@@ -41,7 +43,10 @@ export function isMissingSchema(error) {
   );
 }
 
-/** Turn Supabase/fetch errors into a message a teammate can act on. */
+/**
+ * Map a Supabase/fetch failure to a message id a teammate can act on. Returns
+ * { id, values }; the screen translates it. (The database never sends text we show.)
+ */
 export function friendlyError(error) {
   const raw = `${error?.message ?? ''} ${error?.details ?? ''} ${error?.hint ?? ''}`.toLowerCase();
   const code = error?.code ?? '';
@@ -52,33 +57,17 @@ export function friendlyError(error) {
     raw.includes('network request failed') ||
     raw.includes('load failed')
   ) {
-    return "Can't reach the database. Check your internet connection. If the connection is fine, the Supabase project may be paused (free projects pause after a period of inactivity): restore it from the Supabase dashboard.";
+    return { id: 'error.db.unreachable' };
   }
-  if (raw.includes('profiles') && (raw.includes('row-level security') || code === '42501')) {
-    return 'Adding players needs the latest database setup. Re-run supabase/schema.sql in the Supabase SQL editor.';
-  }
-  if (code === '23505' || raw.includes('duplicate key')) {
-    return 'That name is already taken.';
-  }
-  if (code === '23514' || raw.includes('check constraint')) {
-    return 'The database rejected a value (too long or not allowed). Check the form and try again.';
-  }
-  if (code === '42P01' || code === 'PGRST205' || raw.includes('does not exist') || raw.includes('could not find the table')) {
-    return 'The database tables are missing. Run supabase/schema.sql in the Supabase SQL editor.';
-  }
-  if (raw.includes('image_url')) {
-    return 'Tactic images need a newer database. Re-run supabase/schema.sql in the Supabase SQL editor.';
-  }
-  if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) {
-    return 'The database refused the request (permissions). Re-run supabase/schema.sql to restore the team policies.';
-  }
-  if (raw.includes('invalid api key') || raw.includes('jwt')) {
-    return 'The Supabase anon key is invalid. Check VITE_SUPABASE_ANON_KEY.';
-  }
-  if (code === '503' || raw.includes('upstream') || raw.includes('paused')) {
-    return 'The Supabase project is unavailable (it may be paused). Restore it from the Supabase dashboard.';
-  }
-  return `Database error: ${error?.message || 'unknown error'}`;
+  if (raw.includes('profiles') && (raw.includes('row-level security') || code === '42501')) return { id: 'error.db.addPlayers' };
+  if (code === '23505' || raw.includes('duplicate key')) return { id: 'error.db.nameTaken' };
+  if (code === '23514' || raw.includes('check constraint')) return { id: 'error.db.rejected' };
+  if (code === '42P01' || code === 'PGRST205' || raw.includes('does not exist') || raw.includes('could not find the table')) return { id: 'error.db.tablesMissing' };
+  if (raw.includes('image_url')) return { id: 'error.db.tacticImages' };
+  if (code === '42501' || raw.includes('permission denied') || raw.includes('row-level security')) return { id: 'error.db.permissions' };
+  if (raw.includes('invalid api key') || raw.includes('jwt')) return { id: 'error.db.badKey' };
+  if (code === '503' || raw.includes('upstream') || raw.includes('paused')) return { id: 'error.db.unavailable' };
+  return { id: 'error.db.unknown', values: { detail: error?.message || '' } };
 }
 
 async function run(promise) {
@@ -86,9 +75,13 @@ async function run(promise) {
   try {
     result = await promise;
   } catch (e) {
-    throw new ApiError(friendlyError(e), e);
+    const f = friendlyError(e);
+    throw new ApiError(f.id, e, f.values);
   }
-  if (result?.error) throw new ApiError(friendlyError(result.error), result.error);
+  if (result?.error) {
+    const f = friendlyError(result.error);
+    throw new ApiError(f.id, result.error, f.values);
+  }
   return result?.data;
 }
 
@@ -214,7 +207,7 @@ export function teamStateToRow(state, updatedBy) {
 
 export async function fetchTeamState() {
   const rows = await run(db().from('team_state').select('*').eq('id', 1).limit(1));
-  if (!rows?.length) throw new ApiError('The team_state row is missing. Re-run supabase/schema.sql.');
+  if (!rows?.length) throw new ApiError('error.db.teamStateMissing');
   return teamStateFromRow(rows[0]);
 }
 
@@ -322,7 +315,7 @@ export async function fetchMapNotes(idByName) {
 
 export async function saveMapNote(owner, mapId, notes, idByName) {
   const ownerId = owner ? idByName[owner] : null;
-  if (owner && !ownerId) throw new ApiError(`Unknown profile "${owner}".`);
+  if (owner && !ownerId) throw new ApiError('error.unknownProfile', null, { name: owner });
   let query = db().from('map_notes').select('id').eq('map_id', mapId).limit(1);
   query = ownerId ? query.eq('owner_profile_id', ownerId) : query.is('owner_profile_id', null);
   const existing = await run(query);

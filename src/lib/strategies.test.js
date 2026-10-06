@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import {
   adaptStrategy,
@@ -63,7 +64,7 @@ describe('adaptStrategy', () => {
     expect(strategy.steps[0].description).toBe('Ace breaches after Buck opens the floor.');
     expect(strategy.markers[0].label).toBe('Ace charge');
     expect(strategy.summary).toMatch(/^Ace opens CCTV/);
-    expect(warnings[0]).toMatch(/Ace replaces Thermite/);
+    expect(en(warnings[0])).toMatch(/Ace replaces Thermite/);
     expect(original.slots[0].operatorId).toBe('thermite');
   });
 

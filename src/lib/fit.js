@@ -1,16 +1,10 @@
 // Pure tactic selection and role-fit logic.
 import { maxMatching, playerPool, rerollPlayers, shuffle } from './roll.js';
+import { labelTable, msg } from '../i18n/index.js';
 
 export const ROLES = ['hard-breacher', 'soft-breacher', 'intel', 'anchor', 'roamer', 'support'];
 
-export const ROLE_LABEL = {
-  'hard-breacher': 'Hard breacher',
-  'soft-breacher': 'Soft breacher',
-  intel: 'Intel',
-  anchor: 'Anchor',
-  roamer: 'Roamer',
-  support: 'Support',
-};
+export const ROLE_LABEL = labelTable('role', ROLES);
 
 /**
  * Tactics that match the current side, map and site.
@@ -88,7 +82,7 @@ export function rerollToFit({
   rng = Math.random,
 }) {
   if (requiredRoles.length > players.length) {
-    return { ok: false, error: `This tactic needs ${requiredRoles.length} roles but the team has ${players.length} players.` };
+    return { ok: false, error: msg('fit.tooManyRoles', { roles: requiredRoles.length, players: players.length }) };
   }
   const fit = checkFit({ lineup, players, operatorsById, requiredRoles, rng });
   if (fit.fits) return { ok: true, lineup, rerolled: [] };
@@ -108,7 +102,7 @@ export function rerollToFit({
   }
   return {
     ok: false,
-    error: `Can't cover ${fit.missing.join(', ')} with the current bans${ownedOnly ? ' and owned operators' : ''}.`,
+    error: msg(ownedOnly ? 'fit.cantCover.owned' : 'fit.cantCover', { roles: fit.missing.map((r) => msg(`role.lower.${r}`)) }),
   };
 }
 

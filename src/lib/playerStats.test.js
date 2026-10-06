@@ -92,7 +92,7 @@ describe('timeAgo', () => {
   it('reads naturally', () => {
     expect(timeAgo('2026-01-01T11:59:50Z', now)).toBe('just now');
     expect(timeAgo('2026-01-01T10:00:00Z', now)).toBe('2 hours ago');
-    expect(timeAgo('2025-12-31T12:00:00Z', now)).toBe('1 day ago');
+    expect(timeAgo('2025-12-31T12:00:00Z', now)).toBe('yesterday');
     expect(timeAgo('nonsense', now)).toBe('');
   });
 });

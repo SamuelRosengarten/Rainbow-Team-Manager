@@ -1,3 +1,5 @@
+import { CodedError, errorMsg } from './errors.js';
+import { msg } from '../i18n/index.js';
 // Pure helpers for tactics: validation, merging built-ins with saved ones,
 // tab filtering and JSON import/export.
 import { ROLES } from './fit.js';
@@ -13,16 +15,16 @@ export function newTacticId() {
  * Validate and normalise one tactic. Throws an Error with a readable message.
  */
 export function normalizeTactic(raw, { owner = null } = {}) {
-  if (!raw || typeof raw !== 'object') throw new Error('Tactic must be an object.');
+  if (!raw || typeof raw !== 'object') throw new CodedError('tactic.notObject');
   const name = String(raw.name ?? '').trim();
-  if (!name) throw new Error('Tactic needs a name.');
-  if (!SIDES.includes(raw.side)) throw new Error(`"${name}": side must be "attack" or "defend".`);
+  if (!name) throw new CodedError('tactic.nameRequired');
+  if (!SIDES.includes(raw.side)) throw new CodedError('tactic.badSide', { name });
   const requiredRoles = Array.isArray(raw.requiredRoles) ? raw.requiredRoles : [];
   const badRole = requiredRoles.find((r) => !ROLES.includes(r));
-  if (badRole) throw new Error(`"${name}": unknown role "${badRole}".`);
-  if (requiredRoles.length > 5) throw new Error(`"${name}": at most 5 required roles.`);
+  if (badRole) throw new CodedError('tactic.badRole', { name, role: badRole });
+  if (requiredRoles.length > 5) throw new CodedError('tactic.tooManyRoles', { name });
   const imageUrl = String(raw.imageUrl ?? '').trim();
-  if (imageUrl && !/^https:\/\/\S+$/i.test(imageUrl)) throw new Error(`"${name}": image link must start with https://.`);
+  if (imageUrl && !/^https:\/\/\S+$/i.test(imageUrl)) throw new CodedError('tactic.badImage', { name });
   return {
     id: String(raw.id ?? '').trim() || newTacticId(),
     name: name.slice(0, 120),
@@ -103,17 +105,17 @@ export function parseImport(text, { owner = null } = {}) {
   try {
     data = JSON.parse(text);
   } catch {
-    return { tactics: [], errors: ['The file is not valid JSON.'] };
+    return { tactics: [], errors: [msg('tactic.invalidJson')] };
   }
   const list = Array.isArray(data) ? data : Array.isArray(data?.tactics) ? data.tactics : null;
-  if (!list) return { tactics: [], errors: ['Expected an array of tactics.'] };
+  if (!list) return { tactics: [], errors: [msg('tactic.expectedArray')] };
   const tactics = [];
   const errors = [];
   list.forEach((raw, i) => {
     try {
       tactics.push(normalizeTactic(raw, { owner }));
     } catch (e) {
-      errors.push(`Item ${i + 1}: ${e.message}`);
+      errors.push(msg('tactic.itemError', { n: i + 1, error: errorMsg(e) }));
     }
   });
   return { tactics, errors };

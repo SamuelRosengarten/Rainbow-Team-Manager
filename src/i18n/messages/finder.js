@@ -1,0 +1,76 @@
+// The composition finder: results, proposed lineup, ranking, warnings.
+export const en = {
+  'finder.where.generic': 'A general plan, not tied to a map',
+  'finder.where.otherSite': 'Different site: this plan is for {site}',
+  'finder.where.otherSite.nosite': 'Different site: this plan has no fixed site',
+  'finder.where.otherMap': 'Different map: this plan is for {map} ({site})',
+  'finder.where.otherMap.nosite': 'Different map: this plan is for {map}',
+
+  'finder.favPlayers': '{used} of {total, plural, one {# player} other {# players}} on a favourite',
+  'finder.favPlayers.none': 'No player has a favourite for this side',
+  'finder.reason.favPlayers': '{used} of {total, plural, one {# player is} other {# players are}} on one of their own favourites',
+  'finder.reason.personalBlock': '{blockers, list} blocked {operator}, so {player} plays it',
+
+  'finder.warn.unownedPick': '{player} doesn’t own {operator}, and owned operators only is on.',
+  'finder.warn.useOperator': 'Use {operator} for {player}',
+  'finder.warn.noOperator': '{count, plural, one {# job has no usable operator.} other {# jobs have no usable operator.}}',
+  'finder.warn.shared': '{players, list} {count, plural, =2 {both} other {all}} favour {operator}; {winner} plays it here.',
+
+  'finder.rank.first.exact': 'Ranked first: written for {map} and this site.',
+  'finder.rank.first.other-site': 'Ranked first: written for {map}, but for another site.',
+  'finder.rank.first.generic': 'Ranked first: a general plan, since nothing is written for {map}.',
+  'finder.rank.first.other-map': 'Ranked first: a plan for another map, since nothing is written for {map}.',
+  'finder.rank.first.any': 'Ranked first: the best fit for your lineup and favourites.',
+  'finder.rank.tier.other-site': 'Ranked #{n}: plans for other sites of {map} come after plans for this site.',
+  'finder.rank.tier.generic': 'Ranked #{n}: general plans come after plans written for {map}, whatever their match score.',
+  'finder.rank.tier.other-map': 'Ranked #{n}: plans for other maps come last.',
+  'finder.rank.tier.exact': 'Ranked #{n}.',
+  'finder.rank.by.favorites': 'Ranked #{n}: fewer players on a favourite than #{prev} ({a} vs {b}).',
+  'finder.rank.by.replacement': 'Ranked #{n}: needs a replacement operator, which #{prev} doesn’t.',
+  'finder.rank.by.score': 'Ranked #{n}: a lower combined match score than #{prev}.',
+  'finder.rank.by.origin': 'Ranked #{n}: team plans come before other plans.',
+  'finder.rank.tie': 'Ranked #{n}: ties with #{prev}; the title breaks the tie.',
+
+  'finder.note.none': 'No plan is written for {where} yet, so these are the closest ones.',
+  'finder.note.only': '{count, plural, one {Only 1 plan matches} other {Only # plans match}} {where}. The rest are from other sites or maps.',
+  'finder.note.every.attack': 'That is every attack plan in the library ({count}). Build your own with New strategy.',
+  'finder.note.every.defend': 'That is every defense plan in the library ({count}). Build your own with New strategy.',
+};
+
+export const fr = {
+  'finder.where.generic': 'Un plan général, pas lié à une carte',
+  'finder.where.otherSite': 'Autre site : ce plan est pour {site}',
+  'finder.where.otherSite.nosite': 'Autre site : ce plan n’a pas de site fixe',
+  'finder.where.otherMap': 'Autre carte : ce plan est pour {map} ({site})',
+  'finder.where.otherMap.nosite': 'Autre carte : ce plan est pour {map}',
+
+  'finder.favPlayers': '{used} sur {total, plural, one {# joueur} other {# joueurs}} avec un favori',
+  'finder.favPlayers.none': 'Aucun joueur n’a de favori pour ce côté',
+  'finder.reason.favPlayers': '{used} sur {total, plural, one {# joueur joue} other {# joueurs jouent}} un de leurs propres favoris',
+  'finder.reason.personalBlock': '{blockers, list} {count, plural, one {a bloqué} other {ont bloqué}} {operator}, alors {player} le joue',
+
+  'finder.warn.unownedPick': '{player} ne possède pas {operator}, et « opérateurs possédés seulement » est activé.',
+  'finder.warn.useOperator': 'Mettre {operator} pour {player}',
+  'finder.warn.noOperator': '{count, plural, one {# rôle n’a aucun opérateur utilisable.} other {# rôles n’ont aucun opérateur utilisable.}}',
+  'finder.warn.shared': '{players, list} {count, plural, =2 {ont tous les deux} other {ont tous}} {operator} en favori ; {winner} le joue ici.',
+
+  'finder.rank.first.exact': 'Premier : écrit pour {map} et ce site.',
+  'finder.rank.first.other-site': 'Premier : écrit pour {map}, mais pour un autre site.',
+  'finder.rank.first.generic': 'Premier : un plan général, puisque rien n’est écrit pour {map}.',
+  'finder.rank.first.other-map': 'Premier : un plan pour une autre carte, puisque rien n’est écrit pour {map}.',
+  'finder.rank.first.any': 'Premier : le meilleur choix pour ta formation et tes favoris.',
+  'finder.rank.tier.other-site': 'N° {n} : les plans pour les autres sites de {map} passent après ceux de ce site.',
+  'finder.rank.tier.generic': 'N° {n} : les plans généraux passent après ceux écrits pour {map}, peu importe leur score.',
+  'finder.rank.tier.other-map': 'N° {n} : les plans pour d’autres cartes arrivent en dernier.',
+  'finder.rank.tier.exact': 'N° {n}.',
+  'finder.rank.by.favorites': 'N° {n} : moins de joueurs sur un favori que le n° {prev} ({a} contre {b}).',
+  'finder.rank.by.replacement': 'N° {n} : demande un opérateur de remplacement, contrairement au n° {prev}.',
+  'finder.rank.by.score': 'N° {n} : un score de correspondance combiné plus bas que le n° {prev}.',
+  'finder.rank.by.origin': 'N° {n} : les plans de l’équipe passent avant les autres.',
+  'finder.rank.tie': 'N° {n} : à égalité avec le n° {prev} ; le titre les départage.',
+
+  'finder.note.none': 'Aucun plan n’est écrit pour {where} pour l’instant. Voici donc les plus proches.',
+  'finder.note.only': '{count, plural, one {Seulement 1 plan correspond} other {Seulement # plans correspondent}} à {where}. Les autres viennent d’autres sites ou cartes.',
+  'finder.note.every.attack': 'C’est tous les plans d’attaque de la bibliothèque ({count}). Crée le tien avec « Nouvelle stratégie ».',
+  'finder.note.every.defend': 'C’est tous les plans de défense de la bibliothèque ({count}). Crée le tien avec « Nouvelle stratégie ».',
+};

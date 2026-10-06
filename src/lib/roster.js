@@ -1,27 +1,16 @@
 // Pure roster helpers: merging profiles with their details, who's in the
 // starting five, and labels for statuses.
-import { ROLE_LABEL } from './fit.js';
+import { labelTable, t } from '../i18n/index.js';
 
 export const LINEUP_SIZE = 5;
 
-export const PLAYER_STATUS = {
-  starter: 'Starter',
-  sub: 'Substitute',
-  archived: 'Former player',
-};
+/** Player status names (roster.status.<id>, in the current language). */
+export const PLAYER_STATUS = labelTable('roster.status', ['starter', 'sub', 'archived']);
 
-export const AVAILABILITY = {
-  available: 'Available',
-  limited: 'Limited',
-  unavailable: 'Unavailable',
-};
+export const AVAILABILITY = labelTable('roster.availability', ['available', 'limited', 'unavailable']);
 
 /** Team roles a player can have (operator roles plus IGL and flex). */
-export const MAIN_ROLES = {
-  igl: 'IGL (shot caller)',
-  ...ROLE_LABEL,
-  flex: 'Flex',
-};
+export const MAIN_ROLES = labelTable('mainRole', ['igl', 'hard-breacher', 'soft-breacher', 'intel', 'anchor', 'roamer', 'support', 'flex']);
 
 export const DEFAULT_DETAILS = Object.freeze({
   username: '',
@@ -57,12 +46,12 @@ export function lineupPlayers(roster) {
   return (starters.length ? starters : activePlayers(roster)).slice(0, LINEUP_SIZE).map((p) => p.name);
 }
 
-/** Validate a new player name against the roster. Returns an error message or ''. */
+/** Validate a new player name against the roster. Returns an error message (current language) or ''. */
 export function nameError(name, roster) {
   const n = name.trim();
-  if (!n) return 'Enter a name.';
-  if (n.length > 24) return 'Use at most 24 characters.';
-  if (roster.some((p) => p.name.toLowerCase() === n.toLowerCase())) return 'That name is already on the roster.';
+  if (!n) return t('roster.nameError.empty');
+  if (n.length > 24) return t('roster.nameError.long');
+  if (roster.some((p) => p.name.toLowerCase() === n.toLowerCase())) return t('roster.nameError.taken');
   return '';
 }
 

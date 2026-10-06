@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import strategiesJson from '../data/strategies.json';
 import { normalizeStrategy } from './strategies.js';
@@ -18,6 +19,7 @@ const run = (o) => {
   const pref = preferenceSet(prefs, players.map((p) => p.name), o.bans ?? []);
   return recommendLineup({ side: 'attack', ...o, players, prefs, pref });
 };
+const why = (s) => [...s.whyParts, s.jobNote].map(en).join(' ');
 const ids = (r) => r.slots.map((s) => s.operatorId);
 
 describe('recommendLineup: blocked operators are never recommended', () => {
@@ -75,7 +77,7 @@ describe('recommendLineup: favorites beat statistics', () => {
     const breach = r.slots.find((s) => s.job === 'hard-breach');
     expect(breach.operatorId).toBe('hibana');
     expect(breach.player).toBe('Samuel');
-    expect(breach.why).toMatch(/favorite/i);
+    expect(why(breach)).toMatch(/favourite/i);
   });
 });
 
@@ -85,8 +87,8 @@ describe('recommendLineup: statistics steer, within the rules', () => {
   it('gives the strong Thermite player Thermite as the main breach, and says why', () => {
     const r = run({ players: strong, mapId: 'oregon', site: 'B Laundry Room / Supply Room' });
     const breach = r.slots.find((s) => s.job === 'hard-breach');
-    expect(breach).toMatchObject({ player: 'Samuel', operatorId: 'thermite', jobLabel: 'Main Breach' });
-    expect(breach.why).toMatch(/Samuel has strong performance on Thermite/);
+    expect(breach).toMatchObject({ player: 'Samuel', operatorId: 'thermite', job: 'hard-breach' });
+    expect(why(breach)).toMatch(/Samuel has strong performance on Thermite/);
     expect(breach.alternative).toBeTruthy();
     expect(breach.alternative).not.toBe('thermite');
   });
@@ -101,7 +103,7 @@ describe('recommendLineup: statistics steer, within the rules', () => {
   it('does not trust tiny samples', () => {
     const lucky = [withStats('Samuel', [op('thermite', 3, 100, 3)]), ...NAMES.slice(1).map(plain)];
     const r = run({ players: lucky });
-    expect(r.slots.every((s) => !/strong performance/.test(s.why))).toBe(true);
+    expect(r.slots.every((s) => !/strong performance/.test(why(s)))).toBe(true);
   });
 });
 
@@ -110,8 +112,8 @@ describe('recommendLineup: with no stats at all', () => {
     for (const side of ['attack', 'defend']) {
       const r = run({ side });
       expect(r.slots).toHaveLength(5);
-      expect(r.slots.every((s) => s.operatorId && s.player && s.jobLabel && s.why)).toBe(true);
-      expect(r.notes[0]).toMatch(/standard jobs/);
+      expect(r.slots.every((s) => s.operatorId && s.player && s.job && why(s))).toBe(true);
+      expect(en(r.notes[0])).toMatch(/standard jobs/);
     }
   });
 
@@ -126,7 +128,7 @@ describe('recommendLineup: with no stats at all', () => {
     const r = run({ players: [plain('Samuel'), plain('Anthony')] });
     expect(r.slots).toHaveLength(5);
     expect(r.slots.filter((s) => s.player)).toHaveLength(2);
-    expect(r.notes.join(' ')).toMatch(/Only 2 players/);
+    expect(r.notes.map(en).join(' ')).toMatch(/Only 2 players/);
   });
 });
 

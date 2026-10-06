@@ -1,3 +1,4 @@
+import { CodedError } from './errors.js';
 // Team passcode hashing. Must match the SQL in the README:
 //   encode(sha256(convert_to('r6tp:' || 'your passcode', 'UTF8')), 'hex')
 // This is a light gate, not security: the hash is readable by anyone with the
@@ -6,7 +7,7 @@
 export const PASSCODE_SALT = 'r6tp:';
 
 export async function hashPasscode(passcode, subtle = globalThis.crypto?.subtle) {
-  if (!subtle) throw new Error('This browser cannot hash the passcode (needs HTTPS or localhost).');
+  if (!subtle) throw new CodedError('error.passcodeHash');
   const bytes = new TextEncoder().encode(PASSCODE_SALT + passcode.trim());
   const digest = await subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');

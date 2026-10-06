@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import { checkFit, filterTactics, rerollToFit, rollTactic } from './fit.js';
 import { OPS, OPS_BY_ID, PLAYERS, seededRng, values } from './testUtils.js';
@@ -126,7 +127,7 @@ describe('rerollToFit', () => {
   it('respects bans while fitting', () => {
     const res = rerollToFit({ ...base, lineup, bans: ['hibana'], requiredRoles: ['hard-breacher', 'hard-breacher'] });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/hard-breacher/);
+    expect(en(res.error)).toMatch(/hard breacher/);
   });
 
   it('respects owned-only pools while fitting', () => {

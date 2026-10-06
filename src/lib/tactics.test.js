@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import builtins from '../data/tactics.json';
 import maps from '../data/maps.json';
@@ -87,11 +88,11 @@ describe('import/export', () => {
   it('reports invalid items without dropping valid ones', () => {
     const { tactics, errors } = parseImport(JSON.stringify([{ name: 'ok', side: 'defend' }, { name: 'bad' }]));
     expect(tactics).toHaveLength(1);
-    expect(errors[0]).toMatch(/Item 2/);
+    expect(en(errors[0])).toMatch(/Item 2/);
   });
 
   it('rejects non-JSON', () => {
-    expect(parseImport('nope').errors[0]).toMatch(/not valid JSON/);
+    expect(en(parseImport('nope').errors[0])).toMatch(/not valid JSON/);
   });
 });
 

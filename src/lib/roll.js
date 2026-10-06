@@ -1,11 +1,14 @@
 // Pure operator-rolling logic. No React, no Supabase, no globals: every
 // function takes its inputs explicitly (including an optional rng) so it can
 // be unit tested deterministically.
+// (Messages are descriptors { id, values } from i18n, translated by the screen.)
+import { labelTable, msg, t } from '../i18n/index.js';
 
 export const FAVORITE_WEIGHT = 5;
 const GREEDY_ATTEMPTS = 60;
 
-export const SIDE_LABEL = { attack: 'attackers', defend: 'defenders' };
+/** Side names for sentences (roll.side.<id>, in the current language). */
+export const SIDE_LABEL = labelTable('roll.side', ['attack', 'defend']);
 
 /** Index operators by id. */
 export function indexOperators(operators) {
@@ -88,19 +91,13 @@ export function maxMatching(players, options, rng = Math.random) {
  * Explain why no valid lineup exists, in plain language for the UI.
  */
 function explainShortage({ players, pools, side, ownedOnly, taken = new Set() }) {
-  const label = SIDE_LABEL[side] ?? side;
   const empty = players.filter((p) => pools[p].filter((id) => !taken.has(id)).length === 0);
   if (empty.length > 0) {
-    const who = empty.join(', ');
-    return ownedOnly
-      ? `No ${label} available for ${who}: check their owned and blocked operators and the bans.`
-      : `No ${label} left for ${who}: too many operators are banned or blocked.`;
+    return msg(`roll.shortage.${ownedOnly ? 'ownedNone' : 'none'}`, { side, who: empty, count: empty.length });
   }
   const union = new Set(players.flatMap((p) => pools[p]).filter((id) => !taken.has(id)));
-  if (!ownedOnly) {
-    return `Only ${union.size} ${label} available after bans and blocks, but ${players.length} are needed. Unban or unblock some operators.`;
-  }
-  return `Not enough different ${label} across the players' owned lists (${union.size} usable for ${players.length} players). Add owned operators, remove bans or blocks, or turn off "owned only".`;
+  if (!ownedOnly) return msg('roll.shortage.few', { side, usable: union.size, needed: players.length });
+  return msg('roll.shortage.owned', { side, usable: union.size, needed: players.length });
 }
 
 /**
@@ -215,13 +212,13 @@ function orderLineup(players, lineup) {
  */
 export function formatLineupText({ lineup, players, operatorsById, side, mapName, site, tacticName }) {
   const parts = [];
-  parts.push(`Map: ${mapName || 'not picked'}`);
-  parts.push(`Site: ${site || 'not picked'}`);
-  const label = side === 'attack' ? 'Attackers' : 'Defenders';
+  parts.push(t('share.map', { map: mapName || t('share.notPicked') }));
+  parts.push(t('share.site', { site: site || t('share.notPicked') }));
+  const label = t(side === 'attack' ? 'share.attackers' : 'share.defenders');
   const roster = players
     .map((p) => `${p} - ${operatorsById[lineup?.[p]]?.name ?? '?'}`)
     .join(' | ');
-  parts.push(`${label}: ${roster}`);
-  if (tacticName) parts.push(`Tactic: ${tacticName}`);
+  parts.push(t('share.team', { label, roster }));
+  if (tacticName) parts.push(t('share.tactic', { tactic: tacticName }));
   return parts.join(' | ');
 }

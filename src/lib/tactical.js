@@ -2,87 +2,93 @@
 // zone and path styles, tactical roles, strategy types per side, utility
 // (operator gadgets and general gadgets) and round timing. Pure data and
 // helpers only; strategies.js validates documents against it.
+// No English lives here: every name and hint is a message (object.<id>,
+// objectHint.<id>, zone.<id>, zoneText.<id>, path.<id>, gadget.<id>, breach.<id>,
+// tacticalRole.<id>, type.<id>, toolGroup.<id>) in src/i18n/messages/tactical.js.
+// The tables below read their text from there in the current language, so
+// OBJECTS[k].label, ZONES[k].text, TACTICAL_ROLES[id] etc. keep working.
 import { OPERATORS_BY_ID, operatorProfile } from './operators.js';
+import { labelTable, labelled, t } from '../i18n/index.js';
 
 /**
  * Point objects (markers). `group` drives the toolbar; `side` says which side
  * normally uses it ('both' shows it for either side).
  */
-export const OBJECTS = {
-  position: { label: 'Player', group: 'units', side: 'both', hint: 'Where an operator stands.' },
-  enemy: { label: 'Enemy', group: 'units', side: 'both', hint: 'Where we expect an enemy.' },
-  spawn: { label: 'Spawn', group: 'units', side: 'attack', hint: 'Spawn point for an operator.' },
-  waypoint: { label: 'Waypoint', group: 'units', side: 'both', hint: 'A stop on a route.' },
-  drone: { label: 'Drone', group: 'intel', side: 'attack', hint: 'Drone staging or drone position.' },
-  camera: { label: 'Camera', group: 'intel', side: 'both', hint: 'Camera or gadget that gives intel.' },
-  utility: { label: 'Utility', group: 'utility', side: 'both', hint: 'Operator gadget or grenade.' },
-  trap: { label: 'Trap', group: 'utility', side: 'defend', hint: 'Trap: Kapkan, Frost, Lesion, Ela, Melusi…' },
-  breach: { label: 'Breach', group: 'breach', side: 'attack', hint: 'Hard, soft or vertical breach.' },
-  reinforce: { label: 'Reinforce', group: 'breach', side: 'defend', hint: 'Reinforced wall or hatch.' },
-  'rotation-hole': { label: 'Rotation hole', group: 'breach', side: 'defend', hint: 'Hole made for rotating.' },
-  plant: { label: 'Plant', group: 'objective', side: 'attack', hint: 'Defuser plant spot.' },
-  objective: { label: 'Objective', group: 'objective', side: 'both', hint: 'Bomb or objective.' },
-  note: { label: 'Note', group: 'note', side: 'both', hint: 'A text note on the map.' },
-};
+export const OBJECTS = labelled(
+  {
+  position: { group: 'units', side: 'both' },
+  enemy: { group: 'units', side: 'both' },
+  spawn: { group: 'units', side: 'attack' },
+  waypoint: { group: 'units', side: 'both' },
+  drone: { group: 'intel', side: 'attack' },
+  camera: { group: 'intel', side: 'both' },
+  utility: { group: 'utility', side: 'both' },
+  trap: { group: 'utility', side: 'defend' },
+  breach: { group: 'breach', side: 'attack' },
+  reinforce: { group: 'breach', side: 'defend' },
+  'rotation-hole': { group: 'breach', side: 'defend' },
+  plant: { group: 'objective', side: 'attack' },
+  objective: { group: 'objective', side: 'both' },
+  note: { group: 'note', side: 'both' },
+  },
+  { label: 'object', hint: 'objectHint' },
+);
 
-export const BREACH_TYPES = { hard: 'Hard breach', soft: 'Soft breach', vertical: 'Vertical', hatch: 'Hatch' };
+/** Breach kinds (ids only; names are breach.<id>). */
+export const BREACH_TYPES = labelTable('breach', ['hard', 'soft', 'vertical', 'hatch']);
 
 /** Translucent areas. */
-export const ZONES = {
-  hold: { label: 'Hold area', text: 'HOLD', color: '#3ccf8e' },
-  contest: { label: 'Contest', text: 'CONTEST', color: '#f5c518' },
-  danger: { label: 'Danger', text: 'DANGER', color: '#ff5a5f' },
-  nogo: { label: 'No entry', text: 'NO ENTRY', color: '#ff3b3b' },
-  watch: { label: 'Watch angle', text: 'WATCH THIS ANGLE', color: '#ff9f43' },
-  enemy: { label: 'Enemy likely', text: 'ENEMY LIKELY HERE', color: '#c86bff' },
-};
+export const ZONES = labelled(
+  {
+  hold: { color: '#3ccf8e' },
+  contest: { color: '#f5c518' },
+  danger: { color: '#ff5a5f' },
+  nogo: { color: '#ff3b3b' },
+  watch: { color: '#ff9f43' },
+  enemy: { color: '#c86bff' },
+  },
+  { label: 'zone', text: 'zoneText' },
+);
 
-export const PATHS = {
-  move: { label: 'Movement', dash: null },
-  entry: { label: 'Entry route', dash: null, width: 1.1 },
-  clear: { label: 'Clearing route', dash: '2.4 0.9' },
-  drone: { label: 'Drone route', dash: '1.4 1' },
-  rotate: { label: 'Rotation', dash: '0.5 1' },
-  utility: { label: 'Utility throw', dash: '0.3 0.9' },
-};
+export const PATHS = labelled(
+  {
+  move: { dash: null },
+  entry: { dash: null, width: 1.1 },
+  clear: { dash: '2.4 0.9' },
+  drone: { dash: '1.4 1' },
+  rotate: { dash: '0.5 1' },
+  utility: { dash: '0.3 0.9' },
+  },
+  { label: 'path' },
+);
+
+const withGroupLabels = (groups) => groups.map((g) => Object.defineProperty({ ...g }, 'label', { enumerable: true, get: () => t(`toolGroup.${g.id}`) }));
 
 /** Toolbar groups, in order. Tools are object kinds, path kinds or zone kinds. */
-export const TOOL_GROUPS = [
-  { id: 'units', label: 'Units', tools: ['position', 'enemy', 'spawn', 'waypoint'] },
-  { id: 'move', label: 'Routes', tools: ['path:move', 'path:entry', 'path:clear', 'path:rotate'] },
-  { id: 'intel', label: 'Intel', tools: ['drone', 'path:drone', 'camera'] },
-  { id: 'utility', label: 'Utility', tools: ['utility', 'trap', 'path:utility'] },
-  { id: 'breach', label: 'Breach', tools: ['breach', 'reinforce', 'rotation-hole'] },
-  { id: 'areas', label: 'Areas', tools: ['zone:hold', 'zone:contest', 'zone:danger', 'zone:nogo', 'zone:watch', 'zone:enemy'] },
-  { id: 'crossfire', label: 'Crossfire', tools: ['crossfire'] },
-  { id: 'objective', label: 'Objective', tools: ['plant', 'objective'] },
-  { id: 'note', label: 'Note', tools: ['note'] },
-];
+export const TOOL_GROUPS = withGroupLabels([
+  { id: 'units', tools: ['position', 'enemy', 'spawn', 'waypoint'] },
+  { id: 'move', tools: ['path:move', 'path:entry', 'path:clear', 'path:rotate'] },
+  { id: 'intel', tools: ['drone', 'path:drone', 'camera'] },
+  { id: 'utility', tools: ['utility', 'trap', 'path:utility'] },
+  { id: 'breach', tools: ['breach', 'reinforce', 'rotation-hole'] },
+  { id: 'areas', tools: ['zone:hold', 'zone:contest', 'zone:danger', 'zone:nogo', 'zone:watch', 'zone:enemy'] },
+  { id: 'crossfire', tools: ['crossfire'] },
+  { id: 'objective', tools: ['plant', 'objective'] },
+  { id: 'note', tools: ['note'] },
+]);
 
+/** Name of a tool in the current language. */
 export function toolLabel(tool) {
-  if (tool === 'select') return 'Select';
-  if (tool === 'crossfire') return 'Crossfire';
+  if (tool === 'select') return t('tool.select');
+  if (tool === 'crossfire') return t('tool.crossfire');
   const [a, b] = tool.split(':');
-  if (a === 'path') return PATHS[b]?.label ?? 'Path';
-  if (a === 'zone') return ZONES[b]?.label ?? 'Area';
+  if (a === 'path') return PATHS[b]?.label ?? t('tool.path');
+  if (a === 'zone') return ZONES[b]?.label ?? t('tool.zone');
   return OBJECTS[tool]?.label ?? tool;
 }
 
-/** Tactical role a player has in a strategy (not the operator's category). */
-export const TACTICAL_ROLES = {
-  entry: 'Entry',
-  support: 'Support',
-  'hard-breach': 'Hard Breach',
-  flex: 'Flex',
-  'flank-watch': 'Flank Watch',
-  drone: 'Drone',
-  igl: 'IGL',
-  anchor: 'Anchor',
-  roamer: 'Roamer',
-  'utility-denial': 'Utility Denial',
-  plant: 'Plant',
-  'post-plant': 'Post-Plant',
-};
+/** Tactical role a player has in a strategy (not the operator's category). Names: tacticalRole.<id>. */
+export const TACTICAL_ROLES = labelTable('tacticalRole', ['entry', 'support', 'hard-breach', 'flex', 'flank-watch', 'drone', 'igl', 'anchor', 'roamer', 'utility-denial', 'plant', 'post-plant']);
 
 const ROLE_FROM_CATEGORY = {
   'hard-breacher': 'hard-breach',
@@ -97,36 +103,14 @@ const ROLE_FROM_CATEGORY = {
 export const defaultTacticalRole = (category, side) =>
   ROLE_FROM_CATEGORY[category] ?? (side === 'defend' ? 'anchor' : 'support');
 
+/** Strategy types per side (names are type.<id>, in the current language). */
 export const STRATEGY_TYPES_BY_SIDE = {
-  attack: {
-    execute: 'Execute',
-    default: 'Default',
-    rush: 'Rush',
-    'slow-take': 'Slow take',
-    vertical: 'Vertical',
-    clear: 'Clear',
-    plant: 'Plant',
-    'post-plant': 'Post-plant',
-    conditioning: 'Conditioning',
-    fake: 'Fake',
-    split: 'Split',
-  },
-  defend: {
-    standard: 'Standard setup',
-    aggressive: 'Aggressive',
-    passive: 'Passive',
-    roam: 'Roam',
-    turtle: 'Turtle',
-    retake: 'Retake',
-    'utility-heavy': 'Utility-heavy',
-    vertical: 'Vertical',
-    'extended-hold': 'Extended hold',
-    'site-denial': 'Site denial',
-  },
+  attack: labelTable('type', ['execute', 'default', 'rush', 'slow-take', 'vertical', 'clear', 'plant', 'post-plant', 'conditioning', 'fake', 'split']),
+  defend: labelTable('type', ['standard', 'aggressive', 'passive', 'roam', 'turtle', 'retake', 'utility-heavy', 'vertical', 'extended-hold', 'site-denial']),
 };
 
-/** Every type label, both sides. */
-export const STRATEGY_TYPES = { ...STRATEGY_TYPES_BY_SIDE.attack, ...STRATEGY_TYPES_BY_SIDE.defend };
+/** Every type, both sides. */
+export const STRATEGY_TYPES = labelTable('type', [...Object.keys(STRATEGY_TYPES_BY_SIDE.attack), ...Object.keys(STRATEGY_TYPES_BY_SIDE.defend)].filter((id, i, all) => all.indexOf(id) === i));
 
 // Types used by version 1 documents.
 const LEGACY_TYPES = { attack: { hold: 'default', denial: 'execute', roam: 'default', retake: 'post-plant' }, defend: { hold: 'standard', denial: 'site-denial', execute: 'standard', split: 'standard', rush: 'aggressive', default: 'standard' } };
@@ -140,29 +124,36 @@ export function normalizeType(type, side) {
 }
 
 /** General gadgets anyone on that side can bring, for utility markers. */
-export const GADGETS = {
-  ability: { label: 'Operator gadget', side: 'both', glyph: '★' },
-  smoke: { label: 'Smoke grenade', side: 'attack', glyph: 'S' },
-  flash: { label: 'Stun grenade', side: 'attack', glyph: 'F' },
-  frag: { label: 'Frag grenade', side: 'both', glyph: 'G' },
-  'breach-charge': { label: 'Soft breach charge', side: 'attack', glyph: 'B' },
-  'hard-charge': { label: 'Hard breach charge', side: 'attack', glyph: 'H' },
-  claymore: { label: 'Claymore', side: 'attack', glyph: 'C' },
-  emp: { label: 'Impact EMP', side: 'attack', glyph: 'E' },
-  wire: { label: 'Barbed wire', side: 'defend', glyph: 'W' },
-  shield: { label: 'Deployable shield', side: 'defend', glyph: 'D' },
-  'bp-camera': { label: 'Bulletproof camera', side: 'defend', glyph: 'C' },
-  nitro: { label: 'Nitro cell (C4)', side: 'defend', glyph: '4' },
-  impact: { label: 'Impact grenade', side: 'defend', glyph: 'I' },
-  alarm: { label: 'Proximity alarm', side: 'defend', glyph: 'A' },
-  blocker: { label: 'Observation blocker', side: 'defend', glyph: 'O' },
-};
+export const GADGETS = labelled(
+  {
+  ability: { side: 'both', glyph: '★' },
+  smoke: { side: 'attack', glyph: 'S' },
+  flash: { side: 'attack', glyph: 'F' },
+  frag: { side: 'both', glyph: 'G' },
+  'breach-charge': { side: 'attack', glyph: 'B' },
+  'hard-charge': { side: 'attack', glyph: 'H' },
+  claymore: { side: 'attack', glyph: 'C' },
+  emp: { side: 'attack', glyph: 'E' },
+  wire: { side: 'defend', glyph: 'W' },
+  shield: { side: 'defend', glyph: 'D' },
+  'bp-camera': { side: 'defend', glyph: 'C' },
+  nitro: { side: 'defend', glyph: '4' },
+  impact: { side: 'defend', glyph: 'I' },
+  alarm: { side: 'defend', glyph: 'A' },
+  blocker: { side: 'defend', glyph: 'O' },
+  },
+  { label: 'gadget' },
+);
 
 export const gadgetsForSide = (side) => Object.entries(GADGETS).filter(([, g]) => g.side === 'both' || g.side === side);
 
-/** "Exothermic Charge" for Thermite's ability, "Smoke grenade" for a general one. */
+/** Name of a utility marker's gadget. An operator's own gadget keeps its official English name (operatorProfiles.json). */
 export function utilityName(gadget, operatorId) {
-  if (!gadget || gadget === 'ability') return operatorProfile(operatorId).ability || (OPERATORS_BY_ID[operatorId] ? `${OPERATORS_BY_ID[operatorId].name}'s gadget` : 'Gadget');
+  if (!gadget || gadget === 'ability') {
+    const ability = operatorProfile(operatorId).ability;
+    if (ability) return ability;
+    return OPERATORS_BY_ID[operatorId] ? t('gadget.operators', { operator: OPERATORS_BY_ID[operatorId].name }) : t('gadget.generic');
+  }
   return GADGETS[gadget]?.label ?? gadget;
 }
 
@@ -195,7 +186,7 @@ export function executeTimeline(strategy) {
 
 // ---------- Who does what ----------
 
-/** What a slot does in a step: its written action, else its markers' labels. */
+/** What a slot does in a step: its written action, else its markers' labels, else a stock line (or ''). */
 export function slotAction(strategy, step, slotKey) {
   const written = step.actions?.[slotKey];
   if (written) return written;
@@ -203,8 +194,8 @@ export function slotAction(strategy, step, slotKey) {
   const name = OPERATORS_BY_ID[strategy.slots.find((s) => s.key === slotKey)?.operatorId]?.name;
   // A label that's just the operator's name says nothing; a placed position still means "go here".
   const labels = mine.map((m) => m.label).filter((l) => l && l !== name);
-  if (labels.length) return [...new Set(labels)].join(' · ');
-  return mine.some((m) => m.kind === 'position') ? 'Move to the marked position.' : '';
+  if (labels.length) return [...new Set(labels)].join(' · '); // the author's own text
+  return mine.some((m) => m.kind === 'position') ? t('action.moveToPosition') : '';
 }
 
 /**
@@ -252,35 +243,36 @@ const slotOpName = (strategy, slotKey) => OPERATORS_BY_ID[strategy.slots.find((s
 /** Short description of any board item, for lists and titles. */
 export function describeItem(strategy, type, item) {
   const who = slotOpName(strategy, item.slotKey);
-  if (type === 'zone') return `${ZONES[item.kind].label}${item.label ? `: ${item.label}` : ''}`;
+  const label = item.label || '';
+  if (type === 'zone') return t(label ? 'describe.zone.label' : 'describe.zone', { kind: ZONES[item.kind].label, label });
   if (type === 'crossfire') {
     const a = slotOpName(strategy, item.slotA) ?? 'A';
     const b = slotOpName(strategy, item.slotB) ?? 'B';
-    return `Crossfire ${a} + ${b}${item.label ? `: ${item.label}` : ''}`;
+    return t(label ? 'describe.crossfire.label' : 'describe.crossfire', { a, b, label });
   }
-  if (type === 'path') return `${PATHS[item.kind].label}${who ? ` · ${who}` : ''}${item.label ? `: ${item.label}` : ''}`;
-  return `${OBJECTS[item.kind].label}${item.label ? `: ${item.label}` : who ? ` · ${who}` : ''}`;
+  if (type === 'path') return t(`describe.path${who && label ? '.whoLabel' : who ? '.who' : label ? '.label' : ''}`, { kind: PATHS[item.kind].label, who, label });
+  return t(label ? 'describe.object.label' : who ? 'describe.object.who' : 'describe.object', { kind: OBJECTS[item.kind].label, who, label });
 }
 
 // ---------- Comparing strategies ----------
 
 const UTILITY_KINDS = new Set(['utility', 'trap', 'drone', 'camera', 'breach']);
 
-/** Numbers used to compare two strategies side by side. */
+/** Numbers used to compare two strategies side by side (pace and utilityLevel are ids: t('pace.<id>'), t('level.<id>')). */
 export function strategyStats(s) {
   const timeline = executeTimeline(s);
   const span = timeline.length > 1 ? Math.max(...timeline.map((t) => t.seconds)) - Math.min(...timeline.map((t) => t.seconds)) : null;
   const utility = s.markers.filter((m) => UTILITY_KINDS.has(m.kind)).length;
   const fastTypes = new Set(['rush', 'execute', 'aggressive']);
-  let pace = 'Medium';
-  if (span !== null) pace = span <= 40 ? 'Fast' : span >= 90 ? 'Slow' : 'Medium';
-  else if (fastTypes.has(s.type)) pace = 'Fast';
-  else if (['slow-take', 'default', 'passive', 'turtle', 'extended-hold'].includes(s.type)) pace = 'Slow';
+  let pace = 'medium';
+  if (span !== null) pace = span <= 40 ? 'fast' : span >= 90 ? 'slow' : 'medium';
+  else if (fastTypes.has(s.type)) pace = 'fast';
+  else if (['slow-take', 'default', 'passive', 'turtle', 'extended-hold'].includes(s.type)) pace = 'slow';
   return {
     operators: s.slots.length,
     steps: s.steps.length,
     utility,
-    utilityLevel: utility >= 10 ? 'High' : utility >= 5 ? 'Medium' : 'Low',
+    utilityLevel: utility >= 10 ? 'high' : utility >= 5 ? 'medium' : 'low',
     breaches: s.markers.filter((m) => m.kind === 'breach').length,
     zones: s.zones.length,
     crossfires: s.crossfires.length,

@@ -1,3 +1,4 @@
+import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import {
   FAVORITE_WEIGHT,
@@ -41,7 +42,7 @@ describe('rollLineup', () => {
   it('returns a clear error when bans leave too few operators', () => {
     const res = rollLineup({ ...base, bans: ['thermite', 'hibana', 'ash', 'sledge'] });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Only 4 attackers available after bans and blocks, but 5 are needed/);
+    expect(en(res.error)).toMatch(/Only 4 attackers available after bans and blocks, but 5 are needed/);
   });
 
   it('returns an error naming the player when their owned pool is empty', () => {
@@ -49,7 +50,7 @@ describe('rollLineup', () => {
     prefs.Xavier = { owned: [] };
     const res = rollLineup({ ...base, prefs, ownedOnly: true });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Xavier/);
+    expect(en(res.error)).toMatch(/Xavier/);
   });
 
   it('uses only each player\'s owned operators when owned-only is on', () => {
@@ -75,7 +76,7 @@ describe('rollLineup', () => {
     const prefs = Object.fromEntries(PLAYERS.map((p) => [p, { owned: ['thermite', 'ash', 'iq'] }]));
     const res = rollLineup({ ...base, prefs, ownedOnly: true });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Not enough different attackers/);
+    expect(en(res.error)).toMatch(/Not enough different attackers/);
   });
 
   it('ignores owned lists when owned-only is off', () => {
@@ -96,7 +97,7 @@ describe('rollLineup', () => {
     for (const p of PLAYERS.slice(1)) prefs[p] = { owned: ['ash', 'iq', 'lion', 'sledge'] };
     const res = rollLineup({ ...base, prefs, ownedOnly: true, rng: seededRng(9) });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Samuel.*blocked/);
+    expect(en(res.error)).toMatch(/Samuel.*blocked/);
   });
 
   it('weights favourites more heavily', () => {
@@ -149,7 +150,7 @@ describe('rerollPlayer', () => {
   it('reports an error when nothing is left for that player', () => {
     const res = rerollPlayer({ ...base, lineup: start, player: 'Samuel', bans: ['thermite', 'hibana', 'sledge', 'montagne'] });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/Samuel/);
+    expect(en(res.error)).toMatch(/Samuel/);
   });
 
   it('rerollPlayers can re-roll several players at once', () => {

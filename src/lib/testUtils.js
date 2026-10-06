@@ -37,3 +37,7 @@ export const OPS = [
 export const OPS_BY_ID = Object.fromEntries(OPS.map((o) => [o.id, o]));
 
 export const values = (lineup) => Object.values(lineup);
+
+/** English text of a message descriptor (or a plain string), for assertions. */
+import { tm } from '../i18n/index.js';
+export const en = (v) => (typeof v === 'string' ? v : tm(v));

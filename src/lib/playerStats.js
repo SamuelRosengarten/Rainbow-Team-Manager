@@ -14,6 +14,7 @@
 //     attack:  { kd, winRate }, defense: { kd, winRate } }
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
 import { MAPS } from './maps.js';
+import { formatNumber, formatPercent, labelTable, relativeTime } from '../i18n/index.js';
 
 export const PLATFORMS = { pc: 'PC', xbox: 'Xbox', playstation: 'PlayStation' };
 
@@ -164,15 +165,7 @@ export const weakMaps = (stats, limit = 3) => mapsBy(stats, 'weak').slice(0, lim
 // ---------------------------------------------------------------------------
 
 /** Role buckets a coach thinks in. Uncertain players are simply Flex. */
-export const PLAYER_ROLES = {
-  'hard-breach': 'Breach',
-  entry: 'Entry',
-  intel: 'Intel',
-  support: 'Support',
-  anchor: 'Anchor',
-  roamer: 'Roamer',
-  flex: 'Flex',
-};
+export const PLAYER_ROLES = labelTable('playerRole', ['hard-breach', 'entry', 'intel', 'support', 'anchor', 'roamer', 'flex']);
 
 // Operator role -> player role bucket.
 const BUCKET = {
@@ -222,26 +215,12 @@ export function playerRole(player) {
 // Display helpers
 // ---------------------------------------------------------------------------
 
-export const fmtRatio = (n) => (n === null || n === undefined ? '' : n.toFixed(2));
-export const fmtPct = (n) => (n === null || n === undefined ? '' : `${Math.round(n)}%`);
-export const rankLabel = (stats) => (stats?.rank ? `${stats.rank.name}${stats.rank.rp ? ` · ${stats.rank.rp} RP` : ''}` : '');
+export const fmtRatio = (n) => (n === null || n === undefined ? '' : formatNumber(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+export const fmtPct = (n) => (n === null || n === undefined ? '' : formatPercent(n));
+export const rankLabel = (stats) => (stats?.rank ? `${stats.rank.name}${stats.rank.rp ? ` · ${formatNumber(stats.rank.rp)} RP` : ''}` : '');
 
-/** "2 hours ago". `now` is injectable for tests. */
-export function timeAgo(iso, now = Date.now()) {
-  const t = Date.parse(iso ?? '');
-  if (!Number.isFinite(t)) return '';
-  const s = Math.max(0, Math.round((now - t) / 1000));
-  if (s < 60) return 'just now';
-  const units = [
-    [60, 'minute'],
-    [3600, 'hour'],
-    [86400, 'day'],
-  ];
-  let [size, name] = units[0];
-  for (const u of units) if (s >= u[0]) [size, name] = u;
-  const n = Math.floor(s / size);
-  return `${n} ${name}${n === 1 ? '' : 's'} ago`;
-}
+/** "2 hours ago" / "il y a 2 heures" (Intl, current language). `now` is injectable for tests. */
+export const timeAgo = relativeTime;
 
 /** The compact team table: one row per player, only what the data supports. */
 export function teamSnapshot(players) {

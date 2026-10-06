@@ -29,6 +29,8 @@
 import { OPERATORS_BY_ID, operatorProfile } from './operators.js';
 import { ROLES } from './fit.js';
 import { parseSite } from './diagram.js';
+import { CodedError } from './errors.js';
+import { labelTable, labelled, msg, t } from '../i18n/index.js';
 import { FLOOR_LABEL, floorIdFromSite } from './floorPlans.js';
 import { defaultLayout } from './space.js';
 import {
@@ -46,27 +48,20 @@ import {
 
 export { STRATEGY_TYPES };
 export const SCHEMA_VERSION = 3;
-export const LAYOUTS = { floor: 'Real floor plan', schematic: 'Abstract schematic' };
+/** Board layouts (names are layout.<id>, in the current language). */
+export const LAYOUTS = labelTable('layout', ['floor', 'schematic']);
 // Board size that version 1 and 2 documents were drawn on.
 const LEGACY = { w: 100, h: 64 };
 const UNIT = { w: 1, h: 1 };
 
 /** Where a strategy comes from. Shown on every card and board. */
-export const ORIGINS = {
-  reference: {
-    label: 'Online reference',
-    short: 'Reference',
-    note: 'Linked from a public source. Open the original for the full strategy.',
-  },
-  team: { label: 'Team strategy', short: 'Team', note: 'Created or adapted by your team.' },
-  suggested: {
-    label: 'Suggested',
-    short: 'Suggested',
-    note: 'A starting point written from general Siege knowledge and matched by rules, not a verified or pro strategy. Positions are approximate. Adapt and test it.',
-  },
-};
+export const ORIGINS = labelled(
+  { reference: {}, team: {}, suggested: {} },
+  { label: 'origin.label', short: 'origin.short', note: 'origin.note' },
+);
 
-export const DIFFICULTY = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+/** Difficulty names (difficulty.<n>, in the current language). */
+export const DIFFICULTY = labelTable('difficulty', [1, 2, 3]);
 
 export const SLOT_COLORS = ['#3d9bff', '#3ccf8e', '#f5c518', '#ff6b9a', '#b07cff', '#5ee0e6'];
 export const LIMITS = { markers: 120, paths: 60, zones: 40, crossfires: 20, steps: 15 };
@@ -121,7 +116,7 @@ function normalizeStep(raw, i, slotKeys) {
   }
   return {
     id: str(raw.id, 30) || `st${i + 1}`,
-    title: str(raw.title, 80) || `Step ${i + 1}`,
+    title: str(raw.title, 80) || t('strategy.stepTitle', { n: i + 1 }),
     description: str(raw.description, 600),
     slots: list(raw.slots).filter((k) => slotKeys.has(k)),
     actions,
@@ -222,10 +217,10 @@ function normalizePath(raw, stepIds, slotKeys, sc) {
  * for problems a person must fix; silently drops broken markers/paths.
  */
 export function normalizeStrategy(raw) {
-  if (!raw || typeof raw !== 'object') throw new Error('Strategy must be an object.');
+  if (!raw || typeof raw !== 'object') throw new CodedError('strategy.notObject');
   const title = str(raw.title, 120);
-  if (!title) throw new Error('Give the strategy a title.');
-  if (!SIDES.includes(raw.side)) throw new Error(`"${title}": side must be attack or defend.`);
+  if (!title) throw new CodedError('strategy.titleRequired');
+  if (!SIDES.includes(raw.side)) throw new CodedError('strategy.badSide', { title });
   const origin = ORIGINS[raw.origin] ? raw.origin : 'team';
   const slots = list(raw.slots).slice(0, 6).map(normalizeSlot);
   const keys = new Set();
@@ -236,9 +231,9 @@ export function normalizeStrategy(raw) {
   const steps = list(raw.steps).slice(0, LIMITS.steps).map((s, i) => normalizeStep(s, i, keys));
   const stepIds = new Set(steps.map((s) => s.id));
   const url = str(raw.sourceUrl, 500);
-  if (url && !/^https:\/\/\S+$/i.test(url)) throw new Error(`"${title}": source link must start with https://.`);
+  if (url && !/^https:\/\/\S+$/i.test(url)) throw new CodedError('strategy.badSourceLink', { title });
   const boardImageUrl = str(raw.boardImageUrl, 1000);
-  if (boardImageUrl && !/^https:\/\/\S+$/i.test(boardImageUrl)) throw new Error(`"${title}": board image link must start with https://.`);
+  if (boardImageUrl && !/^https:\/\/\S+$/i.test(boardImageUrl)) throw new CodedError('strategy.badBoardImage', { title });
   const site = str(raw.site, 80);
   const id = str(raw.id, 80) || newId('strat');
   const version = Number.isInteger(raw.version) && raw.version > 0 ? Math.min(raw.version, 999) : 1;
@@ -400,9 +395,7 @@ export function adaptStrategy(strategy, subs) {
     s.crossfires = (s.crossfires ?? []).map((c) => ({ ...c, label: rename(c.label) }));
     s.summary = rename(s.summary);
     if (fromId) {
-      warnings.push(
-        `${OPERATORS_BY_ID[toId].name} replaces ${OPERATORS_BY_ID[fromId].name}. Their gadgets differ: check the instructions for this slot.`,
-      );
+      warnings.push(msg('strategy.gadgetsDiffer', { to: OPERATORS_BY_ID[toId].name, from: OPERATORS_BY_ID[fromId].name }));
     }
   }
   return { strategy: s, warnings };
@@ -420,7 +413,7 @@ export function duplicateStrategy(strategy, { owner = null, subs = {} } = {}) {
     ...adapted,
     id: newId('strat'),
     origin: 'team',
-    title: strategy.origin === 'team' ? `${strategy.title} (copy)` : strategy.title,
+    title: strategy.origin === 'team' ? t('strategy.copyTitle', { title: strategy.title }) : strategy.title,
     adaptedFrom: root,
     owner,
     shared: true,
@@ -466,15 +459,15 @@ export function latestVersions(list) {
   return [...best.values()];
 }
 
-/** One-line attribution for cards and the board header. */
+/** One-line attribution for cards and the board header (the current language; call it while rendering). */
 export function attribution(s) {
-  if (s.origin === 'reference') return `Source: ${s.sourceName || 'online'}${s.sourceTitle ? ` · “${s.sourceTitle}”` : ''}`;
-  if (s.origin === 'suggested') return 'Suggested starting point · not a verified strategy';
-  if (s.adaptedFrom) {
-    const from = ORIGINS[s.adaptedFrom.origin]?.short ?? '';
-    return `Adapted by the team from “${s.adaptedFrom.title}”${from ? ` (${from.toLowerCase()})` : ''}`;
+  if (s.origin === 'reference') {
+    const key = `attribution.reference${s.sourceName ? '' : '.online'}${s.sourceTitle ? '.titled' : ''}`;
+    return t(key, { source: s.sourceName, title: s.sourceTitle });
   }
-  return 'Created by the team';
+  if (s.origin === 'suggested') return t('attribution.suggested');
+  if (s.adaptedFrom) return t('attribution.adapted', { title: s.adaptedFrom.title, origin: t(`origin.lower.${s.adaptedFrom.origin}`) });
+  return t('attribution.team');
 }
 
 /** Strategy in the shape stored in tactics export files and the database doc column. */

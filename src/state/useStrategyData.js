@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as api from '../lib/api.js';
 import { liveFromChannels } from '../lib/live.js';
+import { CodedError, errorMsg } from '../lib/errors.js';
+import { msg } from '../i18n/index.js';
 import { mergeStrategies, normalizeStrategy, strategyDoc } from '../lib/strategies.js';
 
 // The built-in library is ~160 kB of JSON, so it's loaded as its own file the
@@ -43,14 +45,15 @@ const toAssignmentMap = (rows) => {
  */
 export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
   const [status, setStatus] = useState(online ? 'loading' : 'ready');
-  const [error, setError] = useState('');
+  // Errors are message descriptors (not strings) so they follow the language.
+  const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   // Realtime status of the strategy channels: 'idle' until they exist.
   const [live, setLive] = useState('idle');
   const [saved, setSaved] = useState([]);
   const [assignmentRows, setAssignmentRows] = useState([]);
   const [builtins, setBuiltins] = useState(null);
-  const [builtinError, setBuiltinError] = useState('');
+  const [builtinError, setBuiltinError] = useState(null);
   const idsRef = useRef(idByName);
   const profileRef = useRef(profile);
 
@@ -65,7 +68,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
       .then((b) => !cancelled && setBuiltins(b))
       .catch(() => {
         builtinsPromise = null;
-        if (!cancelled) setBuiltinError("Couldn't load the built-in strategies. Check your connection and try again.");
+        if (!cancelled) setBuiltinError(msg('error.builtinsLoad'));
       });
     return () => {
       cancelled = true;
@@ -93,12 +96,12 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
         setSaved(validRows(rows));
         setAssignmentRows(assigns);
         setStatus('ready');
-        setError('');
+        setError(null);
         return true;
       });
     const refresh = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => load().catch((e) => !cancelled && setError(e.message)), 250);
+      timer = setTimeout(() => load().catch((e) => !cancelled && setError(errorMsg(e))), 250);
     };
     load()
       .then((ok) => {
@@ -107,7 +110,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
       })
       .catch((e) => {
         if (cancelled) return;
-        setError(e.message);
+        setError(errorMsg(e));
         setStatus('error');
       });
     return () => {
@@ -119,8 +122,8 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
 
   const retry = useCallback(() => {
     setStatus(online ? 'loading' : 'ready');
-    setError('');
-    setBuiltinError('');
+    setError(null);
+    setBuiltinError(null);
     setReloadKey((k) => k + 1);
   }, [online]);
 
@@ -132,7 +135,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
 
   const saveStrategy = useCallback(
     async (raw) => {
-      if (!canSave) throw new Error('Saving strategies needs the latest database setup. Re-run supabase/schema.sql.');
+      if (!canSave) throw new CodedError('error.strategySaveSchema');
       const s = { ...normalizeStrategy(raw), owner: raw.owner ?? null };
       if (online) await api.saveStrategy(strategyDoc(s), idsRef.current, profileRef.current);
       upsertLocal({ ...s, updatedAt: new Date().toISOString(), updatedBy: profileRef.current });
@@ -144,7 +147,7 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
   /** Team strategies are deleted; built-ins are hidden for everyone (and can come back by deleting the hidden row). */
   const removeStrategy = useCallback(
     async (s) => {
-      if (!canSave) throw new Error('Changing the library needs the latest database setup. Re-run supabase/schema.sql.');
+      if (!canSave) throw new CodedError('error.strategyChangeSchema');
       if (s.builtin) {
         const tomb = { ...strategyDoc(s), deleted: true, owner: null };
         if (online) await api.saveStrategy(tomb, idsRef.current, profileRef.current);

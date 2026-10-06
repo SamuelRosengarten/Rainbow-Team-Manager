@@ -2,6 +2,7 @@
 // a two-room bomb site, which player/operator fills it, and what they do.
 // Coordinates live in a 100 x 64 box (the SVG viewBox).
 import { checkFit, ROLE_LABEL } from './fit.js';
+import { t } from '../i18n/index.js';
 
 export const VIEW_W = 100;
 export const VIEW_H = 64;
@@ -35,37 +36,24 @@ const SLOTS = {
   },
 };
 
+// What each role does, per side (messages diagram.attack.<role> / diagram.defend.<role>).
+// r = the site's two room names, i = how many of that role were placed before.
 const ACTIONS = {
-  attack: {
-    'hard-breacher': (r) => `Open the reinforced wall into ${r[0]}.`,
-    support: (r) => `Clear anti-breach utility on the ${r[0]} wall and cover the breach.`,
-    'soft-breacher': (r) => `Open the floor or hatch above ${r[1]} for vertical pressure.`,
-    intel: (r) => `Drone ${r[1]} and call positions and rotations.`,
-    roamer: () => 'Watch flanks and cut off rotations.',
-    anchor: () => 'Hold the plant and play post-plant.',
-    flex: (r) => `Entry and trade: follow the breach into ${r[0]}.`,
-  },
-  defend: {
-    anchor: (r, i) => `Hold ${r[i % 2]} and stop the plant.`,
-    support: (r, i) => `Reinforce and deny the ${r[i % 2]} walls.`,
-    intel: () => 'Watch cameras and call where the attack is coming from.',
-    roamer: () => 'Roam outside site to delay, then rotate back.',
-    'hard-breacher': () => 'Open rotation holes between the rooms.',
-    'soft-breacher': () => 'Open murder holes and rotations.',
-    flex: () => 'Play between the rooms and rotate where needed.',
-  },
+  attack: Object.fromEntries(['hard-breacher', 'support', 'soft-breacher', 'intel', 'roamer', 'anchor', 'flex'].map((role) => [role, (r) => t(`diagram.attack.${role}`, { room0: r[0], room1: r[1] })])),
+  defend: Object.fromEntries(['anchor', 'support', 'intel', 'roamer', 'hard-breacher', 'soft-breacher', 'flex'].map((role) => [role, (r, i) => t(`diagram.defend.${role}`, { room: r[i % 2] })])),
 };
 
-const FLOOR = { B: 'Basement', '1F': '1st floor', '2F': '2nd floor', '3F': '3rd floor' };
+// Site floor prefixes to message ids (floor.site.<code>); anything else is shown as written.
+const FLOOR_CODES = new Set(['B', '1F', '2F', '3F']);
 
 /** "B Lockers / CCTV Room" -> { floor: 'Basement', rooms: ['Lockers', 'CCTV Room'] }. */
 export function parseSite(site = '') {
   const m = site.trim().match(/^(B|\d+F)\s+(.*)$/);
-  const floor = m ? FLOOR[m[1]] ?? m[1] : '';
+  const floor = m ? (FLOOR_CODES.has(m[1]) ? t(`floor.site.${m[1]}`) : m[1]) : '';
   const names = (m ? m[2] : site).split('/').map((s) => s.trim()).filter(Boolean);
   return {
     floor,
-    rooms: [names[0] || 'Site A', names[1] || names[0] || 'Site B'].map((n) => n.slice(0, 22)),
+    rooms: [names[0] || t('diagram.siteA'), names[1] || names[0] || t('diagram.siteB')].map((n) => n.slice(0, 22)),
   };
 }
 
@@ -120,6 +108,6 @@ export function layoutDiagram({ side, site, requiredRoles = [], lineup, players 
 
 export function markerTitle(m, operatorsById) {
   const op = operatorsById[m.operatorId]?.name;
-  const who = m.player ? `${m.player}${op ? ` (${op})` : ''}` : m.missing ? 'Missing' : 'Open spot';
-  return `${who} · ${m.role === 'flex' ? 'Flex' : ROLE_LABEL[m.role]}`;
+  const who = m.player ? `${m.player}${op ? ` (${op})` : ''}` : m.missing ? t('diagram.missing') : t('diagram.openSpot');
+  return `${who} · ${m.role === 'flex' ? t('mainRole.flex') : ROLE_LABEL[m.role]}`;
 }

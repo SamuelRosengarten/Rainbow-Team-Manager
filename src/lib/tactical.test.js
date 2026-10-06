@@ -135,7 +135,7 @@ describe('briefings', () => {
   });
 
   it('summarises a strategy for comparison', () => {
-    expect(strategyStats(plan())).toMatchObject({ operators: 3, steps: 3, utility: 2, breaches: 1, zones: 1, crossfires: 1, span: 14, pace: 'Fast' });
+    expect(strategyStats(plan())).toMatchObject({ operators: 3, steps: 3, utility: 2, breaches: 1, zones: 1, crossfires: 1, span: 14, pace: 'fast' });
   });
 });
 
