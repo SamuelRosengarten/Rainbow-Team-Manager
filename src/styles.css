@@ -3245,3 +3245,24 @@ button.op-pill {
 .owned-note p {
   margin: 0;
 }
+
+.op-row__own-text {
+  min-width: 5.2em;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.op-row__own-text--on {
+  color: var(--ok);
+  font-weight: 600;
+}
+.owned-status {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+.owned-status--on {
+  border-color: var(--accent);
+}

@@ -19,7 +19,7 @@ const PREF_STATES = [
  * Everyone can look at anyone's lists; only your own are editable.
  */
 export default function OperatorsView({ profile, prefs, setOwned, setPreference }) {
-  const { players } = useRoster();
+  const { players, ownedOnly } = useRoster();
   const [viewing, setViewing] = useState(profile);
   const [side, setSide] = useState('attack');
   const [filter, setFilter] = useState('');
@@ -54,6 +54,10 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
         <strong>🚫 Blocked</strong> means “I never want to play this”: you set it yourself, and nobody else's favourites
         can block it. A blocked operator is left out of recommendations, rolls, substitutes and lineups for any lineup that includes
         you, and the finder shows who blocked it. Click an operator for their profile, stats and intro video.
+      </p>
+      <p className={`owned-status owned-status--${ownedOnly ? 'on' : 'off'}`} role="status">
+        Owned operators only is <strong>{ownedOnly ? 'ON' : 'OFF'}</strong> for the team:{' '}
+        {ownedOnly ? 'recommendations only use operators each player owns.' : 'owned operators are recorded but don’t limit recommendations. Switch it on in the finder or the lineup roller.'}
       </p>
       {!mine && <Notice kind="info">You're viewing {viewing}'s lists (read only).</Notice>}
 
@@ -111,6 +115,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                     onChange={(e) => setOwned(viewing, [op.id], e.target.checked)}
                   />
                   <span className="visually-hidden">{op.name} owned</span>
+                  <span className={`op-row__own-text${isOwned ? ' op-row__own-text--on' : ''}`} aria-hidden="true">
+                    {isOwned ? '✓ Owned' : 'Not owned'}
+                  </span>
                 </label>
                 <button type="button" className="op-row__open" onClick={() => setOpen(op.id)}>
                   <OperatorIcon operator={op} size="sm" />
@@ -139,8 +146,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                     title={label}
                   >
                     <span aria-hidden="true">{glyph}</span>
-                    <span className="pref-btn__label">{label}</span>
-                    <span className="visually-hidden"> {op.name}</span>
+                    <span className="visually-hidden">
+                      {label}: {op.name}
+                    </span>
                   </button>
                 ))}
               </span>
