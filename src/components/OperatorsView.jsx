@@ -29,6 +29,8 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
   const owned = new Set(p.owned);
   const favorites = new Set(p.favorites);
   const avoid = new Set(p.avoid);
+  // Teammates who also favourite an operator: shared favourites are a conflict worth seeing.
+  const alsoFavored = (id) => players.filter((n) => n !== viewing && (prefs[n]?.favorites ?? []).includes(id));
   const ops = operatorsForSide(side).filter((op) => op.name.toLowerCase().includes(filter.trim().toLowerCase()));
   const sideIds = operatorsForSide(side).map((op) => op.id);
   const ownedCount = sideIds.filter((id) => owned.has(id)).length;
@@ -51,9 +53,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
       <p className="panel__sub">
         <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>★ Favorites</strong> are the
         strongest preference: strategy recommendations are built around them and rolls pick them about 5× as often.{' '}
-        <strong>🚫 Blocked</strong> means “I never want to play this”: you set it yourself, and nobody else's favourites
-        can block it. A blocked operator is left out of recommendations, rolls, substitutes and lineups for any lineup that includes
-        you, and the finder shows who blocked it. Click an operator for their profile, stats and intro video.
+        <strong>🚫 Blocked</strong> means “I never want to play this”. You set it yourself; nobody else's favourites can
+        block it, and it keeps the operator off <em>you</em> only: teammates can still play it. It's only excluded for a whole
+        lineup if every player in it blocked it (or the team banned it). Click an operator for their profile, stats and intro video.
       </p>
       <p className={`owned-status owned-status--${ownedOnly ? 'on' : 'off'}`} role="status">
         Owned operators only is <strong>{ownedOnly ? 'ON' : 'OFF'}</strong> for the team:{' '}
@@ -124,6 +126,9 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                   <span className="op-row__name">{op.name}</span>
                   {pref && (
                     <span className={`op-row__state op-row__state--${pref}`}>{pref === 'favorite' ? '★ Favorite' : '🚫 Blocked'}</span>
+                  )}
+                  {alsoFavored(op.id).length > 0 && (
+                    <span className="op-row__shared">also ★ {alsoFavored(op.id).join(', ')}</span>
                   )}
                   <span className="op-row__info" aria-hidden="true">ⓘ</span>
                   <span className="visually-hidden"> profile</span>

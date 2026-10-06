@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import strategiesJson from '../data/strategies.json';
 import { normalizeStrategy } from './strategies.js';
-import { isUsable, playerMoves, preferenceSet, prefState, recommendStrategies, recommendStrategy, sharedFavorites, whereFavoritesFit } from './recommend.js';
+import { isUsable, playerMoves, preferenceSet, prefWho, prefState, recommendStrategies, recommendStrategy, sharedFavorites, whereFavoritesFit } from './recommend.js';
 import { recommendLineup } from './lineup.js';
 import { suggestAlternatives } from './strategyMatch.js';
 import { suggestedPartners } from './synergy.js';
@@ -14,13 +14,21 @@ const ALL = strategiesJson.map((s) => normalizeStrategy(s));
 const prefsFor = (favorites, avoid) => ({ Samuel: { favorites, avoid } });
 
 describe('preferenceSet', () => {
-  it('collects favorites and blocks per player; a blocked operator is never a favorite', () => {
+  it('collects favorites and blocks per player; a block only removes the operator for everyone when everyone blocked it', () => {
     const pref = preferenceSet({ A: { favorites: ['thermite', 'ash'] }, B: { avoid: ['ash'] } }, ['A', 'B'], ['buck']);
-    expect([...pref.favorites.keys()]).toEqual(['thermite']);
+    expect([...pref.favorites.keys()]).toEqual(['thermite', 'ash']); // B's block doesn't touch A's favorite
     expect(pref.blocked.get('ash')).toEqual(['B']);
-    expect(prefState(pref, 'ash')).toBe('blocked');
-    expect(prefState(pref, 'buck')).toBe('blocked');
+    expect(pref.blockedForAll.has('ash')).toBe(false);
+    expect(isUsable(pref, 'ash')).toBe(true);
+    expect(prefState(pref, 'ash')).toBe('favorite');
+    expect(prefWho(pref, 'ash')).toBe('Favorite of A; blocked by B');
+    expect(prefState(pref, 'buck')).toBe('blocked'); // team ban
     expect(prefState(pref, 'thermite')).toBe('favorite');
+    const all = preferenceSet({ A: { avoid: ['iq'] }, B: { avoid: ['iq'] } }, ['A', 'B']);
+    expect(isUsable(all, 'iq')).toBe(false);
+    const some = preferenceSet({ A: { avoid: ['iq'] }, B: {} }, ['A', 'B']);
+    expect(prefState(some, 'iq')).toBe('partial');
+    expect(prefWho(some, 'iq')).toBe('Blocked by A only');
   });
 });
 
@@ -32,7 +40,25 @@ describe('recommendStrategy: blocked operators are a hard exclusion', () => {
     expect(rec.status).toBe('adapted');
     expect(rec.lineup.map((l) => l.operatorId)).not.toContain('ace');
     expect(rec.blockedReplaced[0]).toMatchObject({ blocked: 'ace', by: ['Samuel'] });
-    expect(rec.reasons.some((r) => /Requires blocked operator Ace/.test(r.text))).toBe(true);
+    expect(rec.reasons.some((r) => /Ace is blocked by everyone in the lineup \(Samuel\): adapted with/.test(r.text))).toBe(true);
+    expect(rec.reasons.some((r) => /Requires blocked operator/.test(r.text))).toBe(false);
+  });
+
+  it("a player's own block doesn't remove the operator for teammates, and the reason says whose", () => {
+    const s = strat([{ key: 'a', operatorId: 'mute' }]);
+    const prefs = { Anthony: { favorites: ['mute'] }, Mathis: { avoid: ['mute'] } };
+    const pref = preferenceSet(prefs, ['Anthony', 'Mathis']);
+    const rec = recommendStrategy({ ...s, side: 'defend' }, { pref });
+    expect(rec.lineup[0]).toMatchObject({ operatorId: 'mute', favorite: true, blockedBy: ['Mathis'] });
+    expect(rec.status).toBe('ok');
+    expect(rec.reasons.map((r) => r.text)).toContain('Mathis blocked Mute, so Anthony would play it');
+    expect(rec.reasons.some((r) => /Requires blocked operator/.test(r.text))).toBe(false);
+  });
+
+  it('says "banned", not "blocked by a player", for a team ban', () => {
+    const s = strat([{ key: 'a', operatorId: 'ace' }]);
+    const rec = recommendStrategy(s, { pref: preferenceSet({}, ['Samuel'], ['ace']) });
+    expect(rec.reasons.some((r) => /Ace is banned: adapted with/.test(r.text))).toBe(true);
   });
 
   it('never uses a blocked operator even when it is selected', () => {
@@ -176,5 +202,42 @@ describe('owned operators only', () => {
     const rec = recommendStrategy(strat([{ key: 'a', operatorId: 'thermite' }]), { pref });
     expect(rec.lineup[0].operatorId).not.toBe('thermite');
     expect(rec.reasons.some((r) => /Nobody in the lineup owns Thermite/.test(r.text))).toBe(true);
+  });
+});
+
+describe('owned operators only: a pick the player does not own', () => {
+  const prefs = { Samuel: { owned: ['smoke', 'mute', 'jager', 'bandit', 'caveira'] }, Anthony: {} };
+  const pref = preferenceSet(prefs, ['Samuel', 'Anthony'], [], { ownedOnly: true });
+  const s = strat([{ key: 'a', operatorId: 'mute' }, { key: 'b', operatorId: 'jager' }]);
+  const plan = { ...s, side: 'defend' };
+  const picks = [{ player: 'Samuel', operatorId: 'melusi' }, { player: 'Anthony', operatorId: 'jager' }];
+
+  it("flags it, and doesn't count it as kept", () => {
+    const rec = recommendStrategy(plan, { pref, selected: ['melusi', 'jager'], picks });
+    const text = rec.reasons.map((r) => r.text);
+    expect(text).toContain("Samuel doesn't own Melusi (owned operators only is on): not counted as kept");
+    expect(text).toContain('Keeps 1 of your 1 selected operator');
+    expect(rec.lineup.some((l) => l.selected && l.operatorId === 'melusi')).toBe(false);
+  });
+
+  it('does not flag anything while owned-only is off, or for a player with no owned list', () => {
+    const off = preferenceSet(prefs, ['Samuel', 'Anthony']);
+    expect(recommendStrategy(plan, { pref: off, selected: ['melusi'], picks }).reasons.some((r) => /doesn't own/.test(r.text))).toBe(false);
+    const anthony = [{ player: 'Anthony', operatorId: 'melusi' }];
+    expect(recommendStrategy(plan, { pref, selected: ['melusi'], picks: anthony }).reasons.some((r) => /doesn't own/.test(r.text))).toBe(false);
+  });
+});
+
+describe('stars need a real sample', () => {
+  const plan = strat([{ key: 'a', operatorId: 'hibana' }, { key: 'b', operatorId: 'iq' }, { key: 'c', operatorId: 'ash' }, { key: 'd', operatorId: 'thatcher' }]);
+  it('operator compatibility has no stars for one picked operator, and says what it measured', () => {
+    const rec = recommendStrategy(plan, { pref: preferenceSet({}, []), selected: ['iq'] });
+    expect(rec.compatStars).toBeNull();
+    expect(rec.compatLabel).toBe('1 of 1 picked operator kept');
+    expect(recommendStrategy(plan, { pref: preferenceSet({}, []) }).compatStars).toBeNull();
+  });
+  it('gets stars from three picked operators', () => {
+    const rec = recommendStrategy(plan, { pref: preferenceSet({}, []), selected: ['hibana', 'iq', 'ash'] });
+    expect(rec.compatStars).toBeGreaterThanOrEqual(4);
   });
 });

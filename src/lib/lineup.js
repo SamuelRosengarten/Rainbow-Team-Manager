@@ -83,10 +83,11 @@ const name = (id) => OPERATORS_BY_ID[id]?.name ?? 'an operator';
 const jobOf = (slot) => (TACTICAL_ROLES[slot.tacticalRole] ? slot.tacticalRole : defaultTacticalRole(slot.role));
 
 /** Scored candidates for one (slot, player) pair, best first. Never contains a blocked operator. */
-function cell({ slot, side, player, pref, ownFavs, stats, owned, ownedOnly, map }) {
+function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned, ownedOnly, map }) {
   const out = [];
   for (const op of OPERATORS) {
-    if (op.side !== side || !isUsable(pref, op.id)) continue; // 1. blocked = absolute exclusion
+    if (op.side !== side || !isUsable(pref, op.id)) continue; // 1. banned / blocked by everyone = absolute exclusion
+    if (player && ownBlocked.includes(op.id)) continue; // a block is personal: never this player's operator
     if (player && ownedOnly && owned.length && !owned.includes(op.id)) continue;
     const kind = fitKind(slot, op.id);
     if (!kind) continue;
@@ -133,13 +134,14 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
     p,
     stats: p.stats ?? null,
     ownFavs: prefs[p.name]?.favorites ?? [],
+    ownBlocked: prefs[p.name]?.avoid ?? [],
     owned: prefs[p.name]?.owned ?? [],
   }));
 
   // cells[slot][i] for player i; the last column (index = players.length) is "nobody".
   const cells = slots.map((slot) =>
     [
-      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, stats: x.stats, owned: x.owned, ownedOnly, map: mapId })),
+      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, ownBlocked: x.ownBlocked, stats: x.stats, owned: x.owned, ownedOnly, map: mapId })),
       cell({ slot, side, player: null, pref, ownFavs: [], stats: null, owned: [], ownedOnly: false, map: mapId }),
     ].map((c, i, all) => ({ ...c, who: i < info.length ? i : null, all })),
   );
@@ -179,7 +181,9 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
 
     const reasons = [];
     const blockedOriginal = slot.operatorId && !isUsable(pref, slot.operatorId);
-    if (blockedOriginal) reasons.push(`${name(slot.operatorId)} is blocked, so ${name(choice.id)} takes the job.`);
+    if (blockedOriginal) reasons.push(`${name(slot.operatorId)} is blocked by everyone here, so ${name(choice.id)} takes the job.`);
+    const blockers = (pref.blocked.get(choice.id) ?? []).filter((n) => n !== who?.p.name);
+    if (who && blockers.length) reasons.push(`${blockers.join(' and ')} blocked ${name(choice.id)}, so ${who.p.name} plays it.`);
     if (who && choice.own) reasons.push(`${name(choice.id)} is ${who.p.name}’s favorite.`);
     else if (choice.team) reasons.push(`${name(choice.id)} is a team favorite.`);
     if (who && choice.strength !== null && choice.strength >= 0.6) {

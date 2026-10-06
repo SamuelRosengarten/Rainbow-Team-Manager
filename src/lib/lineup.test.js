@@ -38,7 +38,10 @@ describe('recommendLineup: blocked operators are never recommended', () => {
         const r = recommendLineup({ strategy, side, mapId: strategy.mapId, site: strategy.site, players, prefs, pref });
         for (const s of r.slots) {
           for (const id of [s.operatorId, s.alternative].filter(Boolean)) {
-            expect(pref.blocked.has(id) || pref.banned.has(id), `${strategy.id}: ${id}`).toBe(false);
+            // Banned or blocked by the whole lineup: nobody plays it. Otherwise a block is personal:
+            // the player it is recommended for must not be one of the blockers.
+            expect(pref.banned.has(id) || pref.blockedForAll.has(id), `${strategy.id}: ${id}`).toBe(false);
+            if (s.player) expect(prefs[s.player].avoid, `${strategy.id}: ${s.player} blocked ${id}`).not.toContain(id);
             checked += 1;
           }
         }
@@ -47,9 +50,17 @@ describe('recommendLineup: blocked operators are never recommended', () => {
     expect(checked).toBeGreaterThan(100);
   });
 
-  it('blocks work on generic slots too, and a blocked favorite is not recommended', () => {
+  it("a block is personal: Anthony's block keeps Thermite off Anthony, not off Samuel who favourites it", () => {
     const prefs = { Samuel: { favorites: ['thermite'] }, Anthony: { avoid: ['thermite', 'hibana'] } };
     const r = run({ prefs });
+    expect(r.slots.find((x) => x.player === 'Samuel').operatorId).toBe('thermite');
+    for (const slot of r.slots.filter((x) => x.player === 'Anthony')) expect(['thermite', 'hibana']).not.toContain(slot.operatorId);
+    expect(ids(r).filter((id) => id === 'thermite')).toHaveLength(1);
+  });
+
+  it('nobody plays an operator every player blocked, or the team banned', () => {
+    const everyone = Object.fromEntries(NAMES.map((n) => [n, { avoid: ['thermite'] }]));
+    const r = run({ prefs: everyone, bans: ['hibana'] });
     expect(ids(r)).not.toContain('thermite');
     expect(ids(r)).not.toContain('hibana');
     expect(r.slots[0].operatorId).toBeTruthy();

@@ -28,7 +28,7 @@ import { useSessionState } from '../state/useSessionState.js';
 const STEPS = ['Map', 'Site', 'Side', 'Operators', 'Players', 'Start from', 'Customize', 'Tactics', 'Steps', 'Save'];
 const KEY = 'r6tp.builder';
 // Operator grid order: favorites first, blocked last.
-const PREF_ORDER = { favorite: 0, null: 1, blocked: 2 };
+const PREF_ORDER = { favorite: 0, null: 1, partial: 1, blocked: 2 };
 
 const fresh = (preset = {}) => {
   const step = preset.mapId ? (preset.site !== undefined ? (preset.side ? 4 : 3) : 2) : 1;

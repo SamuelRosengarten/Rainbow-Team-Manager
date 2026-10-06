@@ -29,7 +29,7 @@ export function suggestedPartners(ops, side, limit = 6, pref = null) {
     if (inside.length !== 1) continue;
     const partner = p.ops.find((id) => !set.has(id));
     if (OPERATORS_BY_ID[partner]?.side !== side) continue;
-    if (pref && (pref.blocked.has(partner) || pref.banned.has(partner))) continue;
+    if (pref && (pref.blockedForAll.has(partner) || pref.banned.has(partner))) continue;
     if (!out.has(partner)) out.set(partner, { id: partner, pairs: [] });
     out.get(partner).pairs.push({ ...p, with: inside[0] });
   }

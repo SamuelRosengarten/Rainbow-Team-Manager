@@ -3344,3 +3344,14 @@ button.op-pill {
     min-width: 44px;
   }
 }
+
+.pref-badge--partial,
+.op-tile--partial .pref-badge {
+  color: var(--accent);
+}
+.op-row__shared {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 6px;
+}

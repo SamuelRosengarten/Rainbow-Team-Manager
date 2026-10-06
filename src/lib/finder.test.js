@@ -51,3 +51,26 @@ describe('findStrategies', () => {
     }
   });
 });
+
+describe('ranking: a plan written for the map beats a general plan', () => {
+  it('puts "Workshop crossfire hold" (Border, other site) above "Two-anchor site hold" (any map)', () => {
+    const r = find({ mapId: 'border', site: '1F Bathroom / Tellers', side: 'defend' });
+    const order = r.results.map((x) => x.strategy.title);
+    expect(order.indexOf('Workshop crossfire hold')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('Workshop crossfire hold')).toBeLessThan(order.indexOf('Two-anchor site hold'));
+    const kinds = Object.fromEntries(r.results.map((x) => [x.strategy.title, x.kind]));
+    expect(kinds['Workshop crossfire hold']).toBe('other-site');
+    expect(kinds['Two-anchor site hold']).toBe('generic');
+  });
+
+  it('never tags a general plan "Different site"', () => {
+    const r = find({ mapId: 'border', site: '1F Bathroom / Tellers', side: 'defend' });
+    const general = r.results.find((x) => x.kind === 'generic');
+    expect(general.where).not.toMatch(/Different site/);
+    expect(general.rec.reasons.map((x) => x.text).join(' ')).not.toMatch(/Different site/);
+    expect(general.rec.reasons.map((x) => x.text)).toContain('A general plan: works on any map and site');
+    // while a plan for another site of the map still says so
+    const other = r.results.find((x) => x.kind === 'other-site');
+    expect(other.rec.reasons.map((x) => x.text)).toContain('Different site');
+  });
+});

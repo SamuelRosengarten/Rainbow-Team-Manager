@@ -10,19 +10,22 @@ import { playerMoves, sharedFavorites } from '../lib/recommend.js';
 
 const name = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any';
 
+// Label first, then the stars (or just the count when the sample is too small for stars).
 function StarRow({ stars, label, detail }) {
   return (
     <span className="rec-score">
-      <span className={`match-stars__stars match-stars__stars--${stars}`} aria-hidden="true">
-        {starsText(stars)}
-      </span>
       <span className="rec-score__label">
         {label}
         {detail && <span className="muted"> · {detail}</span>}
       </span>
-      <span className="visually-hidden">
-        {stars} of 5 stars
-      </span>
+      {stars !== null && (
+        <>
+          <span className={`match-stars__stars match-stars__stars--${stars}`} aria-hidden="true">
+            {starsText(stars)}
+          </span>
+          <span className="visually-hidden">{stars} of 5 stars</span>
+        </>
+      )}
     </span>
   );
 }
@@ -57,18 +60,9 @@ export default function RecommendationCard({ strategy, rec, pref, onOpen, fits =
           <span className="match-stars match-stars--none">Operators not listed</span>
         ) : (
           <span className="rec-scores">
-            {hasFavs &&
-              (rec.favoriteStars === null ? (
-                <span className="rec-score">
-                  <span className="rec-score__label">
-                    Favorite match<span className="muted"> · {rec.favoriteLabel}</span>
-                  </span>
-                </span>
-              ) : (
-                <StarRow stars={rec.favoriteStars} label="Favorite match" detail={rec.favoriteLabel} />
-              ))}
-            <StarRow stars={rec.compatStars} label="Operator compatibility" />
-            <StarRow stars={rec.qualityStars} label="Strategy match" />
+            {hasFavs && <StarRow stars={rec.favoriteStars} label="Favorite match" detail={rec.favoriteLabel} />}
+            <StarRow stars={rec.compatStars} label="Operator compatibility" detail={rec.compatLabel} />
+            <StarRow stars={rec.qualityStars} label="Strategy match" detail={rec.qualityLabel} />
           </span>
         )}
 

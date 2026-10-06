@@ -3,11 +3,13 @@
 // silently returning one or two plans (the library is small: most maps have
 // one to four plans per side).
 //
-//   1. Exact: this map (or a plan that isn't tied to any map) and this site.
+//   1. Exact: a plan for this map and this site (or a site-less plan on it).
 //   2. Same map, another site.
-//   3. Another map (only to fill the list).
-// Within a step the engine's own ranking applies (recommend.js): favorites,
-// then tactical quality. Strategies that need a blocked operator with no
+//   3. A general plan that isn't tied to any map.
+//   4. Another map (only to fill the list).
+// A plan written for the map always comes before a general one, whatever its
+// score. Within a step the engine's own ranking applies (recommend.js):
+// favorite coverage, then tactical quality + compatibility, team plans first. Strategies that need a blocked operator with no
 // replacement are removed and returned in `excluded`.
 import { MAPS_BY_ID } from './maps.js';
 import { filterStrategies } from './strategies.js';
@@ -33,20 +35,24 @@ function whereText(kind, s) {
  *   total: number, exactCount: number, excluded: {strategy, rec}[], notes: string[]
  * }}
  */
-export function findStrategies(strategies, { mapId = '', site = '', side, filters = {}, pref, selected = [], limit = FIND_LIMIT } = {}) {
+export function findStrategies(strategies, { mapId = '', site = '', side, filters = {}, pref, selected = [], picks = [], limit = FIND_LIMIT } = {}) {
   const { mapId: _m, site: _s, ...rest } = filters;
   const base = { side, ...rest };
-  const rank = (list) => recommendStrategies(list, { pref, selected, mapId, site });
+  const rank = (list) => recommendStrategies(list, { pref, selected, picks, mapId, site });
 
-  const exactList = filterStrategies(strategies, { ...base, mapId: mapId || undefined, site: site || undefined });
-  const taken = new Set(exactList.map((s) => s.id));
+  const matching = filterStrategies(strategies, { ...base, mapId: mapId || undefined, site: site || undefined });
+  // With a map chosen, general (any-map) plans are their own step, after the map's other sites.
+  const exactList = mapId ? matching.filter((s) => s.mapId !== 'any') : matching;
+  const genericList = mapId ? matching.filter((s) => s.mapId === 'any') : [];
+  const taken = new Set(matching.map((s) => s.id));
   const sameMapList = mapId ? filterStrategies(strategies, { ...base, mapId }).filter((s) => !taken.has(s.id)) : [];
   sameMapList.forEach((s) => taken.add(s.id));
   const otherMapList = mapId ? filterStrategies(strategies, base).filter((s) => !taken.has(s.id)) : [];
 
   const tiers = [
-    [exactList, (s) => (mapId && s.mapId === 'any' ? 'generic' : 'exact')],
+    [exactList, () => 'exact'],
     [sameMapList, () => 'other-site'],
+    [genericList, () => 'generic'],
     [otherMapList, () => 'other-map'],
   ];
   const all = [];
@@ -55,9 +61,8 @@ export function findStrategies(strategies, { mapId = '', site = '', side, filter
   tiers.forEach(([list, kindOf], i) => {
     const { ranked, excluded: out } = rank(list);
     excluded.push(...out);
-    // Plans written for this map and site come before general ones.
-    const items = ranked.map((x) => ({ ...x, kind: kindOf(x.strategy) })).sort((a, b) => Number(a.kind === 'generic') - Number(b.kind === 'generic'));
-    if (i === 0) exactCount = items.filter((x) => x.kind === 'exact').length;
+    const items = ranked.map((x) => ({ ...x, kind: kindOf(x.strategy) }));
+    if (i === 0) exactCount = items.length;
     all.push(...items.map((x) => ({ ...x, where: whereText(x.kind, x.strategy) })));
   });
 

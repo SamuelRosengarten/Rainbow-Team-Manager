@@ -39,7 +39,7 @@ function BlockedPanel({ rec, subs, setSubs }) {
   return (
     <section className="adapt adapt--blocked" aria-labelledby="blocked-title">
       <div className="adapt__head">
-        <h3 id="blocked-title" className="section-title">🚫 Requires a blocked operator</h3>
+        <h3 id="blocked-title" className="section-title">🚫 Needs an operator nobody here can play</h3>
         {open.length > 1 && (
           <button type="button" className="btn btn--secondary btn--sm" onClick={() => setSubs({ ...subs, ...Object.fromEntries(open.map((b) => [b.slotKey, b.replacement])) })}>
             Use the adapted strategy
@@ -50,7 +50,7 @@ function BlockedPanel({ rec, subs, setSubs }) {
         {open.map((b) => (
           <li key={b.slotKey} className="adapt__item adapt__item--missing">
             <span>
-              <strong>{opName(b.blocked)}</strong> is blocked ({b.by.join(', ')}). Possible replacement: <strong>{opName(b.replacement)}</strong>.
+              <strong>{opName(b.blocked)}</strong> is unavailable ({b.by.join(', ')}). Possible replacement: <strong>{opName(b.replacement)}</strong>.
             </span>
             <button type="button" className="btn btn--primary btn--sm" onClick={() => setSubs({ ...subs, [b.slotKey]: b.replacement })}>
               Use {opName(b.replacement)}
@@ -60,7 +60,7 @@ function BlockedPanel({ rec, subs, setSubs }) {
         {rec.blockedMissing.map((b) => (
           <li key={b.slotKey} className="adapt__item adapt__item--missing">
             <span>
-              <strong>{opName(b.blocked)}</strong> is blocked ({b.by.join(', ')}) and no usable operator can do this job. This strategy isn't recommended for you.
+              <strong>{opName(b.blocked)}</strong> is unavailable ({b.by.join(', ')}) and no usable operator can do this job. This strategy isn't recommended for this lineup.
             </span>
           </li>
         ))}
@@ -188,7 +188,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
   const players = picks.map((p) => p.player).filter(Boolean);
   const pref = usePreferences(players);
   const match = useMemo(() => matchStrategy(strategy, picks.map((p) => p.operatorId).filter(Boolean), pref), [strategy, picks, pref]);
-  const rec = useMemo(() => recommendStrategy(strategy, { pref, selected: picks.map((p) => p.operatorId).filter(Boolean) }), [strategy, picks, pref]);
+  const rec = useMemo(() => recommendStrategy(strategy, { pref, selected: picks.map((p) => p.operatorId).filter(Boolean), picks }), [strategy, picks, pref]);
   const { strategy: view, warnings } = useMemo(() => adaptStrategy(strategy, subs), [strategy, subs]);
   const saved = strategyData.assignments[strategy.id] ?? {};
   const assigned = autoAssign(view, picks, saved);

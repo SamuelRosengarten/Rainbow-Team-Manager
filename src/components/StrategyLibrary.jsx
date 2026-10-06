@@ -17,6 +17,12 @@ import { usePreferences } from '../state/usePreferences.js';
 function PreferenceSummary({ pref, side }) {
   const favs = sideFavorites(pref, side);
   const blocked = [...new Set([...pref.blocked.keys(), ...pref.banned])].filter((id) => OPERATORS_BY_ID[id]?.side === side);
+  // A block is personal: say whose, and whether it removes the operator from the whole lineup.
+  const blockNote = (id) => {
+    if (pref.banned.has(id)) return 'team ban: nobody can play it';
+    const by = pref.blocked.get(id) ?? [];
+    return pref.blockedForAll.has(id) ? `everyone blocked it` : `${by.join(', ')} only: teammates can still play it`;
+  };
   return (
     <div className="pref-summary" aria-label="Operator preferences used">
       <span className="pref-summary__group">
@@ -33,13 +39,13 @@ function PreferenceSummary({ pref, side }) {
         )}
       </span>
       <span className="pref-summary__group pref-summary__group--blocked">
-        <span className="pref-summary__label">🚫 Blocked by a player in this lineup (left out)</span>
+        <span className="pref-summary__label">🚫 Blocked (personal)</span>
         {blocked.length ? (
           blocked.map((id) => (
             <span key={id} className="pref-summary__op pref-summary__op--blocked" title={prefWho(pref, id)}>
               <OperatorIcon operator={OPERATORS_BY_ID[id]} size="xs" />
               {OPERATORS_BY_ID[id].name}
-              <span className="muted small"> · {prefWho(pref, id).replace(/^Blocked by /, '')}</span>
+              <span className="muted small"> · {blockNote(id)}</span>
             </span>
           ))
         ) : (
@@ -76,7 +82,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
   // Up to five plans, widening to other sites and maps (and saying so) when
   // the library has few for this setup.
   const found = useMemo(
-    () => findStrategies(strategyData.strategies, { mapId, site, side, filters, pref, selected: picks.map((p) => p.operatorId).filter(Boolean), limit: FIND_LIMIT }),
+    () => findStrategies(strategyData.strategies, { mapId, site, side, filters, pref, selected: picks.map((p) => p.operatorId).filter(Boolean), picks, limit: FIND_LIMIT }),
     [strategyData.strategies, mapId, site, side, filters, picks, pref],
   );
   const { excluded } = found;

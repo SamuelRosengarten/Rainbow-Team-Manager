@@ -27,6 +27,8 @@ const MAX_CANDIDATES = 5;
 // Stars on the favorite match only mean something with a real sample: 1 of 1
 // is 100% of almost nothing. Below this many relevant favorites show the raw count.
 export const MIN_FAVORITES_FOR_STARS = 3;
+// Same rule for operator compatibility: stars need at least this many picked operators.
+export const MIN_PICKS_FOR_STARS = 3;
 
 const rolesOf = (id) => OPERATORS_BY_ID[id]?.roles ?? [];
 const shareRole = (a, b) => rolesOf(a).some((r) => rolesOf(b).includes(r));
@@ -38,8 +40,13 @@ const shareRole = (a, b) => rolesOf(a).some((r) => rolesOf(b).includes(r));
  * With `ownedOnly`, an operator nobody in the lineup owns is unusable. A player
  * who hasn't marked any owned operators isn't limited (and is listed in
  * `noOwnedData`), so an empty profile can't empty the whole search.
- * @returns {{ favorites: Map<string,string[]>, blocked: Map<string,string[]>, banned: Set<string>, players: string[],
- *   ownedOnly: boolean, ownedUnion: Set<string>|null, noOwnedData: string[] }}
+ *
+ * A block is personal: it keeps an operator off the player who blocked it, and
+ * nobody else. `blocked` records who blocked what; `blockedForAll` is the part
+ * that excludes an operator from the whole lineup (team bans are separate, in
+ * `banned`): operators every player in the lineup blocked.
+ * @returns {{ favorites: Map<string,string[]>, blocked: Map<string,string[]>, blockedForAll: Set<string>, banned: Set<string>,
+ *   players: string[], ownedOnly: boolean, ownedUnion: Set<string>|null, ownedBy: Map<string,Set<string>>, noOwnedData: string[] }}
  *   favorites / blocked map operator id -> players who marked it.
  */
 export function preferenceSet(prefs = {}, players = [], bans = [], { ownedOnly = false } = {}) {
@@ -54,23 +61,33 @@ export function preferenceSet(prefs = {}, players = [], bans = [], { ownedOnly =
     for (const id of prefs[p]?.avoid ?? []) mark(blocked, id, p);
     for (const id of prefs[p]?.favorites ?? []) mark(favorites, id, p);
   }
-  // A blocked operator is never a favorite for recommendations.
-  for (const id of blocked.keys()) favorites.delete(id);
+  // Only the whole-lineup exclusions (everyone blocked it, or it's banned) remove a favorite.
+  const blockedForAll = new Set();
+  if (players.length) {
+    for (const id of blocked.keys()) if (players.every((p) => (prefs[p]?.avoid ?? []).includes(id))) blockedForAll.add(id);
+  }
+  for (const id of blockedForAll) favorites.delete(id);
   const banned = new Set(bans.filter((id) => OPERATORS_BY_ID[id]));
   for (const id of banned) favorites.delete(id);
   const noOwnedData = ownedOnly ? players.filter((p) => !(prefs[p]?.owned ?? []).length) : [];
   const ownedUnion = ownedOnly && players.length && !noOwnedData.length ? new Set(players.flatMap((p) => prefs[p]?.owned ?? [])) : null;
-  return { favorites, blocked, banned, players, ownedOnly, ownedUnion, noOwnedData };
+  // Per player: what each limited player owns (for flagging a pick they don't own).
+  const ownedBy = new Map();
+  if (ownedOnly) for (const p of players) if ((prefs[p]?.owned ?? []).length) ownedBy.set(p, new Set(prefs[p].owned));
+  return { favorites, blocked, blockedForAll, banned, players, ownedOnly, ownedUnion, ownedBy, noOwnedData };
 }
 
 export const emptyPreferences = () => preferenceSet({}, []);
 
 /** Can this operator be recommended at all? */
 export const isUsable = (pref, id) =>
-  Boolean(OPERATORS_BY_ID[id]) && !pref.blocked.has(id) && !pref.banned.has(id) && !(pref.ownedUnion && !pref.ownedUnion.has(id));
+  Boolean(OPERATORS_BY_ID[id]) && !pref.blockedForAll.has(id) && !pref.banned.has(id) && !(pref.ownedUnion && !pref.ownedUnion.has(id));
 
 /** Not usable only because nobody in the lineup owns it (owned-only is on). */
-export const isUnowned = (pref, id) => Boolean(pref.ownedUnion && !pref.ownedUnion.has(id)) && !pref.blocked.has(id) && !pref.banned.has(id);
+export const isUnowned = (pref, id) => Boolean(pref.ownedUnion && !pref.ownedUnion.has(id)) && !pref.blockedForAll.has(id) && !pref.banned.has(id);
+
+/** Players in the lineup who blocked this operator (their own choice; others can still play it). */
+export const blockersOf = (pref, id) => pref.blocked.get(id) ?? [];
 
 /** Favorites on a side that can be recommended. */
 export const sideFavorites = (pref, side) => [...pref.favorites.keys()].filter((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id));
@@ -150,10 +167,13 @@ const starsFrom = (ratio) => Math.max(0, Math.min(5, Math.round(ratio * 5)));
  *   reasons: {ok: boolean, text: string}[]
  * }}
  */
-export function recommendStrategy(strategy, { pref = emptyPreferences(), selected = [], mapId = '', site = '' } = {}) {
+export function recommendStrategy(strategy, { pref = emptyPreferences(), selected = [], picks = [], mapId = '', site = '' } = {}) {
   const slots = strategy.slots;
   const side = strategy.side;
-  const chosen = new Set(selected.filter((id) => OPERATORS_BY_ID[id]));
+  // A pick the player doesn't own (owned-only on) isn't kept: it is flagged below.
+  const unownedPicks = picks.filter((p) => p.operatorId && p.player && pref.ownedBy?.get(p.player) && !pref.ownedBy.get(p.player).has(p.operatorId));
+  const unownedIds = new Set(unownedPicks.map((p) => p.operatorId));
+  const chosen = new Set(selected.filter((id) => OPERATORS_BY_ID[id] && !unownedIds.has(id)));
   const out = {
     status: 'unscored',
     lineup: [],
@@ -165,7 +185,9 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     favoriteStars: null,
     favoriteLabel: '',
     compatibility: 0,
-    compatStars: 0,
+    compatStars: null,
+    compatLabel: '',
+    qualityLabel: '',
     quality: 0,
     qualityStars: 0,
     reasons: [],
@@ -180,7 +202,10 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   const pick = bestAssignment(slots, candidates);
   slots.forEach((slot, i) => {
     const c = pick[i];
-    const blockedBy = slot.operatorId ? [...(pref.blocked.get(slot.operatorId) ?? []), ...(pref.banned.has(slot.operatorId) ? ['team ban'] : [])] : [];
+    // Only a whole-lineup exclusion (a ban, or everyone blocked it) makes the plan's own operator unusable.
+    const blockedBy = slot.operatorId && !isUsable(pref, slot.operatorId) && !isUnowned(pref, slot.operatorId)
+      ? [...(pref.banned.has(slot.operatorId) ? ['team ban'] : []), ...blockersOf(pref, slot.operatorId)]
+      : [];
     if (blockedBy.length) {
       if (c) out.blockedReplaced.push({ slotKey: slot.key, blocked: slot.operatorId, replacement: c.id, by: blockedBy });
       else out.blockedMissing.push({ slotKey: slot.key, blocked: slot.operatorId, by: blockedBy });
@@ -192,6 +217,7 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
       kind: c?.kind ?? null,
       favorite: Boolean(c?.favorite),
       selected: Boolean(c?.selected),
+      blockedBy: c ? blockersOf(pref, c.id) : [], // personal blocks: those players can't take this slot
     });
   });
 
@@ -230,25 +256,43 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     const keptSelected = out.lineup.filter((l) => l.selected).length;
     out.compatibility = Math.round(((keptSelected / Math.min(chosen.size, slots.length)) * 0.7 + fidelity * 0.3) * 100) / 100;
   } else out.compatibility = Math.round(fidelity * 100) / 100;
-  out.compatStars = starsFrom(out.compatibility);
+  // Stars only with a real sample: "1 of 1 picked operators kept" is not a 5-star match.
+  const keptCount = out.lineup.filter((l) => l.selected).length;
+  out.compatStars = chosen.size >= MIN_PICKS_FOR_STARS ? starsFrom(out.compatibility) : null;
+  out.compatLabel = chosen.size ? `${keptCount} of ${chosen.size} picked operator${chosen.size === 1 ? '' : 's'} kept` : 'pick operators to rate this';
 
   // Strategy match: right map and site, real positions, a team-tested plan.
-  const siteMatch = !site || strategy.site === site ? 1 : 0;
+  const siteMatch = !site || strategy.site === site ? 1 : !strategy.site ? 0.5 : 0;
   const mapMatch = !mapId || strategy.mapId === mapId ? 1 : 0.5;
   const content = Math.min(1, (strategy.markers.length + strategy.steps.length * 2) / 16);
   out.quality = Math.round((0.35 * siteMatch + 0.15 * mapMatch + 0.3 * fidelity + 0.2 * content) * 100) / 100;
   out.qualityStars = starsFrom(out.quality);
+  out.qualityLabel = strategy.mapId === 'any' ? 'general plan' : siteMatch === 1 ? (site ? 'this map and site' : 'this map') : siteMatch === 0.5 ? 'this map, no fixed site' : 'this map, another site';
 
   // Transparency: why this was (or wasn't) recommended.
   if (favs.length) {
     out.reasons.push({ ok: used.length > 0, text: `Uses ${used.length} of your ${denom} relevant favorite operator${denom === 1 ? '' : 's'}` });
   }
-  if (out.status === 'ok') out.reasons.push({ ok: true, text: 'No blocked operators' });
+  if (out.status === 'ok' && !out.lineup.some((l) => l.blockedBy.length)) out.reasons.push({ ok: true, text: 'Nobody has blocked these operators' });
+  // Personal blocks: say whose, and that someone else plays it.
+  for (const l of out.lineup) {
+    if (!l.blockedBy.length) continue;
+    const others = pref.players.filter((p) => !l.blockedBy.includes(p));
+    out.reasons.push({
+      ok: true,
+      text: `${joinNames(l.blockedBy)} blocked ${OPERATORS_BY_ID[l.operatorId].name}${others.length ? `, so ${joinNames(others)} would play it` : ''}`,
+    });
+  }
+  // Whole-lineup exclusions: a team ban, or every player blocked it.
+  const why = (by) => (by.every((x) => x === 'team ban') ? 'is banned' : by.includes('team ban') ? `is banned and blocked by ${joinNames(by.filter((x) => x !== 'team ban'))}` : `is blocked by everyone in the lineup (${joinNames(by)})`);
   for (const b of out.blockedReplaced) {
-    out.reasons.push({ ok: false, text: `Requires blocked operator ${OPERATORS_BY_ID[b.blocked].name}: adapted with ${OPERATORS_BY_ID[b.replacement].name}` });
+    out.reasons.push({ ok: false, text: `${OPERATORS_BY_ID[b.blocked].name} ${why(b.by)}: adapted with ${OPERATORS_BY_ID[b.replacement].name}` });
   }
   for (const b of out.blockedMissing) {
-    out.reasons.push({ ok: false, text: `Requires blocked operator ${OPERATORS_BY_ID[b.blocked].name}: no usable replacement` });
+    out.reasons.push({ ok: false, text: `${OPERATORS_BY_ID[b.blocked].name} ${why(b.by)}: no usable replacement` });
+  }
+  for (const p of unownedPicks) {
+    out.reasons.push({ ok: false, text: `${p.player} doesn't own ${OPERATORS_BY_ID[p.operatorId].name} (owned operators only is on): not counted as kept` });
   }
   for (const { slot, c } of unowned) {
     out.reasons.push({
@@ -256,7 +300,10 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
       text: `Nobody in the lineup owns ${OPERATORS_BY_ID[slot.operatorId].name}: ${c ? `swapped for ${OPERATORS_BY_ID[c.id].name}` : 'no owned replacement'}`,
     });
   }
-  if (site) out.reasons.push({ ok: siteMatch === 1, text: siteMatch ? 'Matches the selected site' : 'Different site' });
+  if (site) {
+    if (!strategy.site) out.reasons.push({ ok: true, text: strategy.mapId === 'any' ? 'A general plan: works on any map and site' : 'Not tied to a single site' });
+    else out.reasons.push({ ok: siteMatch === 1, text: siteMatch ? 'Matches the selected site' : 'Different site' });
+  }
   if (strategy.markers.length || strategy.steps.length) out.reasons.push({ ok: true, text: 'Existing strategy with positions and steps' });
   if (chosen.size) {
     const kept = out.lineup.filter((l) => l.selected).length;
@@ -312,11 +359,15 @@ export const recommendedSubs = (rec) =>
 /** Usable operator ids from a list, in order (drops blocked and banned). */
 export const withoutBlocked = (pref, ids) => ids.filter((id) => isUsable(pref, id));
 
-/** 'favorite' | 'blocked' | null for an operator in a preference set (recommend.js). */
+/**
+ * 'blocked' (nobody in the lineup can play it) | 'favorite' | 'partial' (some
+ * players blocked it; others can still play it) | null.
+ */
 export function prefState(pref, id) {
   if (!pref || !id) return null;
-  if (pref.blocked.has(id) || pref.banned.has(id)) return 'blocked';
+  if (pref.blockedForAll.has(id) || pref.banned.has(id)) return 'blocked';
   if (pref.favorites.has(id)) return 'favorite';
+  if (pref.blocked.has(id)) return 'partial';
   return null;
 }
 
@@ -329,8 +380,10 @@ export function prefWho(pref, id) {
   }
   if (state === 'favorite') {
     const by = pref.favorites.get(id) ?? [];
-    return `Favorite${by.length ? ` of ${by.join(', ')}` : ''}`;
+    const blockedBy = pref.blocked.get(id) ?? [];
+    return `Favorite${by.length ? ` of ${by.join(', ')}` : ''}${blockedBy.length ? `; blocked by ${blockedBy.join(', ')}` : ''}`;
   }
+  if (state === 'partial') return `Blocked by ${pref.blocked.get(id).join(', ')} only`;
   return '';
 }
 

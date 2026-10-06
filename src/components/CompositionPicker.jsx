@@ -24,8 +24,7 @@ export default function CompositionPicker({ side, picks, players, onChange }) {
         const owned = new Set(prefs[p.player]?.owned ?? []);
         const limited = ownedOnly && owned.size > 0;
         const isBlocked = op && (blocked.has(op.id) || banned.has(op.id));
-        // A block by anyone in the lineup applies to the whole lineup, so say who.
-        const blockedBy = op ? picks.filter((x) => x.player && x.player !== p.player && (prefs[x.player]?.avoid ?? []).includes(op.id)).map((x) => x.player) : [];
+
         return (
           <li key={i} className={`comp__row${isBlocked ? ' comp__row--blocked' : ''}`}>
             <OperatorIcon key={op?.id ?? 'none'} operator={op} size="md" />
@@ -60,8 +59,8 @@ export default function CompositionPicker({ side, picks, players, onChange }) {
                   })}
               </select>
             </label>
-            {!isBlocked && blockedBy.length > 0 && (
-              <span className="comp__warn">🚫 {blockedBy.join(', ')} blocked {op.name}: it's left out of recommendations for this lineup</span>
+            {!isBlocked && op && limited && !owned.has(op.id) && (
+              <span className="comp__warn">⚠ {p.player} doesn't own {op.name}: it isn't counted while owned operators only is on</span>
             )}
             {isBlocked && <span className="comp__warn">🚫 {p.player ? `${p.player} blocked ${op.name}` : 'Banned'}</span>}
           </li>
