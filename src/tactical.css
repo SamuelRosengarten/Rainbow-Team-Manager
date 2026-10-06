@@ -471,7 +471,7 @@ kbd {
 }
 .beditor__rail {
   position: sticky;
-  top: 76px;
+  top: var(--sticky-top);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -638,7 +638,7 @@ kbd {
 }
 .beditor__inspector {
   position: sticky;
-  top: 76px;
+  top: var(--sticky-top);
   max-height: calc(100vh - 96px);
   overflow-y: auto;
   border-radius: var(--radius);
@@ -817,7 +817,7 @@ kbd {
   display: grid;
   gap: 16px;
   position: sticky;
-  top: 76px;
+  top: var(--sticky-top);
 }
 @media (max-width: 1060px) {
   .sview__grid {

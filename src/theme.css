@@ -101,6 +101,7 @@
   --topbar-h: 56px;
   --tabbar-h: 62px;
   --content-max: 1360px;
+  --sticky-top: calc(var(--topbar-h) + var(--safe-t) + 16px); /* clears the top bar below 1024px */
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
 }
@@ -293,6 +294,9 @@ textarea {
   display: none;
 }
 @media (min-width: 1024px) {
+  :root {
+    --sticky-top: var(--sp-5);
+  }
   .app {
     display: grid;
     grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
