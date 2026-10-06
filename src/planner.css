@@ -1,0 +1,1091 @@
+/* ===========================================================================
+   Strategy builder flow and the tactics editor (BoardEditor).
+   Loaded after tactical.css so these rules win at equal specificity.
+   Orange marks what's active, primary or important; everything else stays
+   quiet: filled surfaces instead of outlines, one radius scale, 44px targets
+   on touch.
+   =========================================================================== */
+
+/* ---------- Builder header and stepper ---------- */
+.builder__desc {
+  margin: 4px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  max-width: 62ch;
+}
+.builder__summary {
+  margin-top: 6px;
+  font-size: var(--fs-sm);
+  color: var(--subtle);
+}
+.stepper {
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.stepper::-webkit-scrollbar {
+  display: none;
+}
+.stepper__item {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+/* A short connector between steps; green once the step before is done. */
+.stepper__item + .stepper__item::before {
+  content: '';
+  flex: none;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+}
+.stepper__item--done + .stepper__item::before {
+  background: color-mix(in srgb, var(--ok) 45%, transparent);
+}
+.stepper__item button {
+  width: auto;
+  gap: 7px;
+  padding: 6px 10px 6px 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  color: var(--subtle);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.stepper__item button:hover:not([aria-disabled='true']) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.stepper__n {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line-input);
+  background: transparent;
+  color: var(--subtle);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.stepper__item--done button {
+  color: var(--muted);
+}
+.stepper__item--done .stepper__n {
+  border-color: transparent;
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.stepper__item--on button {
+  padding: 7px 14px 7px 7px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: 700;
+}
+.stepper__item--on .stepper__n {
+  width: 24px;
+  height: 24px;
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+/* Done steps keep their check but drop the label until there's room. */
+@media (max-width: 1399px) {
+  .stepper__item--done .stepper__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .stepper__item--done button {
+    padding: 6px;
+  }
+}
+
+/* Builder footer: Back on the left, Continue on the right, a calm warning above. */
+.builder__hint--warn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--warn);
+  font-weight: 600;
+}
+.builder__hint--warn .icon {
+  flex: none;
+}
+
+/* ---------- Editor layout ---------- */
+.beditor {
+  grid-template-columns: 86px minmax(0, 1fr) 300px;
+  grid-template-areas:
+    'ctx ctx side'
+    'rail stage side';
+  gap: 12px 16px;
+}
+.tctx {
+  grid-area: ctx;
+}
+.beditor__rail {
+  grid-area: rail;
+}
+.beditor__stage {
+  grid-area: stage;
+  gap: 10px;
+}
+.beditor__inspector {
+  grid-area: side;
+  align-self: start;
+}
+
+/* ---------- Tactical context: who and when ---------- */
+.tctx {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.tctx__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.tctx__label {
+  flex: none;
+  width: 48px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.tctx__chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+.tctx__seq {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.tctx__sep {
+  flex: none;
+  color: var(--subtle);
+}
+.tctx__now {
+  margin: 0;
+  padding-left: 60px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tctx__now strong {
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.ctx-chip {
+  min-height: 36px;
+  padding: 4px 12px 4px 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-2);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+.ctx-chip .op-icon {
+  margin-left: 0;
+}
+.ctx-chip:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ctx-chip--team,
+.ctx-chip--phase {
+  padding-left: 12px;
+}
+.ctx-chip--phase .ctx-chip__n {
+  margin-left: -6px;
+}
+/* Active: tinted fill, a solid ring in the operator's colour, bold text and a
+   tick (so the state never relies on colour alone). */
+.ctx-chip[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--slot, var(--accent)) 18%, var(--surface-2));
+  box-shadow: inset 0 0 0 2px var(--slot, var(--accent));
+  color: var(--text);
+  font-weight: 700;
+}
+.ctx-chip[aria-pressed='true']::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  margin: -3px 0 0 2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.ctx-chip__n {
+  background: var(--bg);
+  color: var(--muted);
+}
+.ctx-chip[aria-pressed='true'] .ctx-chip__n {
+  background: var(--slot, var(--accent));
+  color: var(--accent-ink);
+}
+.ctx-chip__clock {
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+.ctx-chip__name {
+  max-width: 180px;
+}
+
+/* ---------- Toolbar ---------- */
+.beditor__rail {
+  z-index: 8; /* sticky makes its own stacking context: keep the tooltips above the map */
+  gap: 2px;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.rail-item {
+  position: relative;
+}
+.rail-btn {
+  width: 100%;
+  min-height: 52px;
+  gap: 3px;
+  padding: 7px 2px 6px;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.15;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.rail-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.rail-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.rail-btn[aria-pressed='true'] {
+  border: 0;
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.rail-btn:disabled {
+  opacity: 0.4;
+}
+.rail-btn__label {
+  max-width: 100%;
+  overflow-wrap: normal;
+  hyphens: auto;
+}
+
+/* Tooltip: intent, name, shortcut, one line on what it does. */
+.rail-tip {
+  position: absolute;
+  z-index: 30;
+  left: calc(100% + 10px);
+  top: 50%;
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  max-width: 240px;
+  padding: 9px 11px;
+  border-radius: var(--radius);
+  background: var(--surface-3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--line-input);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-4px, -50%);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s linear 0.12s;
+}
+.rail-tip__intent {
+  color: var(--subtle);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rail-tip__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+}
+.rail-tip kbd {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  box-shadow: inset 0 -1px 0 var(--line-input);
+  color: var(--text-2);
+  font: 600 var(--fs-xs) var(--font-mono);
+}
+@media (hover: hover) {
+  .rail-item:hover .rail-tip {
+    transition-delay: 0.35s;
+  }
+  .rail-item:hover .rail-tip,
+  .rail-item:has(.rail-btn:focus-visible) .rail-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, -50%);
+  }
+}
+
+/* Sub-tools of the active group: a quiet segmented row. */
+.beditor__subtools {
+  gap: 4px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.subtool {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.subtool[aria-pressed='true'] {
+  border: 0;
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ---------- Guidance ---------- */
+.tguide {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 2px 2px 0;
+  color: var(--muted);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+}
+.tguide strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.tguide__icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent);
+}
+.tguide--ready .tguide__icon {
+  color: var(--ok);
+}
+.tguide__how {
+  color: var(--muted);
+}
+
+/* Friendly notice: approximate positions, missing plan. */
+.tnotice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--warn-soft);
+  box-shadow: inset 3px 0 0 var(--warn);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.tnotice__icon {
+  flex: none;
+  color: var(--warn);
+}
+.tnotice__text {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.tnotice__text strong {
+  color: var(--text);
+  font-size: var(--fs-base);
+}
+.tnotice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tnotice--slim {
+  padding: 8px 12px;
+}
+.tnotice--slim > span {
+  flex: 1 1 200px;
+}
+
+/* ---------- Canvas ---------- */
+.tcanvas {
+  position: relative;
+}
+.tcanvas .tboard {
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), inset 0 0 0 1px var(--line);
+}
+.tcanvas .floor-tabs {
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 0;
+  background: var(--surface);
+}
+.tcanvas .floor-tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.tcanvas .floor-tab:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.tcanvas .floor-tab[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.tcanvas--zoomed .tboard--editing.tboard--tool-select .tboard__svg {
+  cursor: grab;
+}
+.tcanvas--zoomed .tboard--editing.tboard--tool-select .tboard__svg:active {
+  cursor: grabbing;
+}
+
+/* Zoom controls float over the map's bottom-right corner. */
+.tzoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: rgba(16, 19, 23, 0.88);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 0 0 1px var(--line-strong);
+}
+.tzoom__btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.tzoom__btn:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tzoom__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.tzoom__level {
+  min-width: 46px;
+  text-align: center;
+  color: var(--muted);
+  font: 600 var(--fs-xs) var(--font-mono);
+}
+
+/* Contextual action bar above the selected item. */
+.tbar {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: rgba(22, 26, 31, 0.96);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--line-input);
+  transform: translate(-50%, calc(-100% - 12px));
+  animation: tbar-in 0.14s ease-out;
+  white-space: nowrap;
+}
+.tbar--below {
+  transform: translate(-50%, 44px);
+}
+.tbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.tbar__btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.tbar__btn--danger:hover {
+  background: var(--danger-soft);
+  color: #fca5a5;
+}
+@keyframes tbar-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Toast: one at a time, bottom centre of the map. */
+.ttoast-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 7;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ttoast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--text);
+  color: var(--bg);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: ttoast-in 0.18s ease-out;
+  white-space: nowrap;
+}
+.ttoast__action {
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(8, 10, 12, 0.1);
+  color: #9a5a00;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ttoast__action:hover {
+  background: rgba(8, 10, 12, 0.18);
+}
+.ttoast__close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+@keyframes ttoast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---------- Status and checklist ---------- */
+.tstatus {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.tstatus__main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  flex: 1 1 auto;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.tstatus__main strong {
+  color: var(--text-2);
+  font-weight: 600;
+}
+.tstatus__dot {
+  color: var(--subtle);
+}
+.tstatus__warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+.tcheck {
+  position: relative;
+}
+.tcheck > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.tcheck > summary::-webkit-details-marker {
+  display: none;
+}
+.tcheck > summary:hover {
+  background: var(--surface-2);
+}
+.tcheck__count {
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--muted);
+  font: 600 var(--fs-xs) var(--font-mono);
+}
+.tcheck[open] > summary {
+  background: var(--surface-2);
+}
+.tcheck__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.tcheck__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.tcheck__list li .icon {
+  flex: none;
+  color: var(--subtle);
+}
+.tcheck__list li.is-done {
+  color: var(--text-2);
+}
+.tcheck__list li.is-done .icon {
+  color: var(--ok);
+}
+.tcheck__pop {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  animation: tbar-in 0.14s ease-out;
+}
+.tcheck__pop p {
+  margin: 0;
+}
+@media (min-width: 761px) {
+  .tcheck__pop {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 8;
+    width: 290px;
+    margin: 0;
+    background: var(--surface-3);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--line-input);
+  }
+}
+
+/* ---------- Side panel: items in this step / edit the selected item ---------- */
+.beditor__inspector {
+  border: 0;
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+.items__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.items__title {
+  margin: 0;
+  color: var(--subtle);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.items__count {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.items__group {
+  display: grid;
+  gap: 2px;
+}
+.items__group-title {
+  margin: 4px 0 2px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.items__empty {
+  margin: 0;
+  padding: 18px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+.inspector .obj-list {
+  max-height: none;
+  overflow: visible;
+}
+.obj-list__btn {
+  min-height: 36px;
+  gap: 9px;
+  padding: 5px 8px;
+  color: var(--text-2);
+  transition: background-color 0.12s ease;
+}
+.obj-list__btn .op-icon {
+  flex: none;
+  box-shadow: 0 0 0 2px var(--slot, transparent);
+  border-radius: 50%;
+}
+.obj-list__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.obj-list__tag {
+  flex: none;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.inspector__keys {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.inspector__back {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.inspector__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+.inspector > .form,
+.inspector__head {
+  animation: tbar-in 0.16s ease-out;
+}
+
+/* ---------- Board feedback ---------- */
+.tb-sel-ring {
+  fill: rgba(245, 166, 35, 0.14);
+  stroke: var(--accent);
+  stroke-width: 0.4;
+  stroke-dasharray: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tb-sel 0.18s ease-out;
+}
+@keyframes tb-sel {
+  from {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+}
+.tb-fresh .tb-glyph {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tb-pop 0.26s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+@keyframes tb-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+.tb-ripple {
+  fill: none;
+  stroke-width: 0.35;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tb-ripple 0.6s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes tb-ripple {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.tb-zone.tb-fresh,
+.tb-path.tb-fresh,
+.tb-xfire.tb-fresh,
+.tb-note.tb-fresh {
+  animation: tb-fade 0.25s ease-out;
+}
+@keyframes tb-fade {
+  from {
+    opacity: 0;
+  }
+}
+.tboard--editing .tb-hit:hover .tb-glyph {
+  filter: brightness(1.25) drop-shadow(0 0 0.6px rgba(255, 255, 255, 0.6));
+}
+.ml-unverified {
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+
+/* ---------- Medium screens: the panel moves under the map ---------- */
+@media (max-width: 1180px) {
+  .beditor {
+    grid-template-columns: 86px minmax(0, 1fr);
+    grid-template-areas:
+      'ctx ctx'
+      'rail stage'
+      'side side';
+  }
+  .beditor__inspector {
+    grid-area: side;
+    position: static;
+    max-height: none;
+  }
+}
+
+/* ---------- Phones: one column, the map takes the width ---------- */
+@media (max-width: 760px) {
+  .beditor {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'ctx'
+      'rail'
+      'stage'
+      'side';
+    gap: 10px;
+  }
+  .tctx {
+    padding: 10px;
+    border-radius: var(--radius);
+  }
+  .tctx__row {
+    gap: 8px;
+  }
+  .tctx__label {
+    width: 40px;
+  }
+  .tctx__now {
+    padding-left: 0;
+  }
+  .beditor__inspector {
+    grid-area: side;
+  }
+  /* The toolbar becomes a compact floating strip that stays in reach. */
+  .beditor__rail {
+    top: calc(var(--sticky-top) - 8px);
+    z-index: 9;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 2px;
+    padding: 4px;
+    overflow-x: auto;
+    border-radius: var(--radius);
+    background: rgba(16, 19, 23, 0.94);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+  .rail-group {
+    flex-direction: row;
+    margin: 0 0 0 4px;
+    padding: 0 0 0 4px;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+  .rail-item {
+    flex: none;
+  }
+  .rail-btn {
+    min-width: 56px;
+    min-height: var(--tap);
+  }
+  .rail-btn[aria-pressed='true'] {
+    box-shadow: inset 0 -3px 0 var(--accent);
+  }
+  .beditor .tboard {
+    overflow: hidden;
+  }
+  .beditor .tboard__svg {
+    min-width: 0;
+  }
+  .tzoom {
+    right: 8px;
+    bottom: 8px;
+  }
+  .ttoast-wrap {
+    bottom: 64px;
+    max-width: calc(100% - 16px);
+  }
+  .ttoast {
+    white-space: normal;
+  }
+  .tzoom__btn {
+    width: 40px;
+    height: 40px;
+  }
+  .tbar__btn {
+    min-height: 40px;
+    padding-inline: 8px;
+  }
+  .tbar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+@media (pointer: coarse), (max-width: 760px) {
+  .tcheck > summary,
+  .stepper__item button,
+  .inspector__back,
+  .ttoast__action {
+    min-height: var(--tap);
+  }
+  .tzoom__btn {
+    width: var(--tap);
+    height: var(--tap);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tbar,
+  .ttoast,
+  .tb-sel-ring,
+  .tb-fresh .tb-glyph,
+  .tb-ripple,
+  .tb-zone.tb-fresh,
+  .tb-path.tb-fresh,
+  .tb-xfire.tb-fresh,
+  .tb-note.tb-fresh,
+  .inspector > .form,
+  .inspector__head,
+  .tcheck__pop {
+    animation: none;
+  }
+  .rail-tip,
+  .rail-btn,
+  .ctx-chip,
+  .stepper__item button,
+  .builder__nav .btn--primary .icon {
+    transition: none;
+  }
+}
+
+/* Builder footer: Back stays small on the left; Continue is the obvious next move on the right. */
+.builder__nav {
+  align-items: center;
+  justify-content: space-between;
+}
+.builder__nav .btn--ghost {
+  flex: 0 0 auto;
+}
+.builder__nav .btn--primary {
+  flex: 0 1 340px;
+  margin-left: auto;
+  min-height: 46px;
+  font-size: var(--fs-md);
+}
+.builder__nav .btn--primary .icon {
+  transition: transform 0.15s ease;
+}
+.builder__nav .btn--primary:hover:not([aria-disabled='true']) .icon {
+  transform: translateX(3px);
+}
+@media (max-width: 560px) {
+  .builder__nav .btn--primary {
+    flex: 1 1 auto;
+  }
+  .builder__hint--warn {
+    justify-content: flex-start;
+    text-align: left;
+  }
+}

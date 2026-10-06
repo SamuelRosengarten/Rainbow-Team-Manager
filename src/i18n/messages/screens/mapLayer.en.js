@@ -7,6 +7,6 @@ export default {
   "mapLayer.floor": "<floor>",
   "mapLayer.genericPlanNotTiedTo": "Generic plan: not tied to a map",
   "mapLayer.chooseAMapAndSite": "Choose a map and site in the details to plan it on the real floor plan.",
-  "mapLayer.unverifiedFloorPlan": "UNVERIFIED FLOOR PLAN",
-  "mapLayer.positionsComeFromTheOld": "Positions come from the old abstract layout and haven't been placed on this map yet",
+  "mapLayer.unverifiedFloorPlan": "Plan not yet checked in game",
+  "mapLayer.positionsComeFromTheOld": "Some positions are approximate on this floor plan",
 };

@@ -110,9 +110,9 @@ function NoMap({ size }) {
 }
 
 /**
- * @param {{ space: ReturnType<import('../lib/space.js').boardSpace>, strategy, mapName?, compact?, showRooms? }} props
+ * @param {{ space: ReturnType<import('../lib/space.js').boardSpace>, strategy, mapName?, compact?, showRooms?, quiet? (editor: it explains approximate positions itself) }} props
  */
-export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true }) {
+export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true, quiet = false }) {
   const { t } = useI18n();
   if (space.kind === 'floor') {
     return (
@@ -124,7 +124,7 @@ export default function MapLayer({ space, strategy, mapName, compact = false, sh
             {t('mapLayer.unverifiedFloorPlan')}
           </text>
         )}
-        {space.approximate && !compact && (
+        {space.approximate && !compact && !quiet && (
           <g className="ml-approx">
             <rect x="0" y={space.h - 4.2} width={space.w} height="4.2" />
             <text x={space.w / 2} y={space.h - 1.4}>

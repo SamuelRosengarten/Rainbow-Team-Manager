@@ -1,11 +1,8 @@
 // Strings extracted from components/BoardEditor.jsx (English).
 export default {
   "boardEditor.boardTools": "Board tools",
-  "boardEditor.selectMoveV": "Select / move (V)",
   "boardEditor.select": "Select",
-  "boardEditor.undoCtrlZ": "Undo (Ctrl+Z)",
   "boardEditor.undo": "Undo",
-  "boardEditor.redoCtrlShiftZ": "Redo (Ctrl+Shift+Z)",
   "boardEditor.redo": "Redo",
   "boardEditor.operatorForNewObjects": "Operator for new objects",
   "boardEditor.who": "Who",
@@ -20,7 +17,6 @@ export default {
   "boardEditor.undoPoint": "Undo point",
   "boardEditor.nowClickTheEngagementArea": "Now click the engagement area.",
   "boardEditor.nowClickPlayerB": "Now click player B.",
-  "boardEditor.markThePositionsAsPlaced": "mark the positions as placed on the real map",
   "boardEditor.thisPlanIsnTTied": "This plan isn't tied to a map. Choose a map and site in the details to plan it on the real floor plan.",
   "boardEditor.inspector": "Inspector",
 };

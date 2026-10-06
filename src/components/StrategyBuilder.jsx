@@ -22,11 +22,12 @@ import { recommendLineup } from '../lib/lineup.js';
 import { findStrategies } from '../lib/finder.js';
 import { usePreferences } from '../state/usePreferences.js';
 import { TACTICAL_ROLES, defaultTacticalRole } from '../lib/tactical.js';
+import { boardSpace } from '../lib/space.js';
+import { unplacedSlots } from '../lib/tacticStatus.js';
 import { useHistory } from '../state/useHistory.js';
 import { useRoster } from '../state/roster-context.js';
 import { useSessionState } from '../state/useSessionState.js';
 import { tx, useI18n } from '../i18n/index.js';
-import { T } from '../i18n/Rich.jsx';
 
 // Step ids (names: builder.step.<id>).
 const STEPS = ['map', 'site', 'side', 'operators', 'players', 'startFrom', 'customize', 'tactics', 'steps', 'save'];
@@ -72,12 +73,13 @@ function Stepper({ step, reached, hasDraft, go }) {
             <button
               type="button"
               aria-disabled={!can || undefined}
-              title={can ? undefined : t('builder.locked')}
+              title={can ? t(`builder.step.${stepId}`) : t('builder.locked')}
               onClick={() => can && go(n)}
               aria-current={n === step ? 'step' : undefined}
             >
               <span className="stepper__n">{n < step ? <Icon name="check" size={13} /> : n}</span>
               <span className="stepper__label">{t(`builder.step.${stepId}`)}</span>
+              {n < step && <span className="visually-hidden"> {t('builder.stepDone')}</span>}
               {!can && <span className="visually-hidden"> {t('builder.locked')}</span>}
             </button>
           </li>
@@ -109,12 +111,7 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
         </section>
       )}
       {step === 8 && (
-        <>
-          <p className="muted small">
-            <T id="builder.boardHint" />
-          </p>
-          <BoardEditor draft={draft} history={history} mapName={mapName} />
-        </>
+        <BoardEditor draft={draft} history={history} mapName={mapName} inBuilder />
       )}
       {step === 9 && (
         <section className="panel">
@@ -310,6 +307,16 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     { 1: !w.mapId && t('builder.block.map'), 3: !w.side && t('builder.block.side'), 4: ops.length < 1 && t('builder.block.ops') }[w.step] ||
     (w.step >= 6 && !w.draft ? t('builder.block.start') : null);
   const canNext = !nextBlock;
+  // Tactics: say what's still missing, without blocking.
+  const tacticWarn = (() => {
+    if (w.step !== 8 || !w.draft) return null;
+    const space = boardSpace(w.draft);
+    const items = w.draft.markers.length + w.draft.paths.length + w.draft.zones.length + w.draft.crossfires.length;
+    if (space.approximate && items) return t('builder.warn.approx', { count: items });
+    const missing = unplacedSlots(w.draft);
+    if (missing.length) return t('builder.warn.unplaced', { count: missing.length, names: missing.map((s) => OPERATORS_BY_ID[s.operatorId]?.name ?? s.operatorId) });
+    return null;
+  })();
   const summary = [map?.name, w.site && parseSite(w.site).rooms.join(' / '), w.side && t(w.side === 'attack' ? 'card.side.attack' : 'card.side.defend')].filter(Boolean).join(' · ');
 
   return (
@@ -320,7 +327,8 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
           <h1 id="builder-title" className="page__title">
             {t(`builder.step.${STEPS[w.step - 1]}`)}
           </h1>
-          {summary && <p className="page__sub">{summary}</p>}
+          <p className="builder__desc">{t(`builder.desc.${STEPS[w.step - 1]}`)}</p>
+          {summary && <p className="page__sub builder__summary">{summary}</p>}
         </div>
         <button
           type="button"
@@ -595,6 +603,11 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
           {nextBlock && (
             <p id="builder-next-hint" className="builder__hint" role="status">
               {nextBlock}
+            </p>
+          )}
+          {!nextBlock && tacticWarn && (
+            <p className="builder__hint builder__hint--warn" role="status">
+              <Icon name="alert" size={16} /> {tacticWarn}
             </p>
           )}
         </div>

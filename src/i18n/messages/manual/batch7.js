@@ -12,7 +12,7 @@ export const en = {
   'builder.step.save': 'Save',
   'builder.stepOf': 'Step {n} of {total}: {name}',
   'builder.locked': 'Finish the earlier steps first',
-  'builder.next': 'Next: {name}',
+  'builder.next': 'Continue to {name}',
   'builder.block.map': 'Pick a map to continue',
   'builder.block.side': 'Pick attack or defense to continue',
   'builder.block.ops': 'Pick at least one operator to continue',
@@ -29,7 +29,6 @@ export const en = {
   'builder.orPick': 'or pick a new starting point below (that replaces it).',
   'builder.blankMeta': '{count, plural, one {Start from scratch with your # operator.} other {Start from scratch with your # operators.}}',
   'builder.excluded': '{count, plural, one {# more needs} other {# more need}} an operator nobody in the lineup can play, with no replacement, so {count, plural, one {it’s} other {they’re}} not offered: {titles, list}.',
-  'builder.boardHint': 'Place players, routes, utility, breaches, areas and crossfires. Pick <strong>Who</strong> and <strong>When</strong> first: new objects belong to that operator and step.',
   'builder.counts': '{steps, plural, one {# step} other {# steps}} · {markers, plural, one {# object} other {# objects}} · {paths, plural, one {# route} other {# routes}} · {zones, plural, one {# area} other {# areas}} · {crossfires, plural, one {# crossfire} other {# crossfires}}',
 };
 
@@ -46,7 +45,7 @@ export const fr = {
   'builder.step.save': 'Enregistrer',
   'builder.stepOf': 'Étape {n} sur {total} : {name}',
   'builder.locked': 'Termine d’abord les étapes précédentes',
-  'builder.next': 'Suivant : {name}',
+  'builder.next': 'Continuer : {name}',
   'builder.block.map': 'Choisis une carte pour continuer',
   'builder.block.side': 'Choisis l’attaque ou la défense pour continuer',
   'builder.block.ops': 'Choisis au moins un opérateur pour continuer',
@@ -63,6 +62,5 @@ export const fr = {
   'builder.orPick': 'ou choisis un nouveau point de départ ci-dessous (ça remplace le tien).',
   'builder.blankMeta': '{count, plural, one {Pars de zéro avec ton # opérateur.} other {Pars de zéro avec tes # opérateurs.}}',
   'builder.excluded': '{count, plural, one {# autre demande} other {# autres demandent}} un opérateur que personne dans la formation ne peut jouer, sans remplaçant, alors {count, plural, one {elle n’est} other {elles ne sont}} pas proposée{count, plural, one {} other {s}} : {titles, list}.',
-  'builder.boardHint': 'Place les joueurs, les routes, les gadgets, les brèches, les zones et les feux croisés. Choisis d’abord <strong>Qui</strong> et <strong>Quand</strong> : les nouveaux objets appartiennent à cet opérateur et à cette étape.',
   'builder.counts': '{steps, plural, one {# étape} other {# étapes}} · {markers, plural, one {# objet} other {# objets}} · {paths, plural, one {# route} other {# routes}} · {zones, plural, one {# zone} other {# zones}} · {crossfires, plural, one {# feu croisé} other {# feux croisés}}',
 };

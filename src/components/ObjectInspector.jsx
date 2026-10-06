@@ -3,6 +3,7 @@ import OperatorIcon from './OperatorIcon.jsx';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { slotColor } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, PATHS, ZONES, describeItem, gadgetsForSide, utilityName } from '../lib/tactical.js';
+import { groupItems } from '../lib/tacticStatus.js';
 import { useI18n } from '../i18n/index.js';
 import { T } from '../i18n/Rich.jsx';
 
@@ -55,41 +56,49 @@ function Text({ label, value, onChange, max, area, placeholder, autoFocus }) {
 }
 
 /**
- * Edit the selected board object. With nothing selected, lists the objects
- * (for the chosen step) so they can be picked without the mouse.
+ * Edit the selected board object. With nothing selected, lists what's placed
+ * in the chosen step, grouped (players, routes, utility, areas, notes), so
+ * items can be picked without the mouse.
  */
-export default function ObjectInspector({ draft, selected, update, remove, onSelect, stepFilter }) {
+export default function ObjectInspector({ draft, selected, update, remove, onSelect, onDuplicate, stepFilter, hidden = null }) {
   const { t } = useI18n();
   const coll = { marker: 'markers', zone: 'zones', crossfire: 'crossfires', path: 'paths' };
   const item = selected ? draft[coll[selected.type]]?.find((x) => x.id === selected.id) : null;
 
   if (!item) {
-    const inStep = (x) => !stepFilter || !x.stepId || x.stepId === stepFilter;
-    const rows = [
-      ...draft.markers.filter(inStep).map((x) => ['marker', x]),
-      ...draft.paths.filter(inStep).map((x) => ['path', x]),
-      ...draft.zones.filter(inStep).map((x) => ['zone', x]),
-      ...draft.crossfires.filter(inStep).map((x) => ['crossfire', x]),
-    ];
+    const groups = groupItems(draft, stepFilter);
+    const count = groups.reduce((n, g) => n + g.rows.length, 0);
     return (
       <div className="inspector">
-        <h3 className="inspector__title">
-          <Icon name="layers" size={16} /> {t(stepFilter ? 'inspector.objectsInStep' : 'inspector.objects')}
-          <span className="muted">{rows.length}</span>
-        </h3>
-        {rows.length ? (
-          <ul className="obj-list">
-            {rows.map(([type, x]) => (
-              <li key={x.id}>
-                <button type="button" className="obj-list__btn" style={{ '--slot': slotColor(draft, x.slotKey ?? x.slotA) }} onClick={() => onSelect({ type, id: x.id })}>
-                  <span className="slot__dot" aria-hidden="true" />
-                  {describeItem(draft, type, x)}
-                </button>
-              </li>
-            ))}
-          </ul>
+        <div className="items__head">
+          <h3 className="items__title">{t(stepFilter ? 'planner.items.step' : 'planner.items.setup')}</h3>
+          {count > 0 && <span className="items__count">{t('planner.items.count', { count })}</span>}
+        </div>
+        {count ? (
+          groups.map((g) => (
+            <section key={g.id} className="items__group" aria-labelledby={`items-${g.id}`}>
+              <h4 id={`items-${g.id}`} className="items__group-title">
+                {t(`planner.itemGroup.${g.id}`)}
+              </h4>
+              <ul className="obj-list">
+                {g.rows.map(({ type, item: x }) => {
+                  const key = x.slotKey ?? x.slotA;
+                  const o = OPERATORS_BY_ID[draft.slots.find((s) => s.key === key)?.operatorId];
+                  return (
+                    <li key={x.id}>
+                      <button type="button" className="obj-list__btn" style={{ '--slot': slotColor(draft, key) }} onClick={() => onSelect({ type, id: x.id })}>
+                        {o ? <OperatorIcon key={o.id} operator={o} size="xs" /> : <span className="slot__dot" aria-hidden="true" />}
+                        <span className="obj-list__name">{describeItem(draft, type, x)}</span>
+                        {hidden?.has(x.id) && <span className="obj-list__tag">{t('planner.items.hiddenTag')}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))
         ) : (
-          <p className="muted small">{t('objectInspector.nothingPlacedYetPickA')}</p>
+          <p className="items__empty">{t('planner.items.empty')}</p>
         )}
         <p className="muted small inspector__keys">
           <T id="inspector.keys" />
@@ -103,6 +112,9 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
 
   return (
     <div className="inspector">
+      <button type="button" className="link-btn inspector__back" onClick={() => onSelect(null)}>
+        <Icon name="back" size={16} /> {t('planner.items.back')}
+      </button>
       <div className="inspector__head">
         <h3 className="inspector__title">{title}</h3>
         <button type="button" className="btn btn--ghost btn--icon" aria-label={t('objectInspector.closeInspector')} onClick={() => onSelect(null)}>
@@ -233,9 +245,16 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
         </div>
       )}
 
-      <button type="button" className="btn btn--danger btn--sm inspector__delete" onClick={() => remove(selected)}>
-        <Icon name="trash" size={16} /> {t('objectInspector.delete')}
-      </button>
+      <div className="inspector__actions">
+        {onDuplicate && (
+          <button type="button" className="btn btn--secondary btn--sm" onClick={() => onDuplicate(selected)}>
+            <Icon name="copy" size={16} /> {t('planner.action.duplicate')}
+          </button>
+        )}
+        <button type="button" className="btn btn--danger btn--sm inspector__delete" onClick={() => remove(selected)}>
+          <Icon name="trash" size={16} /> {t('objectInspector.delete')}
+        </button>
+      </div>
     </div>
   );
 }

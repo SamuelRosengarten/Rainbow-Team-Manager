@@ -47,6 +47,9 @@ const PATHS = {
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   fullscreen: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
   search: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.8-4.8',
+  minus: 'M5 12h14',
+  eyeOff: 'M3.5 3.5l17 17M10.4 5.7c.5-.1 1-.2 1.6-.2 6 0 9.5 6.5 9.5 6.5a16 16 0 0 1-2.7 3.5M6.6 7.4C4 9.1 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.5 4.2-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  back: 'M15 5l-7 7 7 7',
 };
 
 export default function Icon({ name, size = 20, className = '', label }) {

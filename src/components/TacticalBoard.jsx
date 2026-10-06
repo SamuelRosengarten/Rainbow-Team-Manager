@@ -193,6 +193,9 @@ export default function TacticalBoard({
   svgRef,
   className = '',
   title,
+  view = null,
+  hidden = null,
+  fresh = null,
 }) {
   usePlans();
   const [ownFloor, setOwnFloor] = useState(null);
@@ -213,6 +216,7 @@ export default function TacticalBoard({
 
   // Visibility for the selected step and the focused/isolated slot.
   const vis = (item, slotKeys = [item.slotKey]) => {
+    if (hidden?.has(item.id)) return null;
     const st = stepState(strategy, stepId, item.stepId);
     if (st === 'hidden') return null;
     const tied = slotKeys.filter(Boolean);
@@ -320,7 +324,7 @@ export default function TacticalBoard({
       <svg
         ref={ref}
         className="tboard__svg"
-        viewBox={`0 0 ${space.w} ${space.h}`}
+        viewBox={view ? `${view.x} ${view.y} ${view.w} ${view.h}` : `0 0 ${space.w} ${space.h}`}
         data-board-w={space.w}
         data-board-h={space.h}
         role="img"
@@ -346,7 +350,7 @@ export default function TacticalBoard({
 
         <rect x="0" y="0" width={space.w} height={space.h} className="tboard__bg" />
         {space.kind !== 'floor' && <rect x="0" y="0" width={space.w} height={space.h} fill={`url(#${uid}-grid)`} />}
-        <MapLayer space={space} strategy={source} mapName={mapName} showRooms={showRooms} />
+        <MapLayer space={space} strategy={source} mapName={mapName} showRooms={showRooms} quiet={editing} />
 
         {/* Zones */}
         {strategy.zones.map((z) => {
@@ -354,7 +358,7 @@ export default function TacticalBoard({
           if (!v) return null;
           const k = ZONES[z.kind];
           return (
-            <g key={z.id} className={`tb-zone tb-zone--${z.kind}${v === 'faded' ? ' tb-faded' : ''}${clickable ? ' tb-hit' : ''}`} {...handlers('zone', z, 'body')}>
+            <g key={z.id} className={`tb-zone tb-zone--${z.kind}${v === 'faded' ? ' tb-faded' : ''}${clickable ? ' tb-hit' : ''}${fresh === z.id ? ' tb-fresh' : ''}`} {...handlers('zone', z, 'body')}>
               <rect
                 x={z.x}
                 y={z.y}
@@ -380,7 +384,7 @@ export default function TacticalBoard({
           const pts = p.points.map((pt) => pt.join(',')).join(' ');
           const end = p.points[p.points.length - 1];
           return (
-            <g key={p.id} className={`tb-path tb-path--${p.kind}${v === 'faded' ? ' tb-faded' : ''}${isSel('path', p.id) ? ' tb-path--sel' : ''}`} {...handlers('path', p, 'body')}>
+            <g key={p.id} className={`tb-path tb-path--${p.kind}${v === 'faded' ? ' tb-faded' : ''}${isSel('path', p.id) ? ' tb-path--sel' : ''}${fresh === p.id ? ' tb-fresh' : ''}`} {...handlers('path', p, 'body')}>
               {clickable && <polyline className="tb-path__hit" points={pts} />}
               <polyline className="tb-path__halo" points={pts} strokeWidth={(k.width ?? 0.7) + 0.7} />
               <polyline className="tb-path__line" points={pts} stroke={color} strokeWidth={k.width ?? 0.7} strokeDasharray={k.dash ?? undefined} markerEnd={arrow(colors[p.slotKey] ? color : NEUTRAL)} />
@@ -408,7 +412,7 @@ export default function TacticalBoard({
           const ea = towards(c.a, c.target, c.radius + 0.6);
           const eb = towards(c.b, c.target, c.radius + 0.6);
           return (
-            <g key={c.id} className={`tb-xfire${v === 'faded' ? ' tb-faded' : ''}${isSel('crossfire', c.id) ? ' tb-xfire--sel' : ''}`} {...handlers('crossfire', c, 'body')}>
+            <g key={c.id} className={`tb-xfire${v === 'faded' ? ' tb-faded' : ''}${isSel('crossfire', c.id) ? ' tb-xfire--sel' : ''}${fresh === c.id ? ' tb-fresh' : ''}`} {...handlers('crossfire', c, 'body')}>
               <circle cx={c.target[0]} cy={c.target[1]} r={c.radius} className="tb-xfire__area" />
               <line className="tb-xfire__halo" x1={c.a[0]} y1={c.a[1]} x2={ea[0]} y2={ea[1]} />
               <line className="tb-xfire__halo" x1={c.b[0]} y1={c.b[1]} x2={eb[0]} y2={eb[1]} />
@@ -441,13 +445,16 @@ export default function TacticalBoard({
             return (
               <g
                 key={m.id}
-                className={`tb-marker tb-marker--${m.kind}${v === 'faded' ? ' tb-faded' : ''}${sel ? ' tb-marker--sel' : ''}${clickable ? ' tb-hit' : ''}`}
+                className={`tb-marker tb-marker--${m.kind}${v === 'faded' ? ' tb-faded' : ''}${sel ? ' tb-marker--sel' : ''}${clickable ? ' tb-hit' : ''}${fresh === m.id ? ' tb-fresh' : ''}`}
                 transform={`translate(${m.x} ${m.y})`}
                 {...handlers('marker', m)}
               >
                 <title>{[op?.name, m.label].filter(Boolean).join(': ') || m.kind}</title>
                 {sel && <circle r="3.8" className="tb-sel-ring" />}
-                <Glyph m={m} color={color} op={op} clip={clip} defuser={slotOf(m.slotKey)?.defuser} />
+                {fresh === m.id && <circle r="3.4" className="tb-ripple" stroke={color} />}
+                <g className="tb-glyph">
+                  <Glyph m={m} color={color} op={op} clip={clip} defuser={slotOf(m.slotKey)?.defuser} />
+                </g>
                 {showLabel('marker', m, v) && m.label && (
                   <text className="tb-label" y={m.y > space.h - 8 ? -3.6 : 4.6}>
                     {m.label}
@@ -469,7 +476,7 @@ export default function TacticalBoard({
             const color = colorOf(m.slotKey);
             const sel = isSel('marker', m.id);
             return (
-              <g key={m.id} className={`tb-note${v === 'faded' ? ' tb-faded' : ''}${sel ? ' tb-note--sel' : ''}${clickable ? ' tb-hit' : ''}`} {...handlers('marker', m)}>
+              <g key={m.id} className={`tb-note${v === 'faded' ? ' tb-faded' : ''}${sel ? ' tb-note--sel' : ''}${clickable ? ' tb-hit' : ''}${fresh === m.id ? ' tb-fresh' : ''}`} {...handlers('marker', m)}>
                 {anchor && <line className="tb-note__leader" x1={m.x} y1={m.y} x2={anchor.x} y2={anchor.y} stroke={color} />}
                 <g transform={`translate(${m.x} ${m.y})`}>
                   <rect x={-w / 2} y="-1.7" width={w} height="3.4" rx="0.6" className="tb-note__box" stroke={color} />
