@@ -6,9 +6,10 @@ import RecommendationCard from './RecommendationCard.jsx';
 import { DataState, EmptyState } from './ui.jsx';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { MAPS, MAPS_BY_ID, sitesFor } from '../lib/maps.js';
-import { DIFFICULTY, ORIGINS, STRATEGY_TYPES, filterStrategies } from '../lib/strategies.js';
+import { DIFFICULTY, ORIGINS, STRATEGY_TYPES } from '../lib/strategies.js';
+import { FIND_LIMIT, findStrategies } from '../lib/finder.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
-import { prefWho, recommendStrategies, sideFavorites, whereFavoritesFit } from '../lib/recommend.js';
+import { prefWho, sideFavorites, whereFavoritesFit } from '../lib/recommend.js';
 import { usePreferences } from '../state/usePreferences.js';
 
 /** The favorites and blocks the recommendations are using, so it's clear why. */
@@ -55,6 +56,7 @@ function PreferenceSummary({ pref, side }) {
  */
 export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, strategyData, navigate, onAddReference }) {
   const [showFilters, setShowFilters] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const { mapId, site, side, picks, filters } = setup;
   const set = (patch) => setSetup((s) => ({ ...s, ...patch }));
   const setFilter = (patch) => set({ filters: { ...filters, ...patch } });
@@ -65,10 +67,15 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
 
   // Favorites and blocks drive the search: every candidate is rebuilt around
   // the favorites, blocked operators are removed, then it's ranked.
-  const { ranked, excluded } = useMemo(() => {
-    const list = filterStrategies(strategyData.strategies, { mapId, site, side, ...filters });
-    return recommendStrategies(list, { pref, selected: picks.map((p) => p.operatorId).filter(Boolean), mapId, site });
-  }, [strategyData.strategies, mapId, site, side, filters, picks, pref]);
+  // Up to five plans, widening to other sites and maps (and saying so) when
+  // the library has few for this setup.
+  const found = useMemo(
+    () => findStrategies(strategyData.strategies, { mapId, site, side, filters, pref, selected: picks.map((p) => p.operatorId).filter(Boolean), limit: FIND_LIMIT }),
+    [strategyData.strategies, mapId, site, side, filters, picks, pref],
+  );
+  const { excluded } = found;
+  const ranked = showAll ? found.results : found.results.slice(0, FIND_LIMIT);
+  const hidden = found.results.length - ranked.length;
 
   const activeFilters = Object.values(filters).filter(Boolean).length;
   const mapName = MAPS_BY_ID[mapId]?.name;
@@ -134,7 +141,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
         <div className="results-bar">
           <h2 id="results-title" className="section-title">
             {pref.favorites.size ? 'Recommended for your favorites' : composition.length ? 'Best strategies for your composition' : 'Strategies'}
-            <span className="muted">{ranked.length}</span>
+            <span className="muted">{found.results.length}</span>
           </h2>
           <div className="toolbar">
             <button type="button" className="btn btn--ghost btn--sm" aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}>
@@ -217,7 +224,13 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
               </ul>
             </details>
           )}
+          {found.notes.length > 0 && ranked.length > 0 && (
+            <p className="notice notice--info" role="status">
+              {found.notes.join(' ')}
+            </p>
+          )}
           {ranked.length ? (
+            <>
             <ul className="strat-list">
               {ranked.map((item, i) => (
                 <RecommendationCard
@@ -225,13 +238,20 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
                   strategy={item.strategy}
                   rec={item.rec}
                   pref={pref}
-                  top={i === 0 && item.rec.status !== 'unscored'}
-                  fits={whereFavoritesFit(ranked, item)}
+                  top={i === 0 && item.rec.status !== 'unscored' && (item.kind === 'exact' || item.kind === 'generic')}
+                  where={item.where}
+                  fits={whereFavoritesFit(found.results, item)}
                   onOpen={() => navigate(`strategies/s/${item.strategy.id}`)}
                   onOpenOther={(s) => navigate(`strategies/s/${s.id}`)}
                 />
               ))}
             </ul>
+            {(hidden > 0 || showAll) && found.results.length > FIND_LIMIT && (
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowAll(!showAll)}>
+                {showAll ? `Show only the top ${FIND_LIMIT}` : `Show ${hidden} more`}
+              </button>
+            )}
+            </>
           ) : (
             <EmptyState
               icon="book"

@@ -3213,3 +3213,11 @@ button.op-pill {
   background: var(--ok-soft);
   color: var(--ok);
 }
+
+.rec-card__where {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}

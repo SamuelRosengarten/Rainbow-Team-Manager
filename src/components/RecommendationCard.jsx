@@ -32,7 +32,7 @@ function StarRow({ stars, label, detail }) {
  * operators replaced) and the reasons, good and bad.
  * `fits` maps an idle favorite to another strategy that uses it.
  */
-export default function RecommendationCard({ strategy, rec, pref, onOpen, fits = {}, onOpenOther, top = false }) {
+export default function RecommendationCard({ strategy, rec, pref, onOpen, fits = {}, onOpenOther, top = false, where = '' }) {
   const map = strategy.mapId === 'any' ? 'Any map' : MAPS_BY_ID[strategy.mapId]?.name ?? strategy.mapId;
   const hasFavs = pref.favorites.size > 0;
   return (
@@ -48,6 +48,7 @@ export default function RecommendationCard({ strategy, rec, pref, onOpen, fits =
           {strategy.site ? ` · ${strategy.site}` : ''} · {strategy.side === 'attack' ? 'Attack' : 'Defense'} · {STRATEGY_TYPES[strategy.type]} · {DIFFICULTY[strategy.difficulty]}
         </span>
 
+        {where && <span className="rec-card__where">{where}</span>}
         {rec.status === 'unscored' ? (
           <span className="match-stars match-stars--none">Operators not listed</span>
         ) : (
