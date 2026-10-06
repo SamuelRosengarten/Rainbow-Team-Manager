@@ -3,7 +3,7 @@ import Icon from './Icon.jsx';
 import ObjectInspector from './ObjectInspector.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
-import { dist, moveItem, nearestPlayer, rectFrom, resizeZone, toBoardPoint } from '../lib/board.js';
+import { dist, liveStepId, moveItem, nearestPlayer, rectFrom, resizeZone, toBoardPoint } from '../lib/board.js';
 import { floorLabel } from '../lib/floorPlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { boardSpace, primaryFloor, projectItem, projectStrategy, unprojectPatch } from '../lib/space.js';
@@ -41,7 +41,8 @@ export default function BoardEditor({ draft, history, mapName }) {
   const [tool, setTool] = useState('position');
   const [group, setGroup] = useState('units');
   const [slotKey, setSlotKey] = useState(draft.slots[0]?.key ?? null);
-  const [stepId, setStepId] = useState(draft.steps[0]?.id ?? null);
+  const [pickedStepId, setStepId] = useState(draft.steps[0]?.id ?? null);
+  const stepId = liveStepId(draft.steps, pickedStepId);
   const [selected, setSelected] = useState(null);
   const [path, setPath] = useState([]);
   const [zoneDraft, setZoneDraft] = useState(null);
