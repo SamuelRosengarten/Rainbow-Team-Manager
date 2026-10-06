@@ -59,6 +59,11 @@ h3 {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 button,
@@ -3301,6 +3306,14 @@ button.op-pill {
   }
   .btn--icon {
     min-width: 44px;
+  }
+  /* A link inside a sentence keeps the line height: the tap area grows with
+     padding that inline boxes don't add to the line. */
+  p .link-btn {
+    display: inline;
+    min-height: 0;
+    padding-block: 12px;
+    margin-block: -12px;
   }
 }
 
