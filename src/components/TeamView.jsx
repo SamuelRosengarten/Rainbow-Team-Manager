@@ -15,11 +15,13 @@ const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 
 function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const p = prefs[player.name] ?? { owned: [], favorites: [] };
   const favorites = p.favorites.map((id) => OPERATORS_BY_ID[id]).filter(Boolean);
   const tracker = trackerUrl(player.username);
+  const detailsId = `player-${player.id ?? player.name}-details`;
   return (
-    <li className={`player${isMe ? ' player--me' : ''}${player.status === 'archived' ? ' player--archived' : ''}`}>
+    <li className={`player${isMe ? ' player--me' : ''}${player.status === 'archived' ? ' player--archived' : ''}${open ? ' player--open' : ''}`}>
       <div className="player__head">
         <Avatar name={player.name} size="md" tone={isMe ? 'accent' : undefined} />
         <div className="player__id">
@@ -27,19 +29,24 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
             {player.name}
             {isMe && <span className="tag tag--me">{t('teamView.you')}</span>}
           </span>
-          <span className="player__user">{player.username ? t('team.ubisoft', { username: player.username }) : t('teamView.noUbisoftUsername')}</span>
+          <span className="player__user">{player.username || t('teamView.noUbisoftUsername')}</span>
         </div>
-        <button type="button" className="btn btn--ghost btn--icon" onClick={onEdit} aria-label={t('team.edit', { player: player.name })}>
-          <Icon name="edit" />
-        </button>
+        <div className="player__actions">
+          <button type="button" className="btn btn--ghost btn--sm player__toggle" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen((o) => !o)}>
+            <span className="player__toggle-text">{t('team.details')}</span>
+            <Icon name="chevron" size={14} />
+          </button>
+          <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={onEdit} aria-label={t('team.edit', { player: player.name })} title={t('team.edit', { player: player.name })}>
+            <Icon name="edit" size={16} />
+          </button>
+        </div>
       </div>
-      <PlayerStats player={player} onRefresh={onRefresh} />
       <div className="player__badges">
+        {player.mainRole && <span className="player__role">{MAIN_ROLES[player.mainRole]}</span>}
         <Badge tone="neutral">{PLAYER_STATUS[player.status]}</Badge>
         <Badge tone={AVAIL_TONE[player.availability]} dot>
           {AVAILABILITY[player.availability]}
         </Badge>
-        {player.mainRole && <Badge tone="neutral">{MAIN_ROLES[player.mainRole]}</Badge>}
       </div>
       <div className="player__ops">
         {favorites.length ? (
@@ -52,18 +59,32 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
             {favorites.length > 5 && <span className="muted small">+{favorites.length - 5}</span>}
           </span>
         ) : (
-          <span className="muted small">{t('teamView.noFavouriteOperatorsYet')}</span>
+          <span className="player__nofav">{t('teamView.noFavouriteOperatorsYet')}</span>
         )}
         <span className="player__owned" title={t('teamView.ownedOperators')}>
           <T id="team.owned" values={{ owned: p.owned.length, total: OPERATORS.length }} />
         </span>
       </div>
-      {player.notes && <p className="player__notes">{player.notes}</p>}
-      {tracker && (
-        <a className="player__link" href={tracker} target="_blank" rel="noopener noreferrer">
-          {t('team.tracker')} <Icon name="external" size={14} />
-          <span className="visually-hidden"> {t('teamView.opensInANewTab')}</span>
-        </a>
+      {open && (
+        <div className="player__details" id={detailsId}>
+          <PlayerStats player={player} onRefresh={onRefresh} />
+          {!player.username && (
+            <div className="pstats pstats--empty">
+              <span className="eyebrow">{t('playerStats.stats')}</span>
+              <span className="pstats__none">{t('playerStats.noData')}</span>
+              <span className="muted small">{t('team.addUsername')}</span>
+            </div>
+          )}
+          <div className="player__more">
+            {player.notes ? <p className="player__notes">{player.notes}</p> : <p className="muted small">{t('team.noNotes')}</p>}
+            {tracker && (
+              <a className="player__link" href={tracker} target="_blank" rel="noopener noreferrer">
+                {t('team.tracker')} <Icon name="external" size={14} />
+                <span className="visually-hidden"> {t('teamView.opensInANewTab')}</span>
+              </a>
+            )}
+          </div>
+        </div>
       )}
     </li>
   );

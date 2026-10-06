@@ -129,11 +129,14 @@ export function Sheet({ title, onClose, children, footer, labelId = 'sheet-title
   );
 }
 
-/** Section card with a title row and optional action. */
-export function Card({ title, icon, action, children, className = '', id }) {
+/**
+ * Section card with a title row and optional action. `kicker` renders the
+ * title as a small tactical label (briefing style) instead of a heading-sized one.
+ */
+export function Card({ title, icon, action, children, className = '', id, kicker = false }) {
   const titleId = id ? `${id}-title` : undefined;
   return (
-    <section className={`panel card ${className}`} aria-labelledby={titleId}>
+    <section className={`panel card${kicker ? ' card--kicker' : ''} ${className}`} aria-labelledby={titleId}>
       {(title || action) && (
         <div className="panel__head">
           {title && (
@@ -147,5 +150,18 @@ export function Card({ title, icon, action, children, className = '', id }) {
       )}
       {children}
     </section>
+  );
+}
+
+/**
+ * Progress bar for a share (0-1). The label is the accessible text, e.g.
+ * "3 of 4 sites covered"; the bar itself is decoration.
+ */
+export function Meter({ value, label, tone = 'accent' }) {
+  const pct = Math.round(Math.max(0, Math.min(1, value ?? 0)) * 100);
+  return (
+    <span className={`meter meter--${tone}`} role="img" aria-label={label}>
+      <span className="meter__fill" style={{ width: `${pct}%` }} />
+    </span>
   );
 }

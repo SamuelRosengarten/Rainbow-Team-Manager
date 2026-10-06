@@ -4,8 +4,6 @@ export default {
   "mapsView.mapsAndSites": "Maps and sites",
   "mapsView.pickAMapToSee": "Pick a map to see its sites, your plans for each, and the team's map notes.",
   "mapsView.seeDocsMapAssetsMd": "See docs/MAP_ASSETS.md for how to add one.",
-  "mapsView.sitesNotListedYet": "Sites not listed yet",
-  "mapsView.floorsNotListed": "Floors not listed",
   "mapsView.map": "Map",
   "mapsView.bombSitesArenTListed": "Bomb sites aren't listed for this map yet",
   "mapsView.planAttack": "Plan attack",

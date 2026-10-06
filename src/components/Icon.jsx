@@ -46,6 +46,7 @@ const PATHS = {
   arrow: 'M5 12h14M13 6l6 6-6 6',
   grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
   fullscreen: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  search: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.8-4.8',
 };
 
 export default function Icon({ name, size = 20, className = '', label }) {

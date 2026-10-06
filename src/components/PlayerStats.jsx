@@ -87,9 +87,9 @@ export default function PlayerStats({ player, onRefresh }) {
     if (!player.username) return null;
     return (
       <div className="pstats pstats--empty">
-        <span className="muted small">
-          {STATS_CONFIGURED ? t('playerStats.statsUnavailable') : t('playerStats.noSource', { reason: STATS_REASON['not-configured'] })}
-        </span>
+        <span className="eyebrow">{t('playerStats.stats')}</span>
+        <span className="pstats__none">{t('playerStats.noData')}</span>
+        <span className="muted small">{STATS_CONFIGURED ? t('playerStats.statsUnavailable') : t('playerStats.noSourceShort')}</span>
         {refreshRow}
         {problem && (
           <p className="muted small" role="status">
