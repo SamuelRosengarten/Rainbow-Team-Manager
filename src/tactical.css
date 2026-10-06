@@ -489,10 +489,13 @@ kbd {
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  text-align: center;
+  overflow-wrap: anywhere;
+  hyphens: auto;
   cursor: pointer;
 }
 .rail-btn:hover:not(:disabled) {
@@ -532,7 +535,8 @@ kbd {
 }
 .ctx-label {
   flex: none;
-  width: 44px;
+  min-width: 44px;
+  padding-right: 4px;
   color: var(--muted);
   font-family: var(--font-display);
   font-size: 0.8rem;
@@ -3219,5 +3223,19 @@ button.partner:hover {
     min-height: 44px;
     min-width: 44px;
     justify-content: center;
+  }
+}
+
+/* 44px touch targets on phones and touch screens. Screen rules above set
+   smaller heights for desktop density; this block comes last so it wins. */
+@media (pointer: coarse), (max-width: 720px) {
+  .step-chip,
+  .ctx-chip,
+  .subtool,
+  .floor-tab,
+  .obj-list__btn,
+  .slot-tag--toggle,
+  .role-chip {
+    min-height: var(--tap);
   }
 }

@@ -32,6 +32,7 @@ export const en = {
   'comp.keySlot.hint': 'Only an operator with the same utility should replace this one.',
 
   'finder.rank.by.integrity': 'Ranked #{n}: this version loses a key utility, which #{prev} doesn’t.',
+  'fplan.unverifiedHint': 'Nobody has checked this plan in the game yet ({done} of {total} checks). Do it under Verify and export.',
 };
 
 export const fr = {
@@ -67,4 +68,5 @@ export const fr = {
   'comp.keySlot.hint': 'Seul un opérateur avec le même utilitaire devrait remplacer celui-ci.',
 
   'finder.rank.by.integrity': 'N° {n} : cette version perd un utilitaire clé, contrairement au n° {prev}.',
+  'fplan.unverifiedHint': 'Personne n’a encore vérifié ce plan dans le jeu ({done} vérifications sur {total}). Fais-le dans Vérifier et exporter.',
 };

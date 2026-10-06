@@ -190,6 +190,7 @@ export default function FloorPlanPanel({ map }) {
               {plan.license ? ` · ${plan.license}` : ''}
             </span>
           </p>
+          {!plan.verified && <p className="muted small fplan__hint">{t('fplan.unverifiedHint', { done: plan.checks.length, total: VERIFY_CHECKS.length })}</p>}
 
           {calibrating && (
             <div className="fplan__calib">

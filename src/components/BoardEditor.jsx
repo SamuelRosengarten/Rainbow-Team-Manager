@@ -412,11 +412,13 @@ export default function BoardEditor({ draft, history, mapName }) {
 
         {space.approximate && (
           <p className="notice notice--warn beditor__layout">
-            {t('board.approx', { floor: floorLabel(space.floorId) })}{' '}
-            <button type="button" className="link-btn" onClick={() => set((d) => toFloorLayout(d))}>
-              {t('boardEditor.markThePositionsAsPlaced')}
-            </button>
-            .
+            <span>
+              {t('board.approx', { floor: floorLabel(space.floorId) })}{' '}
+              <button type="button" className="link-btn" onClick={() => set((d) => toFloorLayout(d))}>
+                {t('boardEditor.markThePositionsAsPlaced')}
+              </button>
+              .
+            </span>
           </p>
         )}
         {space.kind === 'none' && (
