@@ -2276,59 +2276,68 @@ button.op-pill {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.coach__list {
+.lcoach__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 10px;
 }
-.coach__row {
+/* One compact line per job: icon, player + operator + job, then why and alternative. */
+.lcoach__row {
   display: flex;
-  gap: 12px;
+  gap: var(--sp-3);
   align-items: flex-start;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
 }
-.coach__main {
-  display: grid;
-  gap: 3px;
+.lcoach__row:first-child {
+  border-top: 0;
+}
+.lcoach__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sp-3);
+  row-gap: 2px;
   min-width: 0;
 }
-.coach__main p {
+.lcoach__why,
+.lcoach__alt,
+.lcoach__conflict {
+  flex-basis: 100%;
+}
+.lcoach__main p {
   margin: 0;
 }
-.coach__who {
+.lcoach__who {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
 }
-.coach__op {
+.lcoach__op {
   font-family: var(--font-display);
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: var(--fs-md);
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
-.coach__job {
+.lcoach__job {
   color: var(--accent);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
 }
-.coach__why {
-  font-size: 0.9rem;
-  color: var(--text-2);
+.lcoach__why {
+  font-size: var(--fs-sm);
+  color: var(--muted);
 }
-.coach__why-label {
+.lcoach__why-label {
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.coach__alt {
+.lcoach__alt {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -2348,11 +2357,11 @@ button.op-pill {
   font-weight: 600;
 }
 
-.coach__conflict,
+.lcoach__conflict,
 .pref-summary__conflict {
   color: var(--warn);
 }
-.coach__conflict {
+.lcoach__conflict {
   margin: 0;
   font-size: 0.85rem;
 }

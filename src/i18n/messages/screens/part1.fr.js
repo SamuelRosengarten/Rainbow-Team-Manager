@@ -8,7 +8,7 @@ export default {
   'app.youReOfflineChangesWon': 'Tu es hors ligne. Tes changements n’arriveront à l’équipe qu’au retour de ta connexion.',
   'app.offlineModeChangesStayOn': 'Mode hors ligne : les changements restent sur cet appareil et sont perdus au rechargement.',
   'app.signedIn': 'Connecté en tant que {name}. Changer de profil',
-  'app.brandSub': 'Planification d’équipe',
+  'app.brandSub': 'Gestion d’équipe',
   'app.switchProfile': 'Changer de profil',
   'nav.home': 'Commande',
   'nav.strategies': 'Stratégies',

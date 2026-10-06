@@ -79,7 +79,8 @@ export const en = {
   'maps.defenseCount': '{count} defense',
   'maps.summary': '{sites, plural, one {# site} other {# sites}} · {plans, plural, one {# plan} other {# plans}}',
   'maps.planOn': 'Plan on {map}',
-  'maps.addSites': 'Add them to <code>src/data/maps.json</code>. Plans for the whole map still work.',
+  'maps.addSites': 'You can still plan for the whole map. Sites are added in <code>src/data/maps.json</code> by whoever maintains the app.',
+  'maps.summary.noSites': 'Sites not listed · {plans, plural, one {# plan} other {# plans}}',
 };
 
 export const fr = {
@@ -162,5 +163,6 @@ export const fr = {
   'maps.defenseCount': '{count} défense',
   'maps.summary': '{sites, plural, one {# site} other {# sites}} · {plans, plural, one {# plan} other {# plans}}',
   'maps.planOn': 'Planifier sur {map}',
-  'maps.addSites': 'Ajoute-les dans <code>src/data/maps.json</code>. Les plans pour toute la carte fonctionnent quand même.',
+  'maps.addSites': 'Tu peux quand même planifier pour toute la carte. Les sites s’ajoutent dans <code>src/data/maps.json</code>, par la personne qui gère l’application.',
+  'maps.summary.noSites': 'Sites non indiqués · {plans, plural, one {# plan} other {# plans}}',
 };

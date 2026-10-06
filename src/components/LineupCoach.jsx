@@ -11,7 +11,7 @@ export default function LineupCoach({ lineup, strategy, onUse }) {
   const { t, tm } = useI18n();
   if (!lineup) return null;
   return (
-    <section className="panel coach" aria-labelledby="coach-title">
+    <section className="panel lcoach" aria-labelledby="coach-title">
       <div className="panel__head">
         <div>
           <h2 id="coach-title" className="panel__title">
@@ -44,28 +44,28 @@ export default function LineupCoach({ lineup, strategy, onUse }) {
           </span>
         </div>
       )}
-      <ol className="coach__list">
+      <ol className="lcoach__list">
         {lineup.slots.map((s) => {
           const op = OPERATORS_BY_ID[s.operatorId];
           const alt = OPERATORS_BY_ID[s.alternative];
           return (
-            <li key={s.slotKey} className="coach__row">
-              <OperatorIcon operator={op} size="lg" />
-              <div className="coach__main">
-                <p className="coach__who">
+            <li key={s.slotKey} className="lcoach__row">
+              <OperatorIcon operator={op} size="md" />
+              <div className="lcoach__main">
+                <p className="lcoach__who">
                   <strong>{s.player ?? t('card.openSlot')}</strong>
-                  <span className="coach__op">{op ? op.name : t('card.noOperator')}</span>
+                  <span className="lcoach__op">{op ? op.name : t('card.noOperator')}</span>
                   {s.favorite && <span className="tag tag--fav">{t('card.favourite')}</span>}
                 </p>
-                <p className="coach__job">{t(`lineup.job.${s.job}`)}</p>
-                <p className="coach__why">
-                  <span className="coach__why-label">{t('coach.why')}</span> {[...s.whyParts, s.jobNote].map(tm).join(' ')}
+                <p className="lcoach__job">{t(`lineup.job.${s.job}`)}</p>
+                <p className="lcoach__why">
+                  <span className="lcoach__why-label">{t('coach.why')}</span> {[...s.whyParts, s.jobNote].map(tm).join(' ')}
                 </p>
                 {s.conflict.length > 1 && (
-                  <p className="coach__conflict">⚠ {t('coach.shared', { players: s.conflict, count: s.conflict.length, operator: op.name, winner: s.player ?? '' })}</p>
+                  <p className="lcoach__conflict">⚠ {t('coach.shared', { players: s.conflict, count: s.conflict.length, operator: op.name, winner: s.player ?? '' })}</p>
                 )}
                 {alt && (
-                  <p className="coach__alt">
+                  <p className="lcoach__alt">
                     {t('coach.alt')} <OperatorIcon operator={alt} size="xs" /> {alt.name}
                   </p>
                 )}

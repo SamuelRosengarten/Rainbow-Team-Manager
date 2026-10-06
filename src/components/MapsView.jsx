@@ -156,7 +156,7 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
             {map.name}
           </h1>
           <p className="page__sub">
-            {t('maps.summary', { sites: sites.length, plans: list.length })}
+            {sites.length ? t('maps.summary', { sites: sites.length, plans: list.length }) : t('maps.summary.noSites', { plans: list.length })}
           </p>
         </div>
         <button type="button" className="btn btn--primary" onClick={() => navigate(`build/${map.id}`)}>

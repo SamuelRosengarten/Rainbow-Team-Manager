@@ -282,6 +282,8 @@ textarea {
   letter-spacing: -0.01em;
 }
 .brand__sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   letter-spacing: 0.1em;
@@ -1593,6 +1595,16 @@ fieldset.field > legend {
   }
   .lang-toggle__group .segmented__btn {
     min-height: 34px;
+  }
+}
+
+/* Long labels (French): on phones a button wraps instead of pushing the page sideways. */
+@media (max-width: 560px) {
+  .btn {
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
+    padding-block: 6px;
   }
 }
 
