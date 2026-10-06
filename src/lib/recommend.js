@@ -262,12 +262,14 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   out.compatLabel = chosen.size ? `${keptCount} of ${chosen.size} picked operator${chosen.size === 1 ? '' : 's'} kept` : 'pick operators to rate this';
 
   // Strategy match: right map and site, real positions, a team-tested plan.
-  const siteMatch = !site || strategy.site === site ? 1 : !strategy.site ? 0.5 : 0;
+  // A site-less plan fits any site a little; a general (any-map) plan less than one written for the map.
+  const siteMatch = !site || strategy.site === site ? 1 : !strategy.site ? (strategy.mapId === 'any' ? 0.3 : 0.5) : 0;
+  const otherMap = Boolean(mapId) && strategy.mapId !== mapId && strategy.mapId !== 'any';
   const mapMatch = !mapId || strategy.mapId === mapId ? 1 : 0.5;
   const content = Math.min(1, (strategy.markers.length + strategy.steps.length * 2) / 16);
   out.quality = Math.round((0.35 * siteMatch + 0.15 * mapMatch + 0.3 * fidelity + 0.2 * content) * 100) / 100;
   out.qualityStars = starsFrom(out.quality);
-  out.qualityLabel = strategy.mapId === 'any' ? 'general plan' : siteMatch === 1 ? (site ? 'this map and site' : 'this map') : siteMatch === 0.5 ? 'this map, no fixed site' : 'this map, another site';
+  out.qualityLabel = strategy.mapId === 'any' ? 'general plan' : otherMap ? 'another map' : siteMatch === 1 ? (site ? 'this map and site' : 'this map') : siteMatch === 0.5 ? 'this map, no fixed site' : 'this map, another site';
 
   // Transparency: why this was (or wasn't) recommended.
   if (favs.length) {
@@ -302,6 +304,7 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   }
   if (site) {
     if (!strategy.site) out.reasons.push({ ok: true, text: strategy.mapId === 'any' ? 'A general plan: works on any map and site' : 'Not tied to a single site' });
+    else if (otherMap) out.reasons.push({ ok: false, text: 'Different map' });
     else out.reasons.push({ ok: siteMatch === 1, text: siteMatch ? 'Matches the selected site' : 'Different site' });
   }
   if (strategy.markers.length || strategy.steps.length) out.reasons.push({ ok: true, text: 'Existing strategy with positions and steps' });

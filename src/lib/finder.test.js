@@ -72,5 +72,17 @@ describe('ranking: a plan written for the map beats a general plan', () => {
     // while a plan for another site of the map still says so
     const other = r.results.find((x) => x.kind === 'other-site');
     expect(other.rec.reasons.map((x) => x.text)).toContain('Different site');
+    // a plan for another map says "Different map", not "Different site"
+    const far = r.results.find((x) => x.kind === 'other-map');
+    expect(far.rec.reasons.map((x) => x.text)).toContain('Different map');
+    expect(far.rec.qualityLabel).toBe('another map');
+  });
+
+  it('a general plan never scores a better strategy match than a plan written for the map', () => {
+    const r = find({ mapId: 'border', site: '1F Bathroom / Tellers', side: 'defend' });
+    const map = r.results.find((x) => x.kind === 'other-site');
+    const general = r.results.find((x) => x.kind === 'generic');
+    expect(general.rec.quality).toBeLessThanOrEqual(map.rec.quality + 0.05);
+    expect(general.rec.qualityStars).toBeLessThanOrEqual(map.rec.qualityStars);
   });
 });
