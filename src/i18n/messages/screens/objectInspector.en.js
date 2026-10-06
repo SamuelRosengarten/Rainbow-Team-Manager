@@ -3,7 +3,6 @@ export default {
   "objectInspector.anyOperator": "Any operator",
   "objectInspector.step": "Step",
   "objectInspector.setupAlwaysShown": "Setup (always shown)",
-  "objectInspector.nothingPlacedYetPickA": "Nothing placed yet. Pick a tool and click the map.",
   "objectInspector.closeInspector": "Close inspector",
   "objectInspector.type": "Type",
   "objectInspector.utility": "Utility",

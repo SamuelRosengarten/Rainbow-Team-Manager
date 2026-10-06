@@ -4,7 +4,6 @@ export default {
   'objectInspector.anyOperator': 'N’importe quel opérateur',
   'objectInspector.step': 'Étape',
   'objectInspector.setupAlwaysShown': 'Préparation (toujours affichée)',
-  'objectInspector.nothingPlacedYetPickA': 'Rien de placé pour l’instant. Choisis un outil et clique sur la carte.',
   'objectInspector.closeInspector': 'Fermer l’inspecteur',
   'objectInspector.type': 'Type',
   'objectInspector.utility': 'Gadget',

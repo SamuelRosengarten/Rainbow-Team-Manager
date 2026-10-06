@@ -28,11 +28,8 @@ export default {
 
   // boardEditor
   'boardEditor.boardTools': 'Outils du tableau',
-  'boardEditor.selectMoveV': 'Sélectionner / déplacer (V)',
   'boardEditor.select': 'Sélectionner',
-  'boardEditor.undoCtrlZ': 'Annuler (Ctrl+Z)',
   'boardEditor.undo': 'Annuler',
-  'boardEditor.redoCtrlShiftZ': 'Rétablir (Ctrl+Maj+Z)',
   'boardEditor.redo': 'Rétablir',
   'boardEditor.operatorForNewObjects': 'Opérateur des nouveaux objets',
   'boardEditor.who': 'Qui',
@@ -47,7 +44,6 @@ export default {
   'boardEditor.undoPoint': 'Annuler le point',
   'boardEditor.nowClickTheEngagementArea': 'Clique maintenant la zone d’engagement.',
   'boardEditor.nowClickPlayerB': 'Clique maintenant le joueur B.',
-  'boardEditor.markThePositionsAsPlaced': 'marquer les positions comme placées sur la vraie carte',
   'boardEditor.thisPlanIsnTTied': 'Ce plan n’est lié à aucune carte. Choisis une carte et un site dans les détails pour le planifier sur le vrai plan d’étage.',
   'boardEditor.inspector': 'Inspecteur',
 
@@ -118,8 +114,8 @@ export default {
   'mapLayer.floor': '<étage>',
   'mapLayer.genericPlanNotTiedTo': 'Plan générique : pas lié à une carte',
   'mapLayer.chooseAMapAndSite': 'Choisis une carte et un site dans les détails pour le planifier sur le vrai plan d’étage.',
-  'mapLayer.unverifiedFloorPlan': 'PLAN D’ÉTAGE NON VÉRIFIÉ',
-  'mapLayer.positionsComeFromTheOld': 'Les positions viennent de l’ancien schéma abstrait et n’ont pas encore été placées sur cette carte',
+  'mapLayer.unverifiedFloorPlan': 'Plan pas encore vérifié en jeu',
+  'mapLayer.positionsComeFromTheOld': 'Certaines positions sont approximatives sur ce plan',
 
   // mapNotes
   'mapNotes.whoseNotes': 'Notes de qui',
