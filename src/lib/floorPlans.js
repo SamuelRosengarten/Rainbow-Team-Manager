@@ -156,6 +156,11 @@ export function floorPlan(mapId, floorId) {
   return { ...plan, url: `${base()}${plan.file}` };
 }
 
+/** True when the strategy is drawn on a floor plan the team has verified against the game. */
+export function onVerifiedPlan(strategy) {
+  return strategy?.layout === 'floor' && Boolean(floorPlan(strategy.mapId, strategy.floorId)?.verified);
+}
+
 /** Board size in board units for a plan: 100 wide, height from the image's aspect ratio. */
 export function planSize(plan) {
   return { w: 100, h: Math.round((100 * plan.height * 100) / plan.width) / 100 };

@@ -3270,3 +3270,77 @@ button.op-pill {
 .live--disconnected .live__dot {
   background: var(--danger);
 }
+
+/* ---------- 44px touch targets on touch screens and phones ---------- */
+@media (pointer: coarse), (max-width: 720px) {
+  .brand,
+  .topbar .btn,
+  .profile-switch,
+  .nav__link,
+  .tabbar__link,
+  .step-chip,
+  .link-btn,
+  .checkbox,
+  .version-pill,
+  .floor-tab,
+  .segmented__btn,
+  .btn,
+  .btn--sm,
+  details > summary {
+    min-height: 44px;
+  }
+  .brand,
+  .link-btn,
+  .checkbox,
+  details > summary {
+    display: inline-flex;
+    align-items: center;
+  }
+  .brand {
+    min-width: 44px;
+  }
+  .btn--icon {
+    min-width: 44px;
+  }
+}
+
+.featured-neutral {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.featured-neutral p {
+  margin: 0;
+}
+@media (pointer: coarse), (max-width: 720px) {
+  .topbar .btn,
+  .profile-switch,
+  .skip-link {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (pointer: coarse), (max-width: 720px) {
+  .pref-btn,
+  .op-row__open,
+  .select,
+  .input,
+  .input--sm,
+  .op-tile,
+  .strat-card__main,
+  .mini-strat__main,
+  .map-card,
+  .choice {
+    min-height: 44px;
+  }
+  .pref-btn {
+    min-width: 44px;
+    width: 44px;
+  }
+  .op-row__open {
+    min-width: 44px;
+  }
+}

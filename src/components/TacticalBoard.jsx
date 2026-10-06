@@ -3,6 +3,7 @@ import MapLayer from './MapLayer.jsx';
 import { stepState, towards } from '../lib/board.js';
 import { floorLabel, floorPlan, floorsFor } from '../lib/floorPlans.js';
 import { OPERATORS_BY_ID, operatorImage } from '../lib/operators.js';
+import { circleRect, labelWidth, placeLabels } from '../lib/labels.js';
 import { boardSpace, floorsInUse, projectStrategy } from '../lib/space.js';
 import { SLOT_COLORS } from '../lib/strategies.js';
 import { GADGETS, PATHS, ZONES } from '../lib/tactical.js';
@@ -239,6 +240,71 @@ export default function TacticalBoard({
   const arrow = (color) => `url(#${uid}-a-${color.replace('#', '')})`;
   const markersById = Object.fromEntries(strategy.markers.map((m) => [m.id, m]));
 
+  // Zone and crossfire labels are drawn in a top layer, placed clear of the
+  // operator markers, notes and each other (labels.js).
+  const obstacles = [
+    ...strategy.markers.filter((m) => m.kind !== 'note').map((m) => circleRect(m.x, m.y, 3.4)),
+    ...strategy.markers
+      .filter((m) => m.kind === 'note')
+      .map((m) => {
+        const w = textW(m.label || 'Note');
+        return { x: m.x - w / 2, y: m.y - 1.7, w, h: 3.4 };
+      }),
+    ...strategy.crossfires.flatMap((c) => [circleRect(c.a[0], c.a[1], 1.6), circleRect(c.b[0], c.b[1], 1.6)]),
+  ];
+  const xfireLabels = strategy.crossfires
+    .map((c) => ({ c, v: vis(c, [c.slotA, c.slotB]) }))
+    .filter((x) => x.v)
+    .map(({ c, v }) => {
+      const [x, y] = c.target;
+      const r = c.radius;
+      const text = `CROSSFIRE${c.label ? ` · ${c.label}` : ''}${c.timing ? ` · ${c.timing}` : ''}`;
+      return {
+        id: `x:${c.id}`,
+        v,
+        text,
+        w: labelWidth(text),
+        h: 1.8,
+        // Nearest first: below, above, beside, then further out and shifted sideways.
+        candidates: [
+          { x, y: y + r + 2, anchor: 'middle' },
+          { x, y: y - r - 1, anchor: 'middle' },
+          { x: x + r + 1.2, y: y + 0.6, anchor: 'start' },
+          { x: x - r - 1.2, y: y + 0.6, anchor: 'end' },
+          ...[5, 8, 11].flatMap((d) =>
+            [0, -1, 1].flatMap((side) => [
+              { x: x + side * (labelWidth(text) / 2 + r), y: y + r + d, anchor: 'middle' },
+              { x: x + side * (labelWidth(text) / 2 + r), y: y - r - d + 1, anchor: 'middle' },
+            ]),
+          ),
+        ],
+      };
+    });
+  const zoneLabels = strategy.zones
+    .map((z) => ({ z, v: vis(z) }))
+    .filter((x) => x.v)
+    .map(({ z, v }) => {
+      const k = ZONES[z.kind];
+      const w = Math.max(labelWidth(k.text), z.label ? labelWidth(z.label, 1.35) : 0);
+      const h = z.label ? 4.2 : 2;
+      const bottom = z.y + z.h - (z.label ? 2.6 : 0.9);
+      return {
+        id: `z:${z.id}`,
+        v,
+        k,
+        z,
+        w,
+        h,
+        candidates: [
+          { x: z.x + 0.8, y: z.y + 2.1, anchor: 'start' },
+          { x: z.x + z.w - 0.8, y: z.y + 2.1, anchor: 'end' },
+          { x: z.x + 0.8, y: bottom, anchor: 'start' },
+          { x: z.x + z.w - 0.8, y: bottom, anchor: 'end' },
+        ],
+      };
+    });
+  const placed = placeLabels([...xfireLabels, ...zoneLabels], obstacles, { w: space.w, h: space.h });
+
   return (
     <div className={`tboard tboard--${space.kind}${editing ? ' tboard--editing' : ''} ${className}`}>
       {multiFloor && showFloorTabs && (
@@ -298,14 +364,6 @@ export default function TacticalBoard({
                 strokeWidth={isSel('zone', z.id) ? 0.5 : 0.3}
                 strokeDasharray="1 0.6"
               />
-              <text className="tb-zone__label" x={z.x + 0.8} y={z.y + 2.1} fill={k.color}>
-                {k.text}
-              </text>
-              {z.label && (
-                <text className="tb-zone__sub" x={z.x + 0.8} y={z.y + 4.1}>
-                  {z.label}
-                </text>
-              )}
             </g>
           );
         })}
@@ -364,10 +422,6 @@ export default function TacticalBoard({
                   </text>
                 </g>
               ))}
-              <text className="tb-xfire__label" x={c.target[0]} y={c.target[1] + c.radius + 2}>
-                CROSSFIRE{c.label ? ` · ${c.label}` : ''}
-                {c.timing ? ` · ${c.timing}` : ''}
-              </text>
             </g>
           );
         })}
@@ -423,6 +477,33 @@ export default function TacticalBoard({
               </g>
             );
           })}
+
+        {/* Labels for zones and crossfires, above everything else */}
+        <g className="tb-labels">
+          {zoneLabels.map(({ id, v, k, z }) => {
+            const p = placed.get(id);
+            return (
+              <g key={id} className={v === 'faded' ? 'tb-faded' : undefined}>
+                <text className="tb-zone__label" x={p.x} y={p.y} style={{ textAnchor: p.anchor }} fill={k.color}>
+                  {k.text}
+                </text>
+                {z.label && (
+                  <text className="tb-zone__sub" x={p.x} y={p.y + 2} style={{ textAnchor: p.anchor }}>
+                    {z.label}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          {xfireLabels.map(({ id, v, text }) => {
+            const p = placed.get(id);
+            return (
+              <text key={id} className={`tb-xfire__label${v === 'faded' ? ' tb-faded' : ''}`} x={p.x} y={p.y} style={{ textAnchor: p.anchor }}>
+                {text}
+              </text>
+            );
+          })}
+        </g>
 
         {editing && draft && <Draft draft={draft} colorOf={colorOf} arrow={arrow} />}
         {editing && selected && <Handles strategy={strategy} selected={selected} onItemPointerDown={onItemPointerDown} />}

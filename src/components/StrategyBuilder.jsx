@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import BoardEditor from './BoardEditor.jsx';
 import Icon from './Icon.jsx';
 import LineupCoach from './LineupCoach.jsx';
@@ -48,21 +48,38 @@ const fresh = (preset = {}) => {
 
 /** Wizard header: ten numbered steps; reached ones are clickable. */
 function Stepper({ step, reached, hasDraft, go }) {
+  const listRef = useRef(null);
+  // Keep the current step in view when the list scrolls sideways on a phone.
+  useEffect(() => {
+    listRef.current?.querySelector('[aria-current="step"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
+  }, [step]);
   return (
-    <ol className="stepper" aria-label="Builder steps">
+    <>
+    <p className="stepper__summary" aria-live="polite">
+      Step {step} of {STEPS.length}: {STEPS[step - 1]}
+    </p>
+    <ol className="stepper" aria-label="Builder steps" ref={listRef}>
       {STEPS.map((label, i) => {
         const n = i + 1;
         const can = n <= reached && (n <= 6 || hasDraft);
         return (
           <li key={label} className={`stepper__item${n === step ? ' stepper__item--on' : ''}${n < step ? ' stepper__item--done' : ''}`}>
-            <button type="button" disabled={!can} onClick={() => go(n)} aria-current={n === step ? 'step' : undefined}>
+            <button
+              type="button"
+              aria-disabled={!can || undefined}
+              title={can ? undefined : 'Finish the earlier steps first'}
+              onClick={() => can && go(n)}
+              aria-current={n === step ? 'step' : undefined}
+            >
               <span className="stepper__n">{n < step ? <Icon name="check" size={13} /> : n}</span>
               <span className="stepper__label">{label}</span>
+              {!can && <span className="visually-hidden"> (finish the earlier steps first)</span>}
             </button>
           </li>
         );
       })}
     </ol>
+    </>
   );
 }
 
@@ -279,7 +296,11 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     }
   };
 
-  const canNext = { 1: Boolean(w.mapId), 2: true, 3: Boolean(w.side), 4: ops.length >= 1, 5: true, 6: Boolean(w.draft) }[w.step] ?? true;
+  // Why Next is blocked, in words (null when it isn't).
+  const nextBlock =
+    { 1: !w.mapId && 'Pick a map to continue', 3: !w.side && 'Pick attack or defense to continue', 4: ops.length < 1 && 'Pick at least one operator to continue' }[w.step] ||
+    (w.step >= 6 && !w.draft ? 'Choose a starting point to continue' : null);
+  const canNext = !nextBlock;
   const summary = [map?.name, w.site && parseSite(w.site).rooms.join(' / '), w.side && (w.side === 'attack' ? 'Attack' : 'Defense')].filter(Boolean).join(' · ');
 
   return (
@@ -324,7 +345,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
                 >
                   <span className="choice__name">{m.name}</span>
                   <span className="choice__meta">
-                    {m.sites.attack.length ? `${m.sites.attack.length} sites` : 'Sites not listed'} · {count} {count === 1 ? 'strategy' : 'strategies'}
+                    {m.sites.attack.length ? `${m.sites.attack.length} sites` : 'No sites listed: plan without a site'} · {count} {count === 1 ? 'strategy' : 'strategies'}
                   </span>
                 </button>
               </li>
@@ -333,6 +354,11 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         </ChoiceGrid>
       )}
 
+      {w.step === 2 && !sites.length && (
+        <p className="notice notice--info" role="status">
+          {map?.name} has no bomb sites listed yet, so this plan won't be tied to a site. You can still choose the side, pick operators and draw the plan.
+        </p>
+      )}
       {w.step === 2 && (
         <ChoiceGrid>
           {sites.map((s) => {
@@ -548,9 +574,20 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
             <Icon name="chevron" size={18} className="icon--flip" /> Back
           </button>
           {w.step !== 6 && (
-            <button type="button" className="btn btn--primary" onClick={next} disabled={!canNext || (w.step >= 6 && !w.draft)}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => canNext && next()}
+              aria-disabled={!canNext || undefined}
+              aria-describedby={nextBlock ? 'builder-next-hint' : undefined}
+            >
               Next: {STEPS[w.step]} <Icon name="arrow" size={18} />
             </button>
+          )}
+          {nextBlock && (
+            <p id="builder-next-hint" className="builder__hint" role="status">
+              {nextBlock}
+            </p>
           )}
         </div>
       )}

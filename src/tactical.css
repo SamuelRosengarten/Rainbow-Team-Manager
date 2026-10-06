@@ -2800,3 +2800,55 @@ button.partner:hover {
 .diagram__legend li .op-icon {
   flex: none;
 }
+
+/* Builder: blocked controls stay focusable and say why (aria-disabled) */
+.btn[aria-disabled='true'],
+.stepper__item button[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn[aria-disabled='true']:hover {
+  filter: none;
+}
+.builder__hint {
+  margin: 0;
+  flex: 1 1 100%;
+  text-align: right;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.builder__nav {
+  flex-wrap: wrap;
+}
+/* "Step 3 of 10: Side" for phones; the list is still there, scrolled to the current step. */
+.stepper__summary {
+  margin: 0;
+  font-weight: 700;
+}
+@media (min-width: 721px) {
+  .stepper__summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 720px) {
+  .stepper__item:not(.stepper__item--on) .stepper__label {
+    display: none;
+  }
+  .stepper__item button {
+    padding-inline: 8px;
+  }
+}
+
+@media (pointer: coarse), (max-width: 720px) {
+  .stepper__item button {
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+}

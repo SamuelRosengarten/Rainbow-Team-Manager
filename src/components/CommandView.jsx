@@ -2,6 +2,8 @@ import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
 import { MAPS, MAPS_BY_ID } from '../lib/maps.js';
+import { onVerifiedPlan } from '../lib/floorPlans.js';
+import { usePlans } from '../state/usePlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { STRATEGY_TYPES, latestVersions } from '../lib/strategies.js';
 
@@ -59,7 +61,13 @@ export default function CommandView({ profile, strategyData, navigate }) {
   const atk = bySide('attack');
   const def = bySide('defend');
   const recent = [...team].sort((a, b) => Number(b.favorite) - Number(a.favorite) || String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''))).slice(0, 5);
-  const featured = recent[0] ?? all.find((s) => s.markers.length > 4);
+  usePlans(); // re-render when a floor plan is added or verified
+  // The hero shows a board only when it sits on a verified floor plan; otherwise
+  // a neutral card, so the dashboard never leads with an unverified map.
+  const candidates = [recent[0], ...all.filter((s) => s.markers.length > 4)].filter(Boolean);
+  const verifiedPick = candidates.find(onVerifiedPlan);
+  const featured = verifiedPick ?? candidates[0];
+  const showBoard = Boolean(verifiedPick);
   const mapsWithPlans = new Set(all.map((s) => s.mapId));
   const wip = builderInProgress();
 
@@ -152,9 +160,18 @@ export default function CommandView({ profile, strategyData, navigate }) {
                   </p>
                 </div>
               </div>
-              <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={`Open ${featured.title}`}>
-                <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
-              </button>
+              {showBoard ? (
+                <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={`Open ${featured.title}`}>
+                  <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
+                </button>
+              ) : (
+                <div className="featured-neutral">
+                  {featured.summary && <p>{featured.summary}</p>}
+                  <p className="muted small">
+                    {featured.steps.length} steps · {featured.slots.length} operators. No floor plan in the library has been verified against the game yet, so the board isn't previewed here. Open the plan to see it on the real map, marked unverified.
+                  </p>
+                </div>
+              )}
               <div className="toolbar">
                 <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}/coach`)} disabled={!featured.steps.length}>
                   <Icon name="play" size={16} /> Coach mode
