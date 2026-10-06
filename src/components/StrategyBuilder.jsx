@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BoardEditor from './BoardEditor.jsx';
 import Icon from './Icon.jsx';
 import LineupCoach from './LineupCoach.jsx';
+import OwnedOnlyNote from './OwnedOnlyNote.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import PrefBadge from './PrefBadge.jsx';
 import RecommendationCard from './RecommendationCard.jsx';
@@ -15,7 +16,7 @@ import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
 import { STRATEGY_TYPES, cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
-import { prefState, prefWho, recommendStrategies, whereFavoritesFit } from '../lib/recommend.js';
+import { isUnowned, prefState, prefWho, recommendStrategies, whereFavoritesFit } from '../lib/recommend.js';
 import { fitToComposition } from '../lib/strategyMatch.js';
 import { recommendLineup } from '../lib/lineup.js';
 import { usePreferences } from '../state/usePreferences.js';
@@ -150,7 +151,7 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
  * start from a library strategy (adapted to our operators) or a blank board
  * → customize → tactics on the map → steps and timing → save.
  */
-export default function StrategyBuilder({ profile, strategyData, navigate, preset, prefs, ownedOnly }) {
+export default function StrategyBuilder({ profile, strategyData, navigate, preset, prefs, ownedOnly, updateTeam }) {
   const { players: roster, lineupPlayers, roster: rosterEntries } = useRoster();
   const [w, setW] = useSessionState(KEY, () => fresh());
   const [error, setError] = useState('');
@@ -380,6 +381,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
 
       {w.step === 4 && (
         <div className="op-step">
+          <OwnedOnlyNote pref={pref} updateTeam={updateTeam} players={lineupPlayers} />
           <LineupCoach lineup={coach?.lineup} strategy={coach?.strategy} onUse={applyCoachLineup} />
           <div className="picked" aria-label="Your five operators">
             {w.ops.map((id, i) => {
@@ -417,7 +419,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
                       type="button"
                       className={`op-tile${prefState(pref, o.id) ? ` op-tile--${prefState(pref, o.id)}` : ''}`}
                       aria-pressed={on}
-                      disabled={(!on && ops.length >= 5) || (!on && prefState(pref, o.id) === 'blocked')}
+                      disabled={(!on && ops.length >= 5) || (!on && (prefState(pref, o.id) === 'blocked' || isUnowned(pref, o.id)))}
                       title={prefWho(pref, o.id) || undefined}
                       onClick={() => toggleOp(o.id)}
                     >

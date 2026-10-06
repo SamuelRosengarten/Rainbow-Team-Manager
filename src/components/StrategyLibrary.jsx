@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import CompositionPicker from './CompositionPicker.jsx';
+import OwnedOnlyNote from './OwnedOnlyNote.jsx';
 import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import RecommendationCard from './RecommendationCard.jsx';
@@ -59,7 +60,7 @@ function PreferenceSummary({ pref, side }) {
  * Map → site → side → five players and operators → ranked strategies.
  * `setup` lives in the parent so it survives opening a strategy and coming back.
  */
-export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, strategyData, navigate, onAddReference }) {
+export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, strategyData, navigate, onAddReference, updateTeam }) {
   const [showFilters, setShowFilters] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const { mapId, site, side, picks, filters } = setup;
@@ -137,6 +138,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
             </div>
           </fieldset>
         </div>
+        <OwnedOnlyNote pref={pref} updateTeam={updateTeam} players={picks.map((p) => p.player).filter(Boolean)} />
         <h3 className="section-title setup-sub">Players and operators</h3>
         <CompositionPicker side={side} picks={picks} players={players} onChange={(next) => set({ picks: next })} />
         <PreferenceSummary pref={pref} side={side} />

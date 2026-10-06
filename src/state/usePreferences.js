@@ -8,11 +8,11 @@ import { useRoster } from './roster-context.js';
  * the team's bans. Blocked operators are never recommended.
  */
 export function usePreferences(players = null) {
-  const { prefs = {}, bans = [], profile } = useRoster();
+  const { prefs = {}, bans = [], profile, ownedOnly = false } = useRoster();
   const who = (players ?? []).filter(Boolean);
   const key = who.length ? who.join('|') : profile ?? '';
   return useMemo(
-    () => preferenceSet(prefs, key ? key.split('|') : [], bans),
-    [prefs, bans, key],
+    () => preferenceSet(prefs, key ? key.split('|') : [], bans, { ownedOnly }),
+    [prefs, bans, key, ownedOnly],
   );
 }

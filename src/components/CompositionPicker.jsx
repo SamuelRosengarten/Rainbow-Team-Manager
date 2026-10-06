@@ -8,7 +8,7 @@ import { useRoster } from '../state/roster-context.js';
  * marks that player's favorites (★) and can't pick what they blocked (🚫).
  */
 export default function CompositionPicker({ side, picks, players, onChange }) {
-  const { prefs = {}, bans = [] } = useRoster();
+  const { prefs = {}, bans = [], ownedOnly = false } = useRoster();
   const banned = new Set(bans);
   const ops = operatorsForSide(side);
   const set = (i, patch) => onChange(picks.map((p, j) => (j === i ? { ...p, ...patch } : p)));
@@ -20,6 +20,9 @@ export default function CompositionPicker({ side, picks, players, onChange }) {
         const takenPlayers = new Set(picks.filter((_, j) => j !== i).map((x) => x.player));
         const favs = new Set(prefs[p.player]?.favorites ?? []);
         const blocked = new Set(prefs[p.player]?.avoid ?? []);
+        // Owned-only: this player's list is limited to what they own (when they've marked any).
+        const owned = new Set(prefs[p.player]?.owned ?? []);
+        const limited = ownedOnly && owned.size > 0;
         const isBlocked = op && (blocked.has(op.id) || banned.has(op.id));
         // A block by anyone in the lineup applies to the whole lineup, so say who.
         const blockedBy = op ? picks.filter((x) => x.player && x.player !== p.player && (prefs[x.player]?.avoid ?? []).includes(op.id)).map((x) => x.player) : [];
@@ -42,6 +45,7 @@ export default function CompositionPicker({ side, picks, players, onChange }) {
               <select className="select" value={p.operatorId ?? ''} onChange={(e) => set(i, { operatorId: e.target.value || null })}>
                 <option value="">Operator…</option>
                 {[...ops]
+                  .filter((o) => !limited || owned.has(o.id) || o.id === p.operatorId)
                   .sort((a, b) => Number(favs.has(b.id)) - Number(favs.has(a.id)))
                   .map((o) => {
                     const no = blocked.has(o.id) || banned.has(o.id);
@@ -50,6 +54,7 @@ export default function CompositionPicker({ side, picks, players, onChange }) {
                         {favs.has(o.id) ? '★ ' : no ? '🚫 ' : ''}
                         {o.name}
                         {no ? (banned.has(o.id) ? ' (banned)' : ' (blocked)') : ''}
+                        {limited && !owned.has(o.id) ? ' (not owned)' : ''}
                       </option>
                     );
                   })}

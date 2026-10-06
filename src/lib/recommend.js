@@ -35,10 +35,14 @@ const shareRole = (a, b) => rolesOf(a).some((r) => rolesOf(b).includes(r));
  * The preferences that apply to a recommendation: blocks and favorites of the
  * players involved (the lineup, or just the viewer), plus team bans.
  * @param prefs {Record<player,{favorites?:string[],avoid?:string[]}>}
- * @returns {{ favorites: Map<string,string[]>, blocked: Map<string,string[]>, banned: Set<string>, players: string[] }}
+ * With `ownedOnly`, an operator nobody in the lineup owns is unusable. A player
+ * who hasn't marked any owned operators isn't limited (and is listed in
+ * `noOwnedData`), so an empty profile can't empty the whole search.
+ * @returns {{ favorites: Map<string,string[]>, blocked: Map<string,string[]>, banned: Set<string>, players: string[],
+ *   ownedOnly: boolean, ownedUnion: Set<string>|null, noOwnedData: string[] }}
  *   favorites / blocked map operator id -> players who marked it.
  */
-export function preferenceSet(prefs = {}, players = [], bans = []) {
+export function preferenceSet(prefs = {}, players = [], bans = [], { ownedOnly = false } = {}) {
   const favorites = new Map();
   const blocked = new Map();
   const mark = (m, id, p) => {
@@ -54,13 +58,19 @@ export function preferenceSet(prefs = {}, players = [], bans = []) {
   for (const id of blocked.keys()) favorites.delete(id);
   const banned = new Set(bans.filter((id) => OPERATORS_BY_ID[id]));
   for (const id of banned) favorites.delete(id);
-  return { favorites, blocked, banned, players };
+  const noOwnedData = ownedOnly ? players.filter((p) => !(prefs[p]?.owned ?? []).length) : [];
+  const ownedUnion = ownedOnly && players.length && !noOwnedData.length ? new Set(players.flatMap((p) => prefs[p]?.owned ?? [])) : null;
+  return { favorites, blocked, banned, players, ownedOnly, ownedUnion, noOwnedData };
 }
 
 export const emptyPreferences = () => preferenceSet({}, []);
 
 /** Can this operator be recommended at all? */
-export const isUsable = (pref, id) => Boolean(OPERATORS_BY_ID[id]) && !pref.blocked.has(id) && !pref.banned.has(id);
+export const isUsable = (pref, id) =>
+  Boolean(OPERATORS_BY_ID[id]) && !pref.blocked.has(id) && !pref.banned.has(id) && !(pref.ownedUnion && !pref.ownedUnion.has(id));
+
+/** Not usable only because nobody in the lineup owns it (owned-only is on). */
+export const isUnowned = (pref, id) => Boolean(pref.ownedUnion && !pref.ownedUnion.has(id)) && !pref.blocked.has(id) && !pref.banned.has(id);
 
 /** Favorites on a side that can be recommended. */
 export const sideFavorites = (pref, side) => [...pref.favorites.keys()].filter((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id));
@@ -185,7 +195,10 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     });
   });
 
-  out.status = out.blockedMissing.length ? 'excluded' : out.blockedReplaced.length ? 'adapted' : 'ok';
+  const unowned = slots
+    .map((slot, i) => ({ slot, c: pick[i] }))
+    .filter(({ slot }) => slot.operatorId && isUnowned(pref, slot.operatorId));
+  out.status = out.blockedMissing.length ? 'excluded' : out.blockedReplaced.length || unowned.length ? 'adapted' : 'ok';
 
   // Favorite coverage: favorites used / favorites that could have a job here
   // (capped at the number of slots, so five favorites in a five-slot plan is 5/5).
@@ -236,6 +249,12 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   }
   for (const b of out.blockedMissing) {
     out.reasons.push({ ok: false, text: `Requires blocked operator ${OPERATORS_BY_ID[b.blocked].name}: no usable replacement` });
+  }
+  for (const { slot, c } of unowned) {
+    out.reasons.push({
+      ok: false,
+      text: `Nobody in the lineup owns ${OPERATORS_BY_ID[slot.operatorId].name}: ${c ? `swapped for ${OPERATORS_BY_ID[c.id].name}` : 'no owned replacement'}`,
+    });
   }
   if (site) out.reasons.push({ ok: siteMatch === 1, text: siteMatch ? 'Matches the selected site' : 'Different site' });
   if (strategy.markers.length || strategy.steps.length) out.reasons.push({ ok: true, text: 'Existing strategy with positions and steps' });

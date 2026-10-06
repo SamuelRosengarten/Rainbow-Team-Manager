@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import strategiesJson from '../data/strategies.json';
 import { normalizeStrategy } from './strategies.js';
-import { playerMoves, preferenceSet, prefState, recommendStrategies, recommendStrategy, sharedFavorites, whereFavoritesFit } from './recommend.js';
+import { isUsable, playerMoves, preferenceSet, prefState, recommendStrategies, recommendStrategy, sharedFavorites, whereFavoritesFit } from './recommend.js';
 import { recommendLineup } from './lineup.js';
 import { suggestAlternatives } from './strategyMatch.js';
 import { suggestedPartners } from './synergy.js';
@@ -151,5 +151,30 @@ describe('player moves and shared favorites', () => {
     expect(slot.conflict).toEqual(['Anthony', 'Mathis']);
     // Unchanged tie rule: equal fit goes to the first player in the lineup order.
     expect(slot.player).toBe('Anthony');
+  });
+});
+
+describe('owned operators only', () => {
+  const prefs = { A: { owned: ['ash', 'iq'] }, B: { owned: ['thatcher'] }, C: { owned: [] } };
+  it('is off by default: owned lists change nothing', () => {
+    const pref = preferenceSet(prefs, ['A', 'B']);
+    expect(pref.ownedOnly).toBe(false);
+    expect(isUsable(pref, 'thermite')).toBe(true);
+  });
+  it('limits the lineup to what its players own', () => {
+    const pref = preferenceSet(prefs, ['A', 'B'], [], { ownedOnly: true });
+    expect(['ash', 'iq', 'thatcher'].every((id) => isUsable(pref, id))).toBe(true);
+    expect(isUsable(pref, 'thermite')).toBe(false);
+  });
+  it("doesn't limit a lineup that includes a player with no owned operators marked", () => {
+    const pref = preferenceSet(prefs, ['A', 'C'], [], { ownedOnly: true });
+    expect(pref.noOwnedData).toEqual(['C']);
+    expect(isUsable(pref, 'thermite')).toBe(true);
+  });
+  it('replaces a plan operator nobody owns and says why', () => {
+    const pref = preferenceSet({ A: { owned: ['ash', 'sledge', 'thatcher', 'iq', 'montagne'] } }, ['A'], [], { ownedOnly: true });
+    const rec = recommendStrategy(strat([{ key: 'a', operatorId: 'thermite' }]), { pref });
+    expect(rec.lineup[0].operatorId).not.toBe('thermite');
+    expect(rec.reasons.some((r) => /Nobody in the lineup owns Thermite/.test(r.text))).toBe(true);
   });
 });

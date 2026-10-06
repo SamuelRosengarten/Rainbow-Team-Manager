@@ -28,7 +28,7 @@ const TABS = [
  * strategies that fit a composition, quick tactics, and every strategy view
  * (detail, editor, coach mode, player mode, compare).
  */
-export default function StrategiesView({ profile, sub, navigate, tacticsStore, strategyData, team }) {
+export default function StrategiesView({ profile, sub, navigate, tacticsStore, strategyData, team, updateTeam }) {
   const { players, lineupPlayers } = useRoster();
   const [setup, setSetup] = useSessionState('r6tp.strategy-setup', () => setupFromTeam(team, lineupPlayers));
   const [referenceFor, setReferenceFor] = useState(null); // null | 'new' | strategy
@@ -88,6 +88,7 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
         onSyncPlan={() => setSetup(setupFromTeam(team, lineupPlayers))}
         strategyData={strategyData}
         navigate={navigate}
+        updateTeam={updateTeam}
         onAddReference={() => setReferenceFor('new')}
       />
     );

@@ -88,9 +88,10 @@ function TeamApp({ online, onOffline }) {
       // Operator preferences for the recommendation engine (see recommend.js).
       prefs: data.prefs,
       bans: data.team.bans ?? [],
+      ownedOnly: Boolean(data.team.ownedOnly),
       profile: storedProfile,
     }),
-    [data.roster, data.rosterReady, data.prefs, data.team.bans, storedProfile],
+    [data.roster, data.rosterReady, data.prefs, data.team.bans, data.team.ownedOnly, storedProfile],
   );
 
   if (data.status === 'loading') return <LoadingScreen />;
@@ -195,6 +196,7 @@ function TeamApp({ online, onOffline }) {
               preset={builderPreset(sub)}
               prefs={data.prefs}
               ownedOnly={Boolean(data.team.ownedOnly)}
+              updateTeam={data.updateTeam}
             />
           )}
           {view === 'maps' && <MapsView sub={sub} strategyData={strategyData} navigate={navigate} profile={profile} notes={data.notes} />}
@@ -226,6 +228,7 @@ function TeamApp({ online, onOffline }) {
               tacticsStore={data.tacticsStore}
               strategyData={strategyData}
               team={data.team}
+              updateTeam={data.updateTeam}
             />
           )}
           {view === 'team' && (
