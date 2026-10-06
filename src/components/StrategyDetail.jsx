@@ -7,6 +7,7 @@ import OperatorIcon from './OperatorIcon.jsx';
 import SynergyList from './SynergyList.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
 import { FitStars, OriginBadge } from './StrategyCard.jsx';
+import { liveStepId } from '../lib/board.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
@@ -189,7 +190,7 @@ export function StepScrubber({ steps, stepId, setStepId, allLabel }) {
 export default function StrategyDetail({ strategy, picks, profile, strategyData, navigate }) {
   const { t } = useI18n();
   const [subs, setSubs] = useState({});
-  const [stepId, setStepId] = useState(null);
+  const [pickedStepId, setStepId] = useState(null);
   const [slotKey, setSlotKey] = useState(null);
   const [inspect, setInspect] = useState(null);
   const [error, setError] = useState('');
@@ -203,6 +204,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
   const saved = strategyData.assignments[strategy.id] ?? {};
   const assigned = autoAssign(view, picks, saved);
   const mapName = strategy.mapId === 'any' ? '' : MAPS_BY_ID[strategy.mapId]?.name;
+  const stepId = liveStepId(view.steps, pickedStepId);
   const step = view.steps.find((s) => s.id === stepId);
   const editable = canEditStrategy(strategy, profile);
   const isTeam = strategy.origin === 'team' && !strategy.builtin;

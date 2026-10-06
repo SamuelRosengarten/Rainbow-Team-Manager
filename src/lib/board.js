@@ -20,6 +20,15 @@ export const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 export const SETUP = '__setup';
 
 /**
+ * The selected step id while that step still exists, else null (setup). A
+ * step removed by undo, another tab or a teammate's edit must not leave the
+ * board filtering on an id nothing has.
+ */
+export function liveStepId(steps, stepId) {
+  return stepId && steps.some((s) => s.id === stepId) ? stepId : null;
+}
+
+/**
  * Whether an item shows at the selected step: 'on' (this step, or setup when
  * no step is selected), 'past' (an earlier step: faded) or 'hidden' (later).
  * Items without a step are setup and always 'on'. With stepId SETUP only
