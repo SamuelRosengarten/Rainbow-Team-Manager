@@ -16,13 +16,16 @@
 //      free for which job.
 //   5. Site/map requirements: the job's own role and a soft map hint.
 //   6. General viability: how closely the operator matches what the plan
-//      was written for.
+//      was written for. A key slot (composition.js) only takes an operator
+//      with the utility it exists for, and synergy pairs count (as in
+//      recommend.js).
 // Stats are optional. A player with none gets no bonus and no penalty.
 //
 // No English lives here: reasons are message descriptors { id, values } that
 // the screen translates (see src/i18n).
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
-import { W, fitKind, isUsable } from './recommend.js';
+import { W, breaksKey, fitKind, isUsable } from './recommend.js';
+import { compositionCheck, integrityIssues, isPair, keySlots, pairsAmong, swapNotes, utilityOf } from './composition.js';
 import { operatorStrength, mapFit, playerRole } from './playerStats.js';
 import { MAPS_BY_ID } from './maps.js';
 import { parseSite } from './diagram.js';
@@ -45,18 +48,23 @@ const SUITS = { 'hard-breach': 'hard-breach', entry: 'entry', drone: 'intel', su
 const FRONTLINE = new Set(['hard-breach', 'entry']);
 const BACKLINE = new Set(['support', 'drone', 'anchor']);
 
-/** Standard five jobs for a side, for sites with no library plan. */
+/**
+ * Standard five jobs for a side, for sites with no library plan. `needs` is
+ * the utility a job must bring (a key slot): the hard breach and someone to
+ * clear denial for it on attack, breach denial on defense.
+ */
 export function genericSlots(side) {
-  const roles =
+  const jobs =
     side === 'attack'
-      ? ['hard-breacher', 'soft-breacher', 'intel', 'support', 'support']
-      : ['anchor', 'anchor', 'roamer', 'intel', 'roamer'];
-  return roles.map((role, i) => ({
+      ? [['hard-breacher', 'hard-breach'], ['support', 'electric-clear'], ['soft-breacher'], ['intel'], ['support']]
+      : [['anchor', 'breach-denial'], ['anchor'], ['intel'], ['roamer'], ['roamer']];
+  return jobs.map(([role, needs], i) => ({
     key: `g${i + 1}`,
     operatorId: null,
     role,
     alternatives: [],
     tacticalRole: defaultTacticalRole(role, side),
+    ...(needs ? { needs } : {}),
   }));
 }
 
@@ -64,7 +72,7 @@ const name = (id) => OPERATORS_BY_ID[id]?.name ?? '';
 const jobOf = (slot) => (TACTICAL_ROLES[slot.tacticalRole] ? slot.tacticalRole : defaultTacticalRole(slot.role));
 
 /** Scored candidates for one (slot, player) pair, best first. Never contains an operator this player can't play. */
-function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned, ownedOnly, map, pickedOps }) {
+function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned, ownedOnly, map, pickedOps, keyTag = null }) {
   const out = [];
   for (const op of OPERATORS) {
     if (op.side !== side || !isUsable(pref, op.id)) continue; // 1. banned / blocked by everyone = absolute exclusion
@@ -73,6 +81,9 @@ function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned
     const kind = fitKind(slot, op.id);
     if (!kind) continue;
     let w = W[kind];
+    // A generic job with a utility need: anyone in the role can fill it, but one with the utility first.
+    if (slot.needs && !slot.operatorId) w += hasNeed(op.id, slot.needs) ? W.listed : W.breakKey / 3;
+    if (breaksKey(keyTag, kind, op.id)) w += W.breakKey;
     const own = ownFavs.includes(op.id);
     // With no player (fewer players than jobs) any lineup favorite counts a little.
     const team = !player && pref.favorites.has(op.id);
@@ -90,6 +101,10 @@ function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned
   const top = out.slice(0, CANDIDATES_PER_CELL);
   for (const c of out) if ((c.kind === 'exact' || c.kind === 'listed') && !top.includes(c) && top.length < CANDIDATES_PER_CELL + 2) top.push(c);
   return { list: top, bonus };
+}
+
+function hasNeed(id, tag) {
+  return utilityOf(id).includes(tag);
 }
 
 function mapNudge(stats, mapId, job) {
@@ -134,12 +149,20 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
   const pickedOps = new Set(picks.filter((pk) => pk.operatorId && !unownedPicks.includes(pk)).map((pk) => pk.operatorId));
 
   // cells[slot][i] for player i; the last column (index = players.length) is "nobody".
+  const keys = strategy?.slots?.length ? keySlots(strategy) : new Map();
+  const planPairs = pairsAmong(slots.map((s) => s.operatorId).filter(Boolean));
   const cells = slots.map((slot) =>
     [
-      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, ownBlocked: x.ownBlocked, stats: x.stats, owned: x.owned, ownedOnly, map: mapId, pickedOps })),
-      cell({ slot, side, player: null, pref, ownFavs: [], stats: null, owned: [], ownedOnly: false, map: mapId, pickedOps }),
+      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, ownBlocked: x.ownBlocked, stats: x.stats, owned: x.owned, ownedOnly, map: mapId, pickedOps, keyTag: keys.get(slot.key) })),
+      cell({ slot, side, player: null, pref, ownFavs: [], stats: null, owned: [], ownedOnly: false, map: mapId, pickedOps, keyTag: keys.get(slot.key) }),
     ].map((c, i) => ({ ...c, who: i < info.length ? i : null })),
   );
+  // Synergy with operators already placed: a pair the plan had, or a new one.
+  const pairBonus = (used, id) => {
+    let b = 0;
+    for (const u of used) if (isPair(u, id)) b += planPairs.has([u, id].sort().join('+')) ? W.keepPair : W.newPair;
+    return b;
+  };
 
   // Best assignment of players to slots (DP over which players are taken), with
   // each slot taking the best operator no earlier slot used.
@@ -151,7 +174,7 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
         if (c.who !== null && mask & (1 << c.who)) continue;
         const choice = c.list.find((x) => !st.used.has(x.id));
         if (!choice) continue;
-        const score = st.score + choice.w + c.bonus + (c.who === null ? B.noPlayer : 0);
+        const score = st.score + choice.w + c.bonus + pairBonus(st.used, choice.id) + (c.who === null ? B.noPlayer : 0);
         const nextMask = c.who === null ? mask : mask | (1 << c.who);
         const cur = next.get(nextMask);
         if (!cur || score > cur.score) next.set(nextMask, { score, picks: [...st.picks, { c, choice }], used: new Set([...st.used, choice.id]) });
@@ -221,5 +244,17 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
   // the players who have a favorite they could play on this side at all.
   const favoritePlayers = out.filter((s) => s.favorite).length;
   const favoriteMax = info.filter((x) => x.ownFavs.some((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id) && !x.ownBlocked.includes(id) && !(ownedOnly && x.owned.length && !x.owned.includes(id)))).length;
-  return { slots: out, usedStrategy: Boolean(strategy?.slots?.length), notes, unownedPicks, favoritePlayers, favoriteMax: Math.min(favoriteMax, slots.length) };
+  return {
+    slots: out,
+    usedStrategy: Boolean(strategy?.slots?.length),
+    notes,
+    unownedPicks,
+    favoritePlayers,
+    favoriteMax: Math.min(favoriteMax, slots.length),
+    // Warnings only: a key utility this lineup loses, then basics any full lineup should have.
+    checks: [
+      ...(strategy?.slots?.length ? swapNotes(strategy, out).filter((n) => n.msg.id.startsWith('comp.swap.breaks')).map((n) => ({ id: 'breaks', msg: n.msg })) : []),
+      ...compositionCheck(side, out.map((x) => x.operatorId).filter(Boolean), { explained: strategy?.slots?.length ? integrityIssues(strategy, out).map((b) => b.tag) : [] }),
+    ],
+  };
 }

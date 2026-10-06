@@ -100,6 +100,8 @@ function normalizeSlot(raw, i) {
     alternatives: list(raw.alternatives).filter((id) => OPERATORS_BY_ID[id] && id !== operatorId).slice(0, 6),
     tacticalRole: TACTICAL_ROLES[raw.tacticalRole] ? raw.tacticalRole : defaultTacticalRole(role, OPERATORS_BY_ID[operatorId]?.side),
     defuser: Boolean(raw.defuser),
+    // A key slot: only an operator with the same utility should replace it (composition.js).
+    ...(raw.essential === true ? { essential: true } : {}),
     spawn: str(raw.spawn, 60),
     instructions: list(raw.instructions).map((t) => str(t, 300)).filter(Boolean).slice(0, 12),
     ...(raw.originalOperatorId && OPERATORS_BY_ID[raw.originalOperatorId] ? { originalOperatorId: raw.originalOperatorId } : {}),

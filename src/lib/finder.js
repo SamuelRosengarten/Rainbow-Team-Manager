@@ -20,6 +20,7 @@ import { OPERATORS_BY_ID } from './operators.js';
 import { filterStrategies } from './strategies.js';
 import { MIN_FAVORITES_FOR_STARS, MIN_PICKS_FOR_STARS, RANK_CRITERIA, W, rankCompare, recommendStrategies, starsFrom } from './recommend.js';
 import { recommendLineup } from './lineup.js';
+import { compositionCheck, integrityIssues, swapNotes } from './composition.js';
 import { msg } from '../i18n/index.js';
 
 export const FIND_LIMIT = 5;
@@ -37,6 +38,8 @@ function whereMsg(kind, s) {
 
 // Reasons the engine produced at operator level, replaced by assignment-level ones below.
 const REPLACED_REASONS = new Set(['rec.usesFavorites', 'rec.keeps', 'rec.noBlocks', 'rec.personalBlock', 'rec.personalBlock.nobody']);
+// Swap and synergy notes are recomputed on the assignment (comp.swap*, comp.pair.*).
+const isSwapReason = (id) => id.startsWith('comp.swap') || id.startsWith('comp.pair.');
 
 /** Re-express an engine recommendation in terms of the real player assignment. */
 function withAssignment(strategy, rec, plan, chosenCount) {
@@ -47,7 +50,9 @@ function withAssignment(strategy, rec, plan, chosenCount) {
   const coverage = plan.favoriteMax ? plan.favoritePlayers / plan.favoriteMax : 0;
   const favOps = slots.filter((l) => l.favorite).map((l) => l.operatorId);
 
-  const reasons = rec.reasons.filter((r) => !REPLACED_REASONS.has(r.msg.id));
+  const reasons = rec.reasons.filter((r) => !REPLACED_REASONS.has(r.msg.id) && !isSwapReason(r.msg.id));
+  const brokenKeys = integrityIssues(strategy, slots);
+  const swaps = swapNotes(strategy, slots, { skip: new Set(rec.blockedReplaced.map((b) => b.slotKey)) });
   const head = [];
   if (plan.favoriteMax) head.push({ ok: plan.favoritePlayers > 0, msg: msg('finder.reason.favPlayers', { used: plan.favoritePlayers, total: plan.favoriteMax }) });
   for (const l of slots) {
@@ -60,6 +65,8 @@ function withAssignment(strategy, rec, plan, chosenCount) {
 
   return {
     ...rec,
+    brokenKeys,
+    status: rec.status === 'ok' && brokenKeys.length ? 'adapted' : rec.status,
     fidelity,
     lineup: slots.map((l) => ({ slotKey: l.slotKey, operatorId: l.operatorId, original: l.original, kind: l.kind, favorite: l.favorite, selected: l.selected, player: l.player, blockedBy: l.blockedBy })),
     favoritesUsed: favOps,
@@ -73,13 +80,19 @@ function withAssignment(strategy, rec, plan, chosenCount) {
     compatLabel: chosenCount ? msg('rec.compat', { kept, total: chosenCount }) : msg('rec.compat.none'),
     quality: Math.round((rec.quality + 0.3 * (fidelity - rec.fidelity)) * 100) / 100,
     qualityStars: starsFrom(rec.quality + 0.3 * (fidelity - rec.fidelity)),
-    reasons: [...head, ...reasons],
+    reasons: [...head, ...reasons, ...swaps],
   };
 }
 
 /** At most MAX_WARNINGS short warnings, most important first; the rest go to the details. */
-function warningsFor(rec, plan) {
+function warningsFor(rec, plan, strategy) {
   const all = [];
+  // A key utility the adaptation loses comes first, then missing basics.
+  for (const r of rec.reasons) if (r.msg.id.startsWith('comp.swap.breaks')) all.push({ msg: r.msg, fix: null });
+  if (strategy) {
+    const explained = (rec.brokenKeys ?? []).map((b) => b.tag);
+    for (const c of compositionCheck(strategy.side, plan.slots.map((l) => l.operatorId).filter(Boolean), { explained })) all.push({ msg: c.msg, fix: null });
+  }
   for (const pk of plan.unownedPicks) {
     const fixOp = plan.slots.find((l) => l.player === pk.player)?.operatorId ?? null;
     all.push({
@@ -160,7 +173,7 @@ export function findStrategies(strategies, { mapId = '', site = '', side, filter
     const { ranked, excluded: out } = rank(list);
     excluded.push(...out);
     if (i === 0) exactCount = ranked.length;
-    all.push(...ranked.map((x) => ({ ...x, kind, where: whereMsg(kind, x.strategy), ...warningsFor(x.rec, x.plan) })));
+    all.push(...ranked.map((x) => ({ ...x, kind, where: whereMsg(kind, x.strategy), ...warningsFor(x.rec, x.plan, x.strategy) })));
   });
   all.forEach((x, i) => {
     x.rankWhy = rankMsg(all, i, mapId);
