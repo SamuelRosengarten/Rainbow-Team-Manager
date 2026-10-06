@@ -1,6 +1,5 @@
 // Hand-written messages: team page, player editor, player stats, operator pools, operator library and profile.
 export const en = {
-  'team.ubisoft': 'Ubisoft: {username}',
   'team.edit': 'Edit {player}',
   'team.favouritesAria': 'Favourites: {operators, list}',
   'team.owned': '<strong>{owned}</strong>/{total} owned',
@@ -27,7 +26,12 @@ export const en = {
   'playerStats.saveFailed': 'Could not save the stats.',
   'playerStats.updated': 'Stats updated {when}',
   'playerStats.refreshFor': 'Refresh stats for {player}',
-  'playerStats.noSource': 'Stats unavailable: {reason} Nothing is wrong with this player.',
+  'playerStats.stats': 'Stats',
+  'team.details': 'Details',
+  'team.addUsername': 'Add a Ubisoft username to look up stats.',
+  'team.noNotes': 'No coach notes for this player.',
+  'playerStats.noData': 'No match data yet',
+  'playerStats.noSourceShort': 'No stats source is connected to this app.',
   'playerStats.playsRole': 'Plays {role}',
   'playerStats.attack': 'Attack',
   'playerStats.defense': 'Defense',
@@ -71,7 +75,6 @@ export const en = {
 };
 
 export const fr = {
-  'team.ubisoft': 'Ubisoft : {username}',
   'team.edit': 'Modifier {player}',
   'team.favouritesAria': 'Favoris : {operators, list}',
   'team.owned': '<strong>{owned}</strong>/{total} possédés',
@@ -98,7 +101,12 @@ export const fr = {
   'playerStats.saveFailed': 'Impossible d’enregistrer les statistiques.',
   'playerStats.updated': 'Statistiques mises à jour {when}',
   'playerStats.refreshFor': 'Actualiser les statistiques de {player}',
-  'playerStats.noSource': 'Statistiques indisponibles : {reason} Le joueur n’a rien de défectueux.',
+  'playerStats.stats': 'Statistiques',
+  'team.details': 'Détails',
+  'team.addUsername': 'Ajoute un nom d’utilisateur Ubisoft pour chercher ses statistiques.',
+  'team.noNotes': 'Aucune note du coach pour ce joueur.',
+  'playerStats.noData': 'Aucune donnée de match',
+  'playerStats.noSourceShort': 'Aucune source de statistiques n’est connectée à l’application.',
   'playerStats.playsRole': 'Joue : {role}',
   'playerStats.attack': 'Attaque',
   'playerStats.defense': 'Défense',

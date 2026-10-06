@@ -11,46 +11,46 @@
   color-scheme: dark;
 
   /* Surfaces, darkest to lightest. Hierarchy comes from these steps, not borders. */
-  --bg: #08090c;
-  --bg-raised: #0c0e11;
-  --surface: #111418;
-  --surface-2: #171b20;
-  --surface-3: #1e2329;
-  --surface-hover: #1a1f25;
+  --bg: #080a0c;
+  --bg-raised: #0b0d10;
+  --surface: #101317;
+  --surface-2: #161a1f;
+  --surface-3: #1d2228;
+  --surface-hover: #14181d;
   --bg-grid: transparent;
 
   /* Lines */
-  --line: rgba(255, 255, 255, 0.06);
-  --line-strong: rgba(255, 255, 255, 0.1);
-  --line-input: rgba(255, 255, 255, 0.13);
+  --line: #1d2228;
+  --line-strong: #23282f;
+  --line-input: #2e343c;
 
   /* Text */
-  --text: #f2f4f7;
-  --text-2: #c4cad2;
-  --muted: #9aa3ad;
-  --subtle: #68717c;
+  --text: #f3f4f6;
+  --text-2: #d1d5db;
+  --muted: #9ca3af;
+  --subtle: #667085;
 
   /* One accent: primary actions, current location, selection, key numbers. */
-  --accent: #f0a63a;
-  --accent-hover: #f6b658;
-  --accent-ink: #170e02;
-  --accent-soft: rgba(240, 166, 58, 0.1);
-  --accent-line: rgba(240, 166, 58, 0.36);
-  --focus: #f0a63a;
+  --accent: #f5a623;
+  --accent-hover: #ffb83d;
+  --accent-ink: #1a1102;
+  --accent-soft: rgba(245, 166, 35, 0.1);
+  --accent-line: rgba(245, 166, 35, 0.38);
+  --focus: #f5a623;
 
   /* Sides (game semantics, not decoration) */
-  --attack: #f27a2e;
-  --attack-soft: rgba(242, 122, 46, 0.12);
-  --defend: #4d9cf3;
-  --defend-soft: rgba(77, 156, 243, 0.12);
+  --attack: #f97316;
+  --attack-soft: rgba(249, 115, 22, 0.12);
+  --defend: #3b82f6;
+  --defend-soft: rgba(59, 130, 246, 0.13);
 
   /* Status */
-  --ok: #35c978;
-  --ok-soft: rgba(53, 201, 120, 0.1);
+  --ok: #22c55e;
+  --ok-soft: rgba(34, 197, 94, 0.1);
   --warn: #e7a93b;
   --warn-soft: rgba(231, 169, 59, 0.1);
-  --danger: #e05252;
-  --danger-soft: rgba(224, 82, 82, 0.1);
+  --danger: #ef4444;
+  --danger-soft: rgba(239, 68, 68, 0.1);
 
   /* Shape */
   --radius-xs: 4px;
@@ -75,11 +75,11 @@
   --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
   --fs-xs: 0.75rem;
   --fs-sm: 0.8125rem;
-  --fs-base: 0.9375rem;
+  --fs-base: 0.875rem;
   --fs-md: 1rem;
   --fs-lg: 1.125rem;
   --fs-xl: 1.375rem;
-  --fs-2xl: 1.75rem;
+  --fs-2xl: 2rem;
   --fs-3xl: 2.25rem;
 
   /* Controls */
@@ -97,7 +97,7 @@
   --dur: 140ms;
 
   /* Shell */
-  --sidebar-w: 232px;
+  --sidebar-w: 212px;
   --topbar-h: 56px;
   --tabbar-h: 62px;
   --content-max: 1360px;
@@ -221,9 +221,9 @@ textarea {
 .page__kicker {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--subtle);
 }
@@ -438,7 +438,7 @@ textarea {
   gap: var(--sp-2);
   min-height: calc(var(--topbar-h) + var(--safe-t));
   padding: var(--safe-t) var(--sp-4) 0;
-  background: rgba(8, 9, 12, 0.88);
+  background: rgba(8, 10, 12, 0.88);
   backdrop-filter: saturate(140%) blur(12px);
   border-bottom: 1px solid var(--line);
 }
@@ -517,7 +517,7 @@ textarea {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   height: calc(var(--tabbar-h) + var(--safe-b));
   padding-bottom: var(--safe-b);
-  background: rgba(8, 9, 12, 0.92);
+  background: rgba(8, 10, 12, 0.92);
   backdrop-filter: saturate(140%) blur(12px);
   border-top: 1px solid var(--line);
 }
@@ -601,6 +601,7 @@ textarea {
    =========================================================================== */
 .page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* wide children (tab strips, chips) scroll inside, never widen the page */
   gap: var(--sp-6);
   min-width: 0;
 }
@@ -617,9 +618,9 @@ textarea {
   min-width: 0;
 }
 .page__title {
-  font-size: clamp(1.5rem, 3.2vw, var(--fs-2xl));
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-size: clamp(1.625rem, 3.2vw, 2.125rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   line-height: 1.15;
 }
 .page__sub {
@@ -644,8 +645,8 @@ textarea {
   gap: 8px;
   margin: 0 0 var(--sp-3);
   font-family: var(--font-display);
-  font-size: var(--fs-md);
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
 .section-title .muted {
@@ -689,8 +690,8 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: var(--fs-md);
-  font-weight: 600;
+  font-size: var(--fs-lg);
+  font-weight: 650;
   letter-spacing: -0.01em;
 }
 .panel__title .icon {
@@ -801,12 +802,12 @@ textarea {
   color: #00111f;
 }
 .btn--primary.btn--attack:hover:not(:disabled) {
-  background: #f68f4c;
-  border-color: #f68f4c;
+  background: #fb8a3c;
+  border-color: #fb8a3c;
 }
 .btn--primary.btn--defend:hover:not(:disabled) {
-  background: #6aaef6;
-  border-color: #6aaef6;
+  background: #5b97f8;
+  border-color: #5b97f8;
 }
 
 /* Secondary: same weight as a plain button, never accent-coloured. */
@@ -829,13 +830,13 @@ textarea {
 
 .btn--danger {
   background: transparent;
-  border-color: rgba(224, 82, 82, 0.3);
-  color: #ec7a7a;
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
 .btn--danger:hover:not(:disabled) {
   background: var(--danger-soft);
-  border-color: rgba(224, 82, 82, 0.5);
-  color: #f29a9a;
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
 }
 
 .btn--sm {
@@ -922,12 +923,12 @@ textarea {
 .segmented__btn--attack[aria-pressed='true'] {
   background: var(--attack-soft);
   color: var(--attack);
-  box-shadow: inset 0 0 0 1px rgba(242, 122, 46, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.35);
 }
 .segmented__btn--defend[aria-pressed='true'] {
   background: var(--defend-soft);
   color: var(--defend);
-  box-shadow: inset 0 0 0 1px rgba(77, 156, 243, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.35);
 }
 .segmented--full {
   display: flex;
@@ -1076,7 +1077,7 @@ fieldset.form:disabled {
 }
 .field__label {
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-2);
 }
 .field__hint {
@@ -1146,17 +1147,17 @@ fieldset.field > legend {
   font-weight: 600;
 }
 .notice--error {
-  border-color: rgba(224, 82, 82, 0.28);
+  border-color: rgba(239, 68, 68, 0.28);
   border-left-color: var(--danger);
   background: linear-gradient(90deg, var(--danger-soft), transparent 70%), var(--surface);
 }
 .notice--info {
-  border-color: rgba(77, 156, 243, 0.24);
+  border-color: rgba(59, 130, 246, 0.24);
   border-left-color: var(--defend);
   background: linear-gradient(90deg, var(--defend-soft), transparent 70%), var(--surface);
 }
 .notice--ok {
-  border-color: rgba(53, 201, 120, 0.24);
+  border-color: rgba(34, 197, 94, 0.24);
   border-left-color: var(--ok);
   background: linear-gradient(90deg, var(--ok-soft), transparent 70%), var(--surface);
 }
@@ -1188,7 +1189,7 @@ fieldset.field > legend {
 }
 .badge--ok {
   color: var(--ok);
-  border-color: rgba(53, 201, 120, 0.3);
+  border-color: rgba(34, 197, 94, 0.3);
   background: var(--ok-soft);
 }
 .badge--warn {
@@ -1197,8 +1198,8 @@ fieldset.field > legend {
   background: var(--warn-soft);
 }
 .badge--danger {
-  color: #ec7a7a;
-  border-color: rgba(224, 82, 82, 0.3);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
   background: var(--danger-soft);
 }
 .badge--accent {
@@ -1208,12 +1209,12 @@ fieldset.field > legend {
 }
 .badge--attack {
   color: var(--attack);
-  border-color: rgba(242, 122, 46, 0.32);
+  border-color: rgba(249, 115, 22, 0.32);
   background: var(--attack-soft);
 }
 .badge--defend {
   color: var(--defend);
-  border-color: rgba(77, 156, 243, 0.32);
+  border-color: rgba(59, 130, 246, 0.32);
   background: var(--defend-soft);
 }
 
@@ -1427,7 +1428,7 @@ fieldset.field > legend {
   place-items: center;
   padding: var(--sp-6) var(--sp-4);
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(240, 166, 58, 0.05), transparent 60%),
+    radial-gradient(1200px 600px at 50% -10%, rgba(245, 166, 35, 0.05), transparent 60%),
     var(--bg);
 }
 .screen__card {

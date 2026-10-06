@@ -1,21 +1,75 @@
+import { useState } from 'react';
 import FloorPlanPanel from './FloorPlanPanel.jsx';
 import Icon from './Icon.jsx';
 import MapNotes from './MapNotes.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
 import { StrategyTile } from './TeamLibrary.jsx';
-import { EmptyState } from './ui.jsx';
+import { EmptyState, Meter } from './ui.jsx';
 import { parseSite } from '../lib/diagram.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
+import { allMapPreparation } from '../lib/readiness.js';
 import { missingFloorPlans, planCoverage } from '../lib/floorPlans.js';
 import { createStrategy, latestVersions } from '../lib/strategies.js';
 import { usePlans } from '../state/usePlans.js';
 import { T } from '../i18n/Rich.jsx';
 import { useI18n } from '../i18n/index.js';
 
+const MAP_FILTERS = ['all', 'ready', 'partial', 'none'];
+const STATUS_TONE = { ready: 'ok', partial: 'accent', none: 'neutral', 'no-sites': 'neutral' };
+
+function MapCard({ map, prep, navigate }) {
+  const { t } = useI18n();
+  const cov = planCoverage(map.id);
+  return (
+    <button type="button" className={`map-card map-card--${prep.status}`} onClick={() => navigate(`maps/${map.id}`)}>
+      <span className="map-card__top">
+        <span className="map-card__name">{map.name}</span>
+        <span className={`badge badge--${STATUS_TONE[prep.status]}`}>{t(`maps.status.${prep.status}`)}</span>
+      </span>
+      <span className="map-card__meta">
+        {[
+          prep.sites ? t('mapPicker.sites', { count: prep.sites }) : null,
+          cov.floors ? t('maps.floorsShort', { with: cov.withPlan, floors: cov.floors, verified: cov.verified }) : null,
+        ].filter(Boolean).join(' · ')}
+      </span>
+      {prep.coverage === null ? (
+        <span className="map-card__nosites">{t('maps.noSitesBody')}</span>
+      ) : (
+        <span className="map-card__coverage">
+          <span className="map-card__label">
+            {t('maps.coverage')}
+            <span className="tnum">{Math.round(prep.coverage * 100)}%</span>
+          </span>
+          <Meter value={prep.coverage} tone={prep.status === 'ready' ? 'ok' : 'accent'} label={t('cmd.maps.coverage', { covered: prep.covered, sites: prep.sites })} />
+        </span>
+      )}
+      <span className="map-card__counts">
+        <span className={`side-stat side-stat--attack${prep.attack ? '' : ' side-stat--zero'}`}>
+          <span className="side-stat__label">{t('maps.side.attack')}</span>
+          <span className="side-stat__n tnum">{prep.attack}</span>
+        </span>
+        <span className={`side-stat side-stat--defend${prep.defend ? '' : ' side-stat--zero'}`}>
+          <span className="side-stat__label">{t('maps.side.defend')}</span>
+          <span className="side-stat__n tnum">{prep.defend}</span>
+        </span>
+        {prep.team > 0 && <span className="map-card__team">{t('maps.teamPlans', { count: prep.team })}</span>}
+      </span>
+    </button>
+  );
+}
+
 function MapIndex({ strategies, navigate }) {
   const { t } = useI18n();
   usePlans();
+  const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
   const missing = missingFloorPlans();
+  const prep = allMapPreparation(strategies);
+  const byMap = Object.fromEntries(prep.map((p) => [p.mapId, p]));
+  const matches = (p) => filter === 'all' || p.status === filter || (filter === 'none' && p.status === 'no-sites');
+  const q = query.trim().toLowerCase();
+  const shown = MAPS.filter((m) => matches(byMap[m.id]) && (!q || m.name.toLowerCase().includes(q)));
+  const count = (f) => prep.filter((p) => f === 'all' || p.status === f || (f === 'none' && p.status === 'no-sites')).length;
   return (
     <>
       <header className="page__head">
@@ -40,29 +94,37 @@ function MapIndex({ strategies, navigate }) {
           <p className="small">{t('mapsView.seeDocsMapAssetsMd')}</p>
         </details>
       )}
-      <ul className="map-grid">
-        {MAPS.map((m) => {
-          const list = latestVersions(strategies.filter((s) => s.mapId === m.id));
-          const atk = list.filter((s) => s.side === 'attack').length;
-          const def = list.filter((s) => s.side === 'defend').length;
-          const cov = planCoverage(m.id);
-          return (
+      <div className="filter-bar">
+        <div className="segmented" role="group" aria-label={t('maps.filter')}>
+          {MAP_FILTERS.map((f) => (
+            <button key={f} type="button" className="segmented__btn" aria-pressed={filter === f} onClick={() => setFilter(f)}>
+              {t(`maps.filter.${f}`)} <span className="count">{count(f)}</span>
+            </button>
+          ))}
+        </div>
+        <label className="filter-bar__search">
+          <span className="visually-hidden">{t('maps.search')}</span>
+          <Icon name="search" size={16} />
+          <input className="input" type="search" value={query} placeholder={t('maps.search')} onChange={(e) => setQuery(e.target.value)} />
+        </label>
+      </div>
+      {shown.length ? (
+        <ul className="map-grid">
+          {shown.map((m) => (
             <li key={m.id}>
-              <button type="button" className="map-card" onClick={() => navigate(`maps/${m.id}`)}>
-                <span className="map-card__name">{m.name}</span>
-                <span className="map-card__meta">{allSites(m.id).length ? t('mapPicker.sites', { count: allSites(m.id).length }) : t('mapsView.sitesNotListedYet')}</span>
-                <span className={`map-card__plans${cov.floors && cov.withPlan === cov.floors ? ' map-card__plans--ok' : ''}`}>
-                  {cov.floors ? t(cov.withPlan ? 'maps.floorPlansVerified' : 'maps.floorPlans', { with: cov.withPlan, floors: cov.floors, verified: cov.verified }) : t('mapsView.floorsNotListed')}
-                </span>
-                <span className="map-card__counts">
-                  <span className={`side-count side-count--attack${atk ? '' : ' side-count--zero'}`}>{t('maps.attackCount', { count: atk })}</span>
-                  <span className={`side-count side-count--defend${def ? '' : ' side-count--zero'}`}>{t('maps.defenseCount', { count: def })}</span>
-                </span>
-              </button>
+              <MapCard map={m} prep={byMap[m.id]} navigate={navigate} />
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState icon="map" title={t('maps.noMatch')}
+          action={
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => { setFilter('all'); setQuery(''); }}>
+              {t('maps.clearFilters')}
+            </button>
+          }
+        />
+      )}
     </>
   );
 }

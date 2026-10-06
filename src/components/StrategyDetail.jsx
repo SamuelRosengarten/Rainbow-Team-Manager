@@ -258,20 +258,23 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       <header className="sview__head">
         <div className="sview__title-row">
           <div>
-            <div className="strat-detail__badges">
+            <p className="eyebrow sview__where">
+              {[mapName || t('strategyDetail.anyMap'), strategy.site].filter(Boolean).join(' / ')}
+            </p>
+            <h1 id="strat-title" className="page__title sview__title">
+              {view.title}
+            </h1>
+            <div className="sview__chips">
               <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? t('strategyDetail.attack') : t('strategyDetail.defense')}</span>
               <span className="type-tag">{STRATEGY_TYPES[strategy.type]}</span>
               <OriginBadge strategy={strategy} />
               {isTeam && <span className="version-chip">v{strategy.version}</span>}
+              <span className="sview__fact">{DIFFICULTY[strategy.difficulty]}</span>
+              <span className="sview__fact">{t('detail.operators', { count: view.slots.filter((x) => x.operatorId).length })}</span>
+              {view.steps.length > 0 && <span className="sview__fact">{t('detail.phases', { count: view.steps.length })}</span>}
+              {match.scored && picks.some((p) => p.operatorId) && <FitStars match={match} />}
             </div>
-            <h1 id="strat-title" className="page__title sview__title">
-              {view.title}
-            </h1>
-            <p className="sview__meta">
-              {mapName || t('strategyDetail.anyMap')}
-              {strategy.site ? ` · ${strategy.site}` : ''} · {DIFFICULTY[strategy.difficulty]}
-              {view.timing ? ` · ${view.timing}` : ''}
-            </p>
+            {view.timing && <p className="sview__timing">{view.timing}</p>}
           </div>
           {isTeam && (
             <button
@@ -301,11 +304,11 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
             </button>
           )}
           {isTeam && (
-            <button type="button" className="btn btn--secondary" onClick={version} disabled={busy || !strategyData.canSave}>
+            <button type="button" className="btn btn--ghost" onClick={version} disabled={busy || !strategyData.canSave}>
               <Icon name="layers" size={18} /> {t('strategyDetail.newVersion')}
             </button>
           )}
-          <button type="button" className="btn btn--secondary" onClick={duplicate} disabled={busy || !strategyData.canSave}>
+          <button type="button" className={`btn ${isTeam ? 'btn--ghost' : 'btn--secondary'}`} onClick={duplicate} disabled={busy || !strategyData.canSave}>
             <Icon name="copy" size={18} /> {isTeam ? t('strategyDetail.duplicate') : adapted ? t('strategyDetail.saveAdaptedCopy') : t('strategyDetail.saveToTeamLibrary')}
           </button>
           <button type="button" className="btn btn--ghost" onClick={() => navigate(`strategies/compare/${strategy.id}`)}>
@@ -318,7 +321,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
           )}
         </div>
 
-        <p className="strat-detail__attr">{attribution(strategy)}</p>
+        {strategy.origin !== 'suggested' && <p className="strat-detail__attr">{attribution(strategy)}</p>}
         {strategy.origin === 'reference' && strategy.sourceUrl && (
           <a className="source-box" href={strategy.sourceUrl} target="_blank" rel="noopener noreferrer">
             <span>
@@ -345,7 +348,6 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
             ))}
           </nav>
         )}
-        {match.scored && picks.some((p) => p.operatorId) && <FitStars match={match} />}
       </header>
 
       <Notice onDismiss={() => setError('')}>{error}</Notice>
@@ -381,7 +383,12 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
               </a>
             </p>
           )}
-          <ExecuteTimeline strategy={view} stepId={stepId} onSelect={setStepId} />
+          {view.steps.some((x) => x.clock) && (
+            <div className="round-clock">
+              <span className="eyebrow">{t('detail.roundClock')}</span>
+              <ExecuteTimeline strategy={view} stepId={stepId} onSelect={setStepId} />
+            </div>
+          )}
           {!view.markers.length && !view.paths.length && !view.zones.length && (
             <p className="muted small">
               {t('detail.emptyBoard')}{' '}
@@ -431,7 +438,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
 
         <aside className="sview__side">
           {view.slots.length > 0 && (
-            <section className="panel" aria-labelledby="squad-title">
+            <section className="panel card--kicker" aria-labelledby="squad-title">
               <div className="panel__head">
                 <h2 id="squad-title" className="panel__title">{t('strategyDetail.squad')}</h2>
                 {!strategyData.canSave && <span className="muted small">{t('strategyDetail.assignmentsArenTSavedUntil')}</span>}
@@ -450,6 +457,9 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                             {s.defuser && <span className="defuser-tag" title={t('strategyDetail.defuserCarrier')}>{t('strategyDetail.defuser')}</span>}
                           </span>
                           <span className="role-tag">{TACTICAL_ROLES[s.tacticalRole]}</span>
+                          {(step ? slotAction(view, step, s.key) : s.instructions[0]) && (
+                            <span className="squad__task">{step ? slotAction(view, step, s.key) : s.instructions[0]}</span>
+                          )}
                           {s.originalOperatorId && <span className="muted small">{t('detail.replaces', { operator: opName(s.originalOperatorId) })}</span>}
                         </span>
                       </button>
@@ -502,17 +512,19 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       </div>
 
       {view.steps.length > 0 && (
-        <section className="panel" aria-labelledby="steps-title">
+        <section className="panel card--kicker" aria-labelledby="steps-title">
           <h2 id="steps-title" className="panel__title steps-title">{t('strategyDetail.steps')}</h2>
           <ol className="step-list">
             {view.steps.map((s, i) => (
               <li key={s.id}>
                 <button type="button" className="step-list__item" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)}>
-                  <span className="step-list__n">{i + 1}</span>
+                  <span className="step-list__n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
                   <span className="step-list__body">
-                    <strong>{s.title}</strong>
-                    {s.clock && <span className="clock-tag">{s.clock}</span>}
-                    {s.timing && <span className="muted small"> · {s.timing}</span>}
+                    <span className="step-list__top">
+                      <strong className="step-list__title">{s.title}</strong>
+                      {s.clock && <span className="clock-tag">{s.clock}</span>}
+                    </span>
+                    {s.timing && <span className="step-list__timing">{s.timing}</span>}
                     {s.description && <span className="step-list__desc">{s.description}</span>}
                   </span>
                 </button>
@@ -523,7 +535,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       )}
 
       {view.notes && (
-        <section className="panel" aria-labelledby="snotes-title">
+        <section className="panel card--kicker coach-notes" aria-labelledby="snotes-title">
           <h2 id="snotes-title" className="panel__title steps-title">{t('strategyDetail.coachNotes')}</h2>
           <p className="notes-text">{view.notes}</p>
         </section>

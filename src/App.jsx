@@ -219,7 +219,7 @@ function TeamApp({ online, onOffline }) {
         )}
 
         <main id="main" className="main" tabIndex={-1}>
-          {view === 'home' && <CommandView profile={profile} strategyData={strategyData} navigate={navigate} />}
+          {view === 'home' && <CommandView profile={profile} strategyData={strategyData} navigate={navigate} team={data.team} />}
           {view === 'build' && (
             <StrategyBuilder
               profile={profile}
