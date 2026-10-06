@@ -11,11 +11,13 @@ import { useRoster } from '../state/roster-context.js';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { formatLineupText, rerollPlayer, rollLineup } from '../lib/roll.js';
+import { useI18n } from '../i18n/index.js';
 
 const describe = (lineup, players) =>
   players.map((p) => `${p}: ${OPERATORS_BY_ID[lineup[p]]?.name ?? 'none'}`).join(', ');
 
 export default function PlanView({ team, updateTeam, currentProfile, rollOptions = {}, notes, tactics, onFindStrategies }) {
+  const { t } = useI18n();
   const { lineupPlayers } = useRoster();
   const [error, setError] = useState('');
   const [changed, setChanged] = useState([]);
@@ -69,12 +71,12 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="page__title">Plan</h1>
-          <p className="page__sub">Map, lineup, tactic and bans. Every change is shared with the team live.</p>
+          <h1 className="page__title">{t('planView.plan')}</h1>
+          <p className="page__sub">{t('planView.mapLineupTacticAndBans')}</p>
         </div>
         {onFindStrategies && (
           <button type="button" className="btn btn--secondary btn--sm" onClick={onFindStrategies}>
-            Find strategies for this lineup
+            {t('planView.findStrategiesForThisLineup')}
           </button>
         )}
       </header>
@@ -84,7 +86,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
 
           <section className="panel panel--lineup" aria-labelledby="lineup-title">
             <div className="panel__head">
-              <h2 id="lineup-title" className="panel__title">Lineup</h2>
+              <h2 id="lineup-title" className="panel__title">{t('planView.lineup')}</h2>
               <SideToggle side={side} onChange={changeSide} />
             </div>
             <Notice onDismiss={() => setError('')}>{error}</Notice>
@@ -98,7 +100,7 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
             />
             <div className="actions">
               <button type="button" className={`btn btn--primary btn--${side}`} onClick={roll}>
-                Roll {side === 'attack' ? 'attackers' : 'defenders'}
+                {t(side === 'attack' ? 'plan.roll.attack' : 'plan.roll.defend')}
               </button>
               <CopyButton getText={shareText} disabled={!lineup} />
             </div>
@@ -109,9 +111,9 @@ export default function PlanView({ team, updateTeam, currentProfile, rollOptions
                   checked={Boolean(team.ownedOnly)}
                   onChange={(e) => updateTeam({ ownedOnly: e.target.checked })}
                 />
-                Use owned operators only
+                {t('planView.useOwnedOperatorsOnly')}
               </label>
-              {team.updatedBy && <span className="muted small">Last change by {team.updatedBy}</span>}
+              {team.updatedBy && <span className="muted small">{t('plan.lastChange', { player: team.updatedBy })}</span>}
             </div>
           </section>
 

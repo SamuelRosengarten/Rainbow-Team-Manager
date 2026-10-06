@@ -5,15 +5,17 @@ import TacticalBoard from './TacticalBoard.jsx';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { slotColor } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, PATHS, TACTICAL_ROLES, playerBrief, utilityName } from '../lib/tactical.js';
+import { t as translate, useI18n } from '../i18n/index.js';
 
-const opName = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any operator';
+const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
 
 /** "Who are you?" grid of the strategy's operators. */
 function Chooser({ strategy, assigned, profile, onPick }) {
+  const { t } = useI18n();
   return (
     <section className="panel" aria-labelledby="pick-title">
-      <h2 id="pick-title" className="panel__title">Who are you playing?</h2>
-      <p className="muted small">You'll see only your operator, position, route, utility and timing.</p>
+      <h2 id="pick-title" className="panel__title">{t('playerMode.whoAreYouPlaying')}</h2>
+      <p className="muted small">{t('playerMode.youLlSeeOnlyYour')}</p>
       <ul className="who-grid">
         {strategy.slots.map((s) => {
           const op = OPERATORS_BY_ID[s.operatorId];
@@ -24,7 +26,7 @@ function Chooser({ strategy, assigned, profile, onPick }) {
                 <OperatorIcon key={op?.id ?? 'none'} operator={op} size="xl" />
                 <span className="who-card__op">{opName(s.operatorId)}</span>
                 <span className="role-tag">{TACTICAL_ROLES[s.tacticalRole]}</span>
-                <span className="who-card__player">{assigned[s.key] ?? 'Unassigned'}{me ? ' (you)' : ''}</span>
+                <span className="who-card__player">{assigned[s.key] ?? t('playerMode.unassigned')}{me ? t('playerMode.you') : ''}</span>
               </button>
             </li>
           );
@@ -45,6 +47,7 @@ const describe = (m, opId) => {
  * instructions, utility and timing — and nothing else.
  */
 export default function PlayerMode({ strategy, mapName, assigned = {}, profile, slotKey, onPick, onBack }) {
+  const { t } = useI18n();
   const [stepId, setStepId] = useState(null);
   const slot = strategy.slots.find((s) => s.key === slotKey);
 
@@ -74,29 +77,29 @@ export default function PlayerMode({ strategy, mapName, assigned = {}, profile, 
           <Icon name="chevron" size={16} className="icon--flip" /> {strategy.title}
         </button>
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPick(null)}>
-          Switch operator
+          {t('playerMode.switchOperator')}
         </button>
       </div>
 
       <header className="pm-hero">
         <OperatorIcon key={op?.id ?? 'none'} operator={op} size="xl" />
         <div>
-          <p className="pm-hero__kicker">Your job</p>
+          <p className="pm-hero__kicker">{t('playerMode.yourJob')}</p>
           <h1 className="pm-hero__op">{opName(slot.operatorId)}</h1>
           <p className="pm-hero__meta">
             <span className="role-tag">{TACTICAL_ROLES[slot.tacticalRole]}</span>
             {assigned[slot.key] && <span>{assigned[slot.key]}</span>}
-            {slot.defuser && <span className="defuser-tag">You carry the defuser</span>}
-            {slot.spawn && <span className="muted">Spawn: {slot.spawn}</span>}
+            {slot.defuser && <span className="defuser-tag">{t('playerMode.youCarryTheDefuser')}</span>}
+            {slot.spawn && <span className="muted">{t('coach.spawn', { spawn: slot.spawn })}</span>}
           </p>
         </div>
       </header>
 
       <div className="pm-grid">
-        <section className="pm-board" aria-label="Your positions and routes">
-          <div className="step-chips" role="group" aria-label="Show step">
+        <section className="pm-board" aria-label={t('playerMode.yourPositionsAndRoutes')}>
+          <div className="step-chips" role="group" aria-label={t('playerMode.showStep')}>
             <button type="button" className="step-chip" aria-pressed={!stepId} onClick={() => setStepId(null)}>
-              Whole round
+              {t('playerMode.wholeRound')}
             </button>
             {mySteps.map(({ step, index }) => (
               <button key={step.id} type="button" className="step-chip" aria-pressed={stepId === step.id} onClick={() => setStepId(step.id)}>
@@ -105,12 +108,12 @@ export default function PlayerMode({ strategy, mapName, assigned = {}, profile, 
               </button>
             ))}
           </div>
-          <TacticalBoard strategy={strategy} mapName={mapName} stepId={stepId} focusSlot={slot.key} isolate labels="all" title={`${opName(slot.operatorId)}'s positions`} />
+          <TacticalBoard strategy={strategy} mapName={mapName} stepId={stepId} focusSlot={slot.key} isolate labels="all" title={t('playerMode.positionsOf', { operator: opName(slot.operatorId) })} />
         </section>
 
         <aside className="pm-side">
           <section className="panel">
-            <h2 className="panel__title">Your timing</h2>
+            <h2 className="panel__title">{t('playerMode.yourTiming')}</h2>
             {mySteps.length ? (
               <ol className="pm-steps">
                 {mySteps.map(({ step, index, action, markers, paths }) => (
@@ -131,13 +134,13 @@ export default function PlayerMode({ strategy, mapName, assigned = {}, profile, 
                 ))}
               </ol>
             ) : (
-              <p className="muted small">No steps for you yet.</p>
+              <p className="muted small">{t('playerMode.noStepsForYouYet')}</p>
             )}
           </section>
 
           {brief.utility.length > 0 && (
             <section className="panel">
-              <h2 className="panel__title">Your utility</h2>
+              <h2 className="panel__title">{t('playerMode.yourUtility')}</h2>
               <ul className="pm-util">
                 {brief.utility.map((m) => (
                   <li key={m.id}>
@@ -153,12 +156,12 @@ export default function PlayerMode({ strategy, mapName, assigned = {}, profile, 
 
           {brief.crossfires.length > 0 && (
             <section className="panel">
-              <h2 className="panel__title">Your crossfires</h2>
+              <h2 className="panel__title">{t('playerMode.yourCrossfires')}</h2>
               <ul className="pm-util">
                 {brief.crossfires.map((c) => (
                   <li key={c.id}>
-                    <strong>With {partner(c)}</strong>
-                    {c.label && <span> on {c.label}</span>}
+                    <strong>{t('playerMode.crossfireWith', { partner: partner(c) })}</strong>
+                    {c.label && <span>{t('playerMode.crossfireOn', { label: c.label })}</span>}
                     {c.timing && <span className="muted small">{c.timing}</span>}
                   </li>
                 ))}
@@ -168,7 +171,7 @@ export default function PlayerMode({ strategy, mapName, assigned = {}, profile, 
 
           {slot.instructions.length > 0 && (
             <section className="panel">
-              <h2 className="panel__title">Your instructions</h2>
+              <h2 className="panel__title">{t('playerMode.yourInstructions')}</h2>
               <ol className="slot__steps">
                 {slot.instructions.map((t, i) => (
                   <li key={i}>{t}</li>

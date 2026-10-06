@@ -4,8 +4,8 @@ import { layoutDiagram } from '../lib/diagram.js';
 import { floorIdFromSite, floorLabel, floorPlan } from '../lib/floorPlans.js';
 import { defaultFloor } from '../lib/space.js';
 import { usePlans } from '../state/usePlans.js';
+import { useI18n } from '../i18n/index.js';
 
-const roleLabel = (r) => (r === 'flex' ? 'Flex' : ROLE_LABEL[r]);
 
 /**
  * A quick tactic: the real floor plan of its map and site floor (when it has
@@ -13,6 +13,7 @@ const roleLabel = (r) => (r === 'flex' ? 'Flex' : ROLE_LABEL[r]);
  * and have no positions, so nothing is drawn on the map.
  */
 export default function TacticDiagram({ tactic, lineup, players, operatorsById, mapName, compact = false }) {
+  const { t } = useI18n();
   usePlans();
   const { markers } = layoutDiagram({
     side: tactic.side,
@@ -31,17 +32,17 @@ export default function TacticDiagram({ tactic, lineup, players, operatorsById, 
     <figure className={`diagram diagram--${tactic.side}${compact ? ' diagram--compact' : ''}`}>
       {tactic.imageUrl && (
         <a className="diagram__photo" href={tactic.imageUrl} target="_blank" rel="noopener noreferrer">
-          <img src={tactic.imageUrl} alt={`Map image for ${tactic.name}`} loading="lazy" />
+          <img src={tactic.imageUrl} alt={t('diagram.mapImageAlt', { name: tactic.name })} loading="lazy" />
         </a>
       )}
       {plan ? (
         <div className="diagram__plan" style={{ aspectRatio: `${plan.width} / ${plan.height}` }}>
-          <img src={plan.url} alt={`${where} floor plan`} loading="lazy" />
+          <img src={plan.url} alt={t('diagram.floorPlanAlt', { where })} loading="lazy" />
           {where && <span className="diagram__where">{where}</span>}
         </div>
       ) : (
         <p className="diagram__nomap muted small">
-          {mapId ? `No floor plan for ${where || 'this floor'} yet.` : 'Generic tactic: not tied to a map.'}
+          {mapId ? t('tacticDiagram.noPlan', { where: where || t('tacticDiagram.thisFloor') }) : t('tacticDiagram.genericTacticNotTiedTo')}
         </p>
       )}
       <ol className="diagram__legend">
@@ -54,17 +55,17 @@ export default function TacticDiagram({ tactic, lineup, players, operatorsById, 
                 {m.player
                   ? `${m.player}${operatorsById[m.operatorId] ? ` · ${operatorsById[m.operatorId].name}` : ''}`
                   : m.missing
-                    ? 'Missing'
-                    : `Spot ${i + 1}`}
+                    ? t('tacticDiagram.missing')
+                    : t('tacticDiagram.spot', { n: i + 1 })}
               </strong>{' '}
-              <span className={`role role--${m.missing ? 'missing' : m.role}`}>{roleLabel(m.role)}</span>{' '}
+              <span className={`role role--${m.missing ? 'missing' : m.role}`}>{m.role === 'flex' ? t('mainRole.flex') : ROLE_LABEL[m.role]}</span>{' '}
               {m.action}
             </span>
           </li>
         ))}
       </ol>
       <figcaption className="muted small">
-        Quick tactics are role-based: the list says who does what. For positions on the map, build a strategy.
+        {t('tacticDiagram.quickTacticsAreRoleBased')}
       </figcaption>
     </figure>
   );

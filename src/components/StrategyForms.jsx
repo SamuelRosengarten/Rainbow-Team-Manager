@@ -6,8 +6,9 @@ import { MAPS, sitesFor } from '../lib/maps.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { DIFFICULTY, LIMITS, newId, slotColor } from '../lib/strategies.js';
 import { STRATEGY_TYPES_BY_SIDE, TACTICAL_ROLES, normalizeClock, normalizeType } from '../lib/tactical.js';
+import { t as translate, useI18n } from '../i18n/index.js';
 
-const opName = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any operator';
+const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
 const move = (list, i, d) => {
   const j = i + d;
   if (j < 0 || j >= list.length) return list;
@@ -18,26 +19,27 @@ const move = (list, i, d) => {
 
 /** Title, map/site/side, type, summary, timing, notes, board image and source. */
 export function DetailsForm({ draft, set, compact = false }) {
+  const { t } = useI18n();
   const sites = draft.mapId && draft.mapId !== 'any' ? sitesFor(draft.mapId, draft.side) : [];
   const f = (key) => ({ key: `details-${key}` });
   return (
     <div className="form">
       <label className="field">
-        <span className="field__label">Title</span>
-        <input className="input" value={draft.title} maxLength={120} placeholder="e.g. Oregon Basement Execute" onChange={(e) => set({ title: e.target.value }, f('title'))} />
+        <span className="field__label">{t('strategyForms.title')}</span>
+        <input className="input" value={draft.title} maxLength={120} placeholder={t('strategyForms.eGOregonBasementExecute')} onChange={(e) => set({ title: e.target.value }, f('title'))} />
       </label>
       {draft.version > 1 && (
         <label className="field">
-          <span className="field__label">What changed in v{draft.version}</span>
-          <input className="input" value={draft.versionNote} maxLength={120} placeholder="e.g. Changed Buck route" onChange={(e) => set({ versionNote: e.target.value }, f('vnote'))} />
+          <span className="field__label">{t('forms.versionNote', { version: draft.version })}</span>
+          <input className="input" value={draft.versionNote} maxLength={120} placeholder={t('strategyForms.eGChangedBuckRoute')} onChange={(e) => set({ versionNote: e.target.value }, f('vnote'))} />
         </label>
       )}
       {!compact && (
         <div className="field-row">
           <label className="field">
-            <span className="field__label">Map</span>
+            <span className="field__label">{t('strategyForms.map')}</span>
             <select className="select" value={draft.mapId} onChange={(e) => set({ mapId: e.target.value, site: '' })}>
-              <option value="any">Any map</option>
+              <option value="any">{t('strategyForms.anyMap')}</option>
               {MAPS.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
@@ -46,9 +48,9 @@ export function DetailsForm({ draft, set, compact = false }) {
             </select>
           </label>
           <label className="field">
-            <span className="field__label">Site</span>
+            <span className="field__label">{t('strategyForms.site')}</span>
             <select className="select" value={draft.site} onChange={(e) => set({ site: e.target.value, floor: '' })} disabled={!sites.length}>
-              <option value="">Any site</option>
+              <option value="">{t('strategyForms.anySite')}</option>
               {sites.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -57,7 +59,7 @@ export function DetailsForm({ draft, set, compact = false }) {
             </select>
           </label>
           <label className="field">
-            <span className="field__label">Side</span>
+            <span className="field__label">{t('strategyForms.side')}</span>
             <select
               className="select"
               value={draft.side}
@@ -70,14 +72,14 @@ export function DetailsForm({ draft, set, compact = false }) {
                 })
               }
             >
-              <option value="attack">Attack</option>
-              <option value="defend">Defense</option>
+              <option value="attack">{t('strategyForms.attack')}</option>
+              <option value="defend">{t('strategyForms.defense')}</option>
             </select>
           </label>
         </div>
       )}
       <div className="field">
-        <span className="field__label">Strategy type</span>
+        <span className="field__label">{t('strategyForms.strategyType')}</span>
         <div className="chip-row">
           {Object.entries(STRATEGY_TYPES_BY_SIDE[draft.side]).map(([id, l]) => (
             <button key={id} type="button" className="step-chip" aria-pressed={draft.type === id} onClick={() => set({ type: id })}>
@@ -88,7 +90,7 @@ export function DetailsForm({ draft, set, compact = false }) {
       </div>
       <div className="field-row">
         <label className="field">
-          <span className="field__label">Difficulty</span>
+          <span className="field__label">{t('strategyForms.difficulty')}</span>
           <select className="select" value={draft.difficulty} onChange={(e) => set({ difficulty: Number(e.target.value) })}>
             {Object.entries(DIFFICULTY).map(([id, l]) => (
               <option key={id} value={id}>
@@ -98,44 +100,44 @@ export function DetailsForm({ draft, set, compact = false }) {
           </select>
         </label>
         <label className="field">
-          <span className="field__label">Overall timing</span>
-          <input className="input" value={draft.timing} maxLength={200} placeholder="e.g. Breach at 1:50, plant before 0:40" onChange={(e) => set({ timing: e.target.value }, f('timing'))} />
+          <span className="field__label">{t('strategyForms.overallTiming')}</span>
+          <input className="input" value={draft.timing} maxLength={200} placeholder={t('strategyForms.eGBreachAt1')} onChange={(e) => set({ timing: e.target.value }, f('timing'))} />
         </label>
       </div>
       <label className="field">
-        <span className="field__label">Summary</span>
-        <textarea className="textarea" value={draft.summary} maxLength={1000} placeholder="The idea in two sentences." onChange={(e) => set({ summary: e.target.value }, f('summary'))} />
+        <span className="field__label">{t('strategyForms.summary')}</span>
+        <textarea className="textarea" value={draft.summary} maxLength={1000} placeholder={t('strategyForms.theIdeaInTwoSentences')} onChange={(e) => set({ summary: e.target.value }, f('summary'))} />
       </label>
       <label className="field">
-        <span className="field__label">Tags</span>
+        <span className="field__label">{t('strategyForms.tags')}</span>
         <input
           className="input"
           value={draft.tags.join(', ')}
-          placeholder="basement, anti-breach"
+          placeholder={t('strategyForms.basementAntiBreach')}
           onChange={(e) => set({ tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean) }, f('tags'))}
         />
       </label>
       <label className="field">
-        <span className="field__label">Coach notes</span>
+        <span className="field__label">{t('strategyForms.coachNotes')}</span>
         <textarea className="textarea" value={draft.notes} maxLength={2000} onChange={(e) => set({ notes: e.target.value }, f('notes'))} />
       </label>
       {!compact && (
         <>
           <label className="field">
-            <span className="field__label">Attached image link (optional)</span>
-            <input className="input" type="url" value={draft.boardImageUrl} placeholder="https://… a screenshot or drawing for this plan" onChange={(e) => set({ boardImageUrl: e.target.value }, f('img'))} />
-            <span className="field__hint">Shown as a link under the board. The board itself always uses the real floor plan.</span>
+            <span className="field__label">{t('strategyForms.attachedImageLinkOptional')}</span>
+            <input className="input" type="url" value={draft.boardImageUrl} placeholder={t('strategyForms.httpsAScreenshotOrDrawing')} onChange={(e) => set({ boardImageUrl: e.target.value }, f('img'))} />
+            <span className="field__hint">{t('strategyForms.shownAsALinkUnder')}</span>
           </label>
           <fieldset className="form field-group">
-            <legend>Source</legend>
+            <legend>{t('strategyForms.source')}</legend>
             <div className="field-row">
               <label className="field">
-                <span className="field__label">Source name</span>
-                <input className="input" value={draft.sourceName} maxLength={80} placeholder="Website, creator or video" onChange={(e) => set({ sourceName: e.target.value }, f('sn'))} />
+                <span className="field__label">{t('strategyForms.sourceName')}</span>
+                <input className="input" value={draft.sourceName} maxLength={80} placeholder={t('strategyForms.websiteCreatorOrVideo')} onChange={(e) => set({ sourceName: e.target.value }, f('sn'))} />
               </label>
               <label className="field">
-                <span className="field__label">Link</span>
-                <input className="input" type="url" value={draft.sourceUrl} placeholder="https://…" onChange={(e) => set({ sourceUrl: e.target.value }, f('su'))} />
+                <span className="field__label">{t('strategyForms.link')}</span>
+                <input className="input" type="url" value={draft.sourceUrl} placeholder={t('strategyForms.https')} onChange={(e) => set({ sourceUrl: e.target.value }, f('su'))} />
               </label>
             </div>
           </fieldset>
@@ -147,6 +149,7 @@ export function DetailsForm({ draft, set, compact = false }) {
 
 /** The five (up to six) operator slots: operator, tactical role, defuser, alternatives, spawn and instructions. */
 export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) {
+  const { t } = useI18n();
   const ops = operatorsForSide(draft.side);
   const update = (i, patch, key) => set({ slots: draft.slots.map((s, j) => (j === i ? { ...s, ...patch } : s)) }, key ? { key: `slot-${i}-${key}` } : undefined);
   return (
@@ -165,9 +168,9 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
               <OperatorIcon key={op?.id ?? 'none'} operator={op} size="lg" />
               <div className="field-row field-row--grow">
                 <label className="field">
-                  <span className="field__label">Operator</span>
+                  <span className="field__label">{t('strategyForms.operator')}</span>
                   <select className="select" value={s.operatorId ?? ''} onChange={(e) => update(i, { operatorId: e.target.value || null })}>
-                    <option value="">Any ({ROLE_LABEL[s.role]})</option>
+                    <option value="">{t('forms.anyRole', { role: ROLE_LABEL[s.role] })}</option>
                     {ops.map((o) => (
                       <option key={o.id} value={o.id} disabled={taken.has(o.id)}>
                         {o.name}
@@ -176,7 +179,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                   </select>
                 </label>
                 <label className="field">
-                  <span className="field__label">Tactical role</span>
+                  <span className="field__label">{t('strategyForms.tacticalRole')}</span>
                   <select className="select" value={s.tacticalRole} onChange={(e) => update(i, { tacticalRole: e.target.value })}>
                     {Object.entries(TACTICAL_ROLES).map(([id, l]) => (
                       <option key={id} value={id}>
@@ -187,9 +190,9 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                 </label>
                 {onAssign && (
                   <label className="field">
-                    <span className="field__label">Player</span>
+                    <span className="field__label">{t('strategyForms.player')}</span>
                     <select className="select" value={assigned[s.key] ?? ''} onChange={(e) => onAssign(s.key, e.target.value || null)}>
-                      <option value="">Unassigned</option>
+                      <option value="">{t('strategyForms.unassigned')}</option>
                       {roster.map((p) => (
                         <option key={p} value={p}>
                           {p}
@@ -202,7 +205,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
             </div>
             <div className="field-row">
               <label className="field">
-                <span className="field__label">Operator category</span>
+                <span className="field__label">{t('strategyForms.operatorCategory')}</span>
                 <select className="select" value={s.role} onChange={(e) => update(i, { role: e.target.value })}>
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
@@ -212,7 +215,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                 </select>
               </label>
               <label className="field">
-                <span className="field__label">Spawn / start</span>
+                <span className="field__label">{t('strategyForms.spawnStart')}</span>
                 <input className="input" value={s.spawn} maxLength={60} onChange={(e) => update(i, { spawn: e.target.value }, 'spawn')} />
               </label>
             </div>
@@ -223,26 +226,26 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                   checked={s.defuser}
                   onChange={(e) => set({ slots: draft.slots.map((x, j) => ({ ...x, defuser: j === i ? e.target.checked : e.target.checked ? false : x.defuser })) })}
                 />
-                Carries the defuser
+                {t('strategyForms.carriesTheDefuser')}
               </label>
             )}
             <div className="field">
-              <span className="field__label">Alternatives</span>
+              <span className="field__label">{t('strategyForms.alternatives')}</span>
               <div className="chip-row">
                 {s.alternatives.map((id) => (
                   <button key={id} type="button" className="op-pill op-pill--sub" onClick={() => update(i, { alternatives: s.alternatives.filter((x) => x !== id) })}>
                     {opName(id)} <span aria-hidden="true">✕</span>
-                    <span className="visually-hidden"> remove</span>
+                    <span className="visually-hidden"> {t('strategyForms.remove')}</span>
                   </button>
                 ))}
                 {s.alternatives.length < 6 && (
                   <select
                     className="select input--sm alt-add"
                     value=""
-                    aria-label={`Add an alternative to ${opName(s.operatorId)}`}
+                    aria-label={t('forms.addAlternative', { operator: opName(s.operatorId) })}
                     onChange={(e) => e.target.value && update(i, { alternatives: [...s.alternatives, e.target.value] })}
                   >
-                    <option value="">+ Add</option>
+                    <option value="">{t('strategyForms.add')}</option>
                     {ops
                       .filter((o) => o.id !== s.operatorId && !s.alternatives.includes(o.id))
                       .map((o) => (
@@ -255,20 +258,20 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
               </div>
             </div>
             <label className="field">
-              <span className="field__label">Instructions (one per line)</span>
+              <span className="field__label">{t('strategyForms.instructionsOnePerLine')}</span>
               <textarea
                 className="textarea"
                 value={s.instructions.join('\n')}
                 onChange={(e) => update(i, { instructions: e.target.value.split('\n') }, 'instr')}
-                placeholder={'Drone the main wall.\nOpen it when the support calls clear.\nHold the breach.'}
+                placeholder={t('strategyForms.droneTheMainWallOpen')}
               />
             </label>
             <div className="toolbar">
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => set({ slots: move(draft.slots, i, -1) })} disabled={i === 0}>
-                Move up
+                {t('strategyForms.moveUp')}
               </button>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => set({ slots: move(draft.slots, i, 1) })} disabled={i === draft.slots.length - 1}>
-                Move down
+                {t('strategyForms.moveDown')}
               </button>
               <button
                 type="button"
@@ -288,7 +291,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                   })
                 }
               >
-                Remove
+                {t('strategyForms.remove2')}
               </button>
             </div>
           </fieldset>
@@ -307,7 +310,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
             })
           }
         >
-          <Icon name="plus" size={18} /> Add operator
+          <Icon name="plus" size={18} /> {t('strategyForms.addOperator')}
         </button>
       )}
     </div>
@@ -316,6 +319,7 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
 
 /** Steps: title, round clock, what happens, who acts and what each one does. */
 export function StepsForm({ draft, set }) {
+  const { t } = useI18n();
   const update = (i, patch, key) => set({ steps: draft.steps.map((s, j) => (j === i ? { ...s, ...patch } : s)) }, key ? { key: `step-${i}-${key}` } : undefined);
   return (
     <div className="form">
@@ -326,7 +330,7 @@ export function StepsForm({ draft, set }) {
           </legend>
           <div className="field-row">
             <label className="field step-edit__clock">
-              <span className="field__label">Round clock</span>
+              <span className="field__label">{t('strategyForms.roundClock')}</span>
               <input
                 className="input input--mono"
                 value={s.clock}
@@ -338,16 +342,16 @@ export function StepsForm({ draft, set }) {
               />
             </label>
             <label className="field field--grow">
-              <span className="field__label">Title</span>
-              <input className="input" value={s.title} maxLength={80} placeholder="Drone / Clear / Breach / Execute / Plant" onChange={(e) => update(i, { title: e.target.value }, 'title')} />
+              <span className="field__label">{t('strategyForms.title')}</span>
+              <input className="input" value={s.title} maxLength={80} placeholder={t('strategyForms.droneClearBreachExecutePlant')} onChange={(e) => update(i, { title: e.target.value }, 'title')} />
             </label>
           </div>
           <label className="field">
-            <span className="field__label">What happens</span>
+            <span className="field__label">{t('strategyForms.whatHappens')}</span>
             <textarea className="textarea" value={s.description} maxLength={600} onChange={(e) => update(i, { description: e.target.value }, 'desc')} />
           </label>
           <div className="field">
-            <span className="field__label">Who acts</span>
+            <span className="field__label">{t('strategyForms.whoActs')}</span>
             <div className="chip-row">
               {draft.slots.map((sl) => (
                 <button
@@ -372,12 +376,12 @@ export function StepsForm({ draft, set }) {
                   return (
                     <label key={sl.key} className="step-action" style={{ '--slot': slotColor(draft, sl.key) }}>
                       <OperatorIcon key={op?.id ?? 'none'} operator={op} size="sm" />
-                      <span className="visually-hidden">What {opName(sl.operatorId)} does</span>
+                      <span className="visually-hidden">{t('forms.whatDoes', { operator: opName(sl.operatorId) })}</span>
                       <input
                         className="input input--sm"
                         value={s.actions[sl.key] ?? ''}
                         maxLength={300}
-                        placeholder={`${opName(sl.operatorId)}: e.g. "Move to breach position."`}
+                        placeholder={t('forms.actionPlaceholder', { operator: opName(sl.operatorId) })}
                         onChange={(e) => update(i, { actions: { ...s.actions, [sl.key]: e.target.value } }, `act-${sl.key}`)}
                       />
                     </label>
@@ -387,24 +391,24 @@ export function StepsForm({ draft, set }) {
           )}
           <div className="field-row">
             <label className="field">
-              <span className="field__label">Utility</span>
+              <span className="field__label">{t('strategyForms.utility')}</span>
               <input className="input" value={s.utility} maxLength={200} onChange={(e) => update(i, { utility: e.target.value }, 'util')} />
             </label>
             <label className="field">
-              <span className="field__label">Phase / timing note</span>
-              <input className="input" value={s.timing} maxLength={40} placeholder="e.g. After the breach" onChange={(e) => update(i, { timing: e.target.value }, 'timing')} />
+              <span className="field__label">{t('strategyForms.phaseTimingNote')}</span>
+              <input className="input" value={s.timing} maxLength={40} placeholder={t('strategyForms.eGAfterTheBreach')} onChange={(e) => update(i, { timing: e.target.value }, 'timing')} />
             </label>
           </div>
           <label className="field">
-            <span className="field__label">Notes</span>
-            <input className="input" value={s.notes} maxLength={400} placeholder={'e.g. "Don\'t swing before smoke"'} onChange={(e) => update(i, { notes: e.target.value }, 'notes')} />
+            <span className="field__label">{t('strategyForms.notes')}</span>
+            <input className="input" value={s.notes} maxLength={400} placeholder={t('strategyForms.eGDonTSwing')} onChange={(e) => update(i, { notes: e.target.value }, 'notes')} />
           </label>
           <div className="toolbar">
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => set({ steps: move(draft.steps, i, -1) })} disabled={i === 0}>
-              Move up
+              {t('strategyForms.moveUp')}
             </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => set({ steps: move(draft.steps, i, 1) })} disabled={i === draft.steps.length - 1}>
-              Move down
+              {t('strategyForms.moveDown')}
             </button>
             <button
               type="button"
@@ -419,7 +423,7 @@ export function StepsForm({ draft, set }) {
                 })
               }
             >
-              Remove step
+              {t('strategyForms.removeStep')}
             </button>
           </div>
         </fieldset>
@@ -433,12 +437,12 @@ export function StepsForm({ draft, set }) {
               set({
                 steps: [
                   ...draft.steps,
-                  { id: newId('st'), title: `Step ${draft.steps.length + 1}`, description: '', slots: [], actions: {}, clock: '', timing: '', utility: '', notes: '' },
+                  { id: newId('st'), title: t('strategy.stepTitle', { n: draft.steps.length + 1 }), description: '', slots: [], actions: {}, clock: '', timing: '', utility: '', notes: '' },
                 ],
               })
             }
           >
-            <Icon name="plus" size={18} /> Add step
+            <Icon name="plus" size={18} /> {t('strategyForms.addStep')}
           </button>
           {draft.steps.length === 0 && (
             <button
@@ -447,8 +451,8 @@ export function StepsForm({ draft, set }) {
               onClick={() =>
                 set({
                   steps: (draft.side === 'attack'
-                    ? [['0:45', 'Drone'], ['0:38', 'Clear'], ['0:31', 'Breach'], ['0:25', 'Execute'], ['0:18', 'Plant']]
-                    : [['Prep', 'Reinforce & set up'], ['2:30', 'Early hold'], ['1:30', 'Deny the breach'], ['0:45', 'Late round'], ['0:20', 'Plant denial']]
+                    ? [['0:45', t('forms.tpl.a1')], ['0:38', t('forms.tpl.a2')], ['0:31', t('forms.tpl.a3')], ['0:25', t('forms.tpl.a4')], ['0:18', t('forms.tpl.a5')]]
+                    : [[t('forms.tpl.prep'), t('forms.tpl.d1')], ['2:30', t('forms.tpl.d2')], ['1:30', t('forms.tpl.d3')], ['0:45', t('forms.tpl.d4')], ['0:20', t('forms.tpl.d5')]]
                   ).map(([clock, title]) => ({
                     id: newId('st'),
                     title,
@@ -463,7 +467,7 @@ export function StepsForm({ draft, set }) {
                 })
               }
             >
-              Use a {draft.side === 'attack' ? 'Drone → Clear → Breach → Execute → Plant' : 'standard defense'} template
+              {t(draft.side === 'attack' ? 'forms.templateAttack' : 'forms.templateDefense')}
             </button>
           )}
         </div>

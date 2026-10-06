@@ -6,11 +6,13 @@ import { SIDES } from '../lib/constants.js';
 import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
+import { useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
 const PREF_STATES = [
-  [null, '♡', 'Not favorited'],
-  ['favorite', '★', 'Favorite'],
-  ['avoid', '🚫', 'Blocked'],
+  [null, '♡', 'none'],
+  ['favorite', '★', 'favorite'],
+  ['avoid', '🚫', 'avoid'],
 ];
 
 /**
@@ -19,6 +21,7 @@ const PREF_STATES = [
  * Everyone can look at anyone's lists; only your own are editable.
  */
 export default function OperatorsView({ profile, prefs, setOwned, setPreference }) {
+  const { t } = useI18n();
   const { players, ownedOnly } = useRoster();
   const [viewing, setViewing] = useState(profile);
   const [side, setSide] = useState('attack');
@@ -39,32 +42,27 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
     <section className="panel" aria-labelledby="ops-title">
       <div className="panel__head">
         <h2 id="ops-title" className="panel__title">
-          {mine ? 'My operators' : `${viewing}'s operators`}
+          {mine ? t('opsPool.mine') : t('opsPool.theirs', { player: viewing })}
         </h2>
         <label className="inline-field">
-          <span className="visually-hidden">Whose operators</span>
+          <span className="visually-hidden">{t('operatorsView.whoseOperators')}</span>
           <select className="select input--sm" value={viewing} onChange={(e) => setViewing(e.target.value)}>
             {players.map((n) => (
-              <option key={n} value={n}>{n === profile ? `${n} (you)` : n}</option>
+              <option key={n} value={n}>{n === profile ? t('opsPool.you', { name: n }) : n}</option>
             ))}
           </select>
         </label>
       </div>
       <p className="panel__sub">
-        <strong>Owned</strong> operators are used when “owned operators only” is on. <strong>★ Favorites</strong> are the
-        strongest preference: strategy recommendations are built around them and rolls pick them about 5× as often.{' '}
-        <strong>🚫 Blocked</strong> means “I never want to play this”. You set it yourself; nobody else's favourites can
-        block it, and it keeps the operator off <em>you</em> only: teammates can still play it. It's only excluded for a whole
-        lineup if every player in it blocked it (or the team banned it). Click an operator for their profile, stats and intro video.
+        <T id="opsPool.intro" />
       </p>
       <p className={`owned-status owned-status--${ownedOnly ? 'on' : 'off'}`} role="status">
-        Owned operators only is <strong>{ownedOnly ? 'ON' : 'OFF'}</strong> for the team:{' '}
-        {ownedOnly ? 'recommendations only use operators each player owns.' : 'owned operators are recorded but don’t limit recommendations. Switch it on in the finder or the lineup roller.'}
+        <T id={ownedOnly ? 'opsPool.status.on' : 'opsPool.status.off'} />
       </p>
-      {!mine && <Notice kind="info">You're viewing {viewing}'s lists (read only).</Notice>}
+      {!mine && <Notice kind="info">{t('opsPool.viewing', { player: viewing })}</Notice>}
 
       <div className="tabs-row">
-        <div className="segmented" role="group" aria-label="Side">
+        <div className="segmented" role="group" aria-label={t('operatorsView.side')}>
           {SIDES.map((s) => (
             <button
               key={s.id}
@@ -77,25 +75,25 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
             </button>
           ))}
         </div>
-        <span className="count" aria-label={`${ownedCount} of ${sideIds.length} owned`}>
-          {ownedCount}/{sideIds.length} owned
+        <span className="count" aria-label={t('opsPool.ownedAria', { owned: ownedCount, total: sideIds.length })}>
+          {t('opsPool.ownedCount', { owned: ownedCount, total: sideIds.length })}
         </span>
         {mine && (
           <>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOwned(viewing, sideIds, true)}>
-              Own all
+              {t('operatorsView.ownAll')}
             </button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOwned(viewing, sideIds, false)}>
-              Clear owned
+              {t('operatorsView.clearOwned')}
             </button>
           </>
         )}
         <label className="inline-field grow">
-          <span className="visually-hidden">Filter operators</span>
+          <span className="visually-hidden">{t('operatorsView.filterOperators')}</span>
           <input
             className="input input--sm"
             type="search"
-            placeholder="Filter…"
+            placeholder={t('operatorsView.filter')}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
@@ -116,22 +114,22 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                     disabled={!mine}
                     onChange={(e) => setOwned(viewing, [op.id], e.target.checked)}
                   />
-                  <span className="visually-hidden">{op.name} owned</span>
+                  <span className="visually-hidden">{t('opsPool.ownA11y', { operator: op.name })}</span>
                   <span className={`op-row__own-text${isOwned ? ' op-row__own-text--on' : ''}`} aria-hidden="true">
-                    {isOwned ? '✓ Owned' : 'Not owned'}
+                    {isOwned ? `✓ ${t('operatorsView.owned')}` : t('operatorsView.notOwned')}
                   </span>
                 </label>
                 <button type="button" className="op-row__open" onClick={() => setOpen(op.id)}>
                   <OperatorIcon operator={op} size="sm" />
                   <span className="op-row__name">{op.name}</span>
                   {pref && (
-                    <span className={`op-row__state op-row__state--${pref}`}>{pref === 'favorite' ? '★ Favorite' : '🚫 Blocked'}</span>
+                    <span className={`op-row__state op-row__state--${pref}`}>{pref === 'favorite' ? t('opsPool.stateFavorite') : t('opsPool.stateBlocked')}</span>
                   )}
                   {alsoFavored(op.id).length > 0 && (
-                    <span className="op-row__shared">also ★ {alsoFavored(op.id).join(', ')}</span>
+                    <span className="op-row__shared">{t('opsPool.also', { players: alsoFavored(op.id) })}</span>
                   )}
                   <span className="op-row__info" aria-hidden="true">ⓘ</span>
-                  <span className="visually-hidden"> profile</span>
+                  <span className="visually-hidden"> {t('operatorsView.profile')}</span>
                 </button>
               </span>
               <span className="op-row__roles">
@@ -139,7 +137,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                   <span key={r} className={`role role--${r}`}>{ROLE_LABEL[r]}</span>
                 ))}
               </span>
-              <span className="op-row__prefs" role="group" aria-label={`${op.name} preference`}>
+              <span className="op-row__prefs" role="group" aria-label={t('opsPool.prefAria', { operator: op.name })}>
                 {PREF_STATES.map(([kind, glyph, label]) => (
                   <button
                     key={label}
@@ -148,11 +146,11 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                     aria-pressed={pref === kind}
                     disabled={!mine}
                     onClick={() => pref !== kind && setPreference(viewing, op.id, kind)}
-                    title={label}
+                    title={t(`opsPool.pref.${label}`)}
                   >
                     <span aria-hidden="true">{glyph}</span>
                     <span className="visually-hidden">
-                      {label}: {op.name}
+                      {t('opsPool.prefBtn', { label: t(`opsPool.pref.${label}`), operator: op.name })}
                     </span>
                   </button>
                 ))}

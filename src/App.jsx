@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import CommandView from './components/CommandView.jsx';
 import Icon from './components/Icon.jsx';
+import LanguageToggle from './components/LanguageToggle.jsx';
 import MapsView from './components/MapsView.jsx';
 import Notice from './components/Notice.jsx';
 import OperatorLibraryView from './components/OperatorLibraryView.jsx';
@@ -26,13 +27,14 @@ import { MAPS_BY_ID, allSites } from './lib/maps.js';
 import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, storeProfile } from './lib/config.js';
 import { activePlayers, lineupPlayers } from './lib/roster.js';
 import { rollableTactics } from './lib/tactics.js';
+import { useI18n } from './i18n/index.js';
 
 const VIEWS = [
-  { id: 'home', label: 'Command', icon: 'crosshair' },
-  { id: 'strategies', label: 'Strategies', icon: 'book', also: ['build'] },
-  { id: 'maps', label: 'Maps', icon: 'map' },
-  { id: 'operators', label: 'Operators', icon: 'shield' },
-  { id: 'team', label: 'Team', icon: 'users', also: ['plan'] },
+  { id: 'home', icon: 'crosshair' },
+  { id: 'strategies', icon: 'book', also: ['build'] },
+  { id: 'maps', icon: 'map' },
+  { id: 'operators', icon: 'shield' },
+  { id: 'team', icon: 'users', also: ['plan'] },
 ];
 
 /** "#/build/<map>/<site index>/<side>" -> builder preset. */
@@ -46,13 +48,6 @@ function builderPreset(sub) {
   };
 }
 
-const LIVE_LABEL = {
-  disconnected: 'No connection',
-  live: 'Live',
-  connecting: 'Connecting…',
-  reconnecting: 'Reconnecting…',
-  offline: 'Offline mode',
-};
 
 export default function App() {
   const [mode, setMode] = useState(isConfigured ? 'online' : 'unconfigured');
@@ -73,6 +68,7 @@ export default function App() {
 }
 
 function TeamApp({ online, onOffline }) {
+  const { t } = useI18n();
   const [storedProfile, setStoredProfile] = useState(() => loadProfile(null));
   const [picking, setPicking] = useState(false);
   const route = useHashRoute();
@@ -129,10 +125,10 @@ function TeamApp({ online, onOffline }) {
           e.preventDefault();
           document.getElementById('main')?.focus();
         }}>
-          Skip to content
+          {t('app.skipToContent')}
         </a>
         <header className="topbar">
-          <button type="button" className="brand" onClick={() => navigate('')} aria-label="R6 Tactical Command, go home">
+          <button type="button" className="brand" onClick={() => navigate('')} aria-label={t('app.r6TacticalCommandGoHome')}>
             <svg className="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
               <path d="M16 3 27 8.5v8.5c0 6-4.5 9.5-11 12-6.5-2.5-11-6-11-12V8.5z" fill="none" stroke="currentColor" strokeWidth="2.5" />
               <circle cx="16" cy="16" r="3.5" fill="currentColor" />
@@ -141,7 +137,7 @@ function TeamApp({ online, onOffline }) {
               R6 <span className="brand__accent">Tactical</span> Command
             </span>
           </button>
-          <nav className="nav nav--top" aria-label="Main">
+          <nav className="nav nav--top" aria-label={t('app.main')}>
             {VIEWS.map((v) => (
               <button
                 key={v.id}
@@ -151,23 +147,24 @@ function TeamApp({ online, onOffline }) {
                 onClick={() => navigate(v.id === 'home' ? '' : v.id)}
               >
                 <Icon name={v.icon} size={18} />
-                {v.label}
+                {t(`nav.${v.id}`)}
               </button>
             ))}
           </nav>
           <div className="topbar__right">
             <button type="button" className="btn btn--primary btn--sm topbar__create" onClick={() => navigate('build')}>
-              <Icon name="plus" size={16} /> <span>New strategy</span>
+              <Icon name="plus" size={16} /> <span>{t('app.newStrategy')}</span>
             </button>
-            <span className={`live live--${live}`} role="status" title={LIVE_LABEL[live]}>
+            <LanguageToggle />
+            <span className={`live live--${live}`} role="status" title={t(`live.${live}`)}>
               <span className="live__dot" aria-hidden="true" />
-              <span className="live__label">{LIVE_LABEL[live]}</span>
+              <span className="live__label">{t(`live.${live}`)}</span>
             </span>
             <button
               type="button"
               className="btn btn--ghost btn--sm profile-switch"
               onClick={() => setPicking(true)}
-              aria-label={`Signed in as ${profile}. Switch profile`}
+              aria-label={t('app.signedIn', { name: profile })}
             >
               <span className="profile-switch__initial" aria-hidden="true">{profile[0]}</span>
               <span className="profile-switch__name">{profile}</span>
@@ -177,7 +174,7 @@ function TeamApp({ online, onOffline }) {
 
         {online && !browserOnline && (
           <div className="banner">
-            <Notice>You're offline. Changes won't reach the team until your connection is back.</Notice>
+            <Notice>{t('app.youReOfflineChangesWon')}</Notice>
           </div>
         )}
         {data.writeError && (
@@ -187,7 +184,7 @@ function TeamApp({ online, onOffline }) {
         )}
         {!online && (
           <div className="banner">
-            <Notice kind="warn">Offline mode: changes stay on this device and are lost on reload.</Notice>
+            <Notice kind="warn">{t('app.offlineModeChangesStayOn')}</Notice>
           </div>
         )}
 
@@ -251,7 +248,7 @@ function TeamApp({ online, onOffline }) {
           )}
         </main>
 
-        <nav className={`tabbar${fullBleed ? ' tabbar--hidden' : ''}`} aria-label="Main">
+        <nav className={`tabbar${fullBleed ? ' tabbar--hidden' : ''}`} aria-label={t('app.main')}>
           {VIEWS.map((v) => (
             <button
               key={v.id}
@@ -261,7 +258,7 @@ function TeamApp({ online, onOffline }) {
               onClick={() => navigate(v.id === 'home' ? '' : v.id)}
             >
               <Icon name={v.icon} size={22} />
-              <span>{v.label}</span>
+              <span>{t(`nav.${v.id}`)}</span>
             </button>
           ))}
         </nav>

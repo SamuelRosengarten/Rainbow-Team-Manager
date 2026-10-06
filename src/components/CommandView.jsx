@@ -6,6 +6,8 @@ import { onVerifiedPlan } from '../lib/floorPlans.js';
 import { usePlans } from '../state/usePlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { STRATEGY_TYPES, latestVersions } from '../lib/strategies.js';
+import { useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
 const FEATURE_OPS = ['thermite', 'ash', 'buck', 'smoke', 'jager', 'mira', 'bandit', 'hibana'];
 
@@ -19,6 +21,7 @@ function builderInProgress() {
 }
 
 function MiniRow({ s, navigate }) {
+  const { t } = useI18n();
   return (
     <li className="mini-strat">
       <button type="button" className="mini-strat__main" onClick={() => navigate(`strategies/s/${s.id}`)}>
@@ -28,7 +31,7 @@ function MiniRow({ s, navigate }) {
             {s.favorite && <Icon name="star" size={13} className="icon--fav" />} {s.title} <span className="version-chip version-chip--sm">v{s.version}</span>
           </span>
           <span className="muted small">
-            {MAPS_BY_ID[s.mapId]?.name ?? 'Any map'} · {STRATEGY_TYPES[s.type]}
+            {MAPS_BY_ID[s.mapId]?.name ?? t('commandView.anyMap')} · {STRATEGY_TYPES[s.type]}
           </span>
         </span>
         <span className="mini-strat__ops" aria-hidden="true">
@@ -37,7 +40,7 @@ function MiniRow({ s, navigate }) {
           ))}
         </span>
       </button>
-      <button type="button" className="btn btn--ghost btn--icon" aria-label={`Coach mode: ${s.title}`} onClick={() => navigate(`strategies/s/${s.id}/coach`)} disabled={!s.steps.length}>
+      <button type="button" className="btn btn--ghost btn--icon" aria-label={t('cmd.coachMode', { title: s.title })} onClick={() => navigate(`strategies/s/${s.id}/coach`)} disabled={!s.steps.length}>
         <Icon name="play" size={16} />
       </button>
     </li>
@@ -50,6 +53,7 @@ function MiniRow({ s, navigate }) {
  * team's saved strategies, with the featured plan on the board.
  */
 export default function CommandView({ profile, strategyData, navigate }) {
+  const { t } = useI18n();
   const all = strategyData.strategies;
   const team = latestVersions(all.filter((s) => s.origin === 'team' && !s.builtin));
   // "total" counts every plan, including the generic ones that aren't tied to a
@@ -74,11 +78,11 @@ export default function CommandView({ profile, strategyData, navigate }) {
   return (
     <section className="page command" aria-labelledby="cmd-title">
       <header className="command__head">
-        <p className="page__kicker">Welcome back, {profile}</p>
+        <p className="page__kicker">{t('cmd.welcome', { name: profile })}</p>
         <h1 id="cmd-title" className="command__title">
           R6 Tactical Command
         </h1>
-        <p className="command__q">What are we playing, where are we playing it, and what is everyone supposed to do?</p>
+        <p className="command__q">{t('commandView.whatAreWePlayingWhere')}</p>
       </header>
 
       <div className="command__grid">
@@ -88,39 +92,40 @@ export default function CommandView({ profile, strategyData, navigate }) {
               <Icon name="plus" size={30} />
             </span>
             <span>
-              <span className="cmd-card__title">Create strategy</span>
-              <span className="cmd-card__sub">Plan a new attack or defense: map, site, five operators, then draw it.</span>
+              <span className="cmd-card__title">{t('commandView.createStrategy')}</span>
+              <span className="cmd-card__sub">{t('commandView.planANewAttackOr')}</span>
             </span>
             <Icon name="arrow" size={22} className="cmd-card__go" />
           </button>
           {wip && (
             <button type="button" className="cmd-resume" onClick={() => navigate('build')}>
-              <Icon name="edit" size={16} /> Continue building{wip.draft?.title ? ` “${wip.draft.title}”` : MAPS_BY_ID[wip.mapId] ? ` on ${MAPS_BY_ID[wip.mapId].name}` : ''}
+              <Icon name="edit" size={16} />{' '}
+              {wip.draft?.title ? t('cmd.resume.title', { title: wip.draft.title }) : MAPS_BY_ID[wip.mapId] ? t('cmd.resume.map', { map: MAPS_BY_ID[wip.mapId].name }) : t('cmd.resume')}
             </button>
           )}
           <div className="command__sides">
             <button type="button" className="cmd-card cmd-card--attack" onClick={() => navigate('strategies/attack')}>
               <Icon name="swords" size={26} />
-              <span className="cmd-card__title">Attack strategies</span>
+              <span className="cmd-card__title">{t('commandView.attackStrategies')}</span>
               <span className="cmd-card__stat">
-                <strong>{atk.team}</strong> team · {atk.all} total{atk.anyMap > 0 && ` (${atk.anyMap} not tied to a map)`}
+                <T id={atk.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: atk.team, total: atk.all, any: atk.anyMap }} />
               </span>
             </button>
             <button type="button" className="cmd-card cmd-card--defend" onClick={() => navigate('strategies/defense')}>
               <Icon name="shield" size={26} />
-              <span className="cmd-card__title">Defense strategies</span>
+              <span className="cmd-card__title">{t('commandView.defenseStrategies')}</span>
               <span className="cmd-card__stat">
-                <strong>{def.team}</strong> team · {def.all} total{def.anyMap > 0 && ` (${def.anyMap} not tied to a map)`}
+                <T id={def.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: def.team, total: def.all, any: def.anyMap }} />
               </span>
             </button>
           </div>
           <section className="panel" aria-labelledby="mine-title">
             <div className="panel__head">
               <h2 id="mine-title" className="panel__title card__title">
-                <Icon name="book" size={18} /> My strategies
+                <Icon name="book" size={18} /> {t('commandView.myStrategies')}
               </h2>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('strategies')}>
-                Team library <Icon name="chevron" size={14} />
+                {t('commandView.teamLibrary')} <Icon name="chevron" size={14} />
               </button>
             </div>
             {recent.length ? (
@@ -131,13 +136,13 @@ export default function CommandView({ profile, strategyData, navigate }) {
               </ul>
             ) : (
               <p className="muted">
-                No saved team tactics yet.{' '}
+                {t('cmd.empty.lead')}{' '}
                 <button type="button" className="link-btn" onClick={() => navigate('build')}>
-                  Build your first strategy
+                  {t('commandView.buildYourFirstStrategy')}
                 </button>{' '}
-                or{' '}
+                {t('cmd.empty.or')}{' '}
                 <button type="button" className="link-btn" onClick={() => navigate('strategies/find')}>
-                  find one that fits your operators
+                  {t('commandView.findOneThatFitsYour')}
                 </button>
                 .
               </p>
@@ -150,39 +155,39 @@ export default function CommandView({ profile, strategyData, navigate }) {
             <>
               <div className="panel__head">
                 <div>
-                  <p className="page__kicker">{featured.origin === 'team' ? (featured.favorite ? 'Favourite plan' : 'Latest team plan') : 'Starting point'}</p>
+                  <p className="page__kicker">{featured.origin === 'team' ? (featured.favorite ? t('commandView.favouritePlan') : t('commandView.latestTeamPlan')) : t('commandView.startingPoint')}</p>
                   <h2 id="feat-title" className="panel__title">
                     {featured.title}
                   </h2>
                   <p className="muted small">
-                    {MAPS_BY_ID[featured.mapId]?.name ?? 'Any map'}
-                    {featured.site ? ` · ${featured.site}` : ''} · {featured.side === 'attack' ? 'Attack' : 'Defense'}
+                    {MAPS_BY_ID[featured.mapId]?.name ?? t('commandView.anyMap')}
+                    {featured.site ? ` · ${featured.site}` : ''} · {featured.side === 'attack' ? t('commandView.attack') : t('commandView.defense')}
                   </p>
                 </div>
               </div>
               {showBoard ? (
-                <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={`Open ${featured.title}`}>
+                <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={t('cmd.open', { title: featured.title })}>
                   <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
                 </button>
               ) : (
                 <div className="featured-neutral">
                   {featured.summary && <p>{featured.summary}</p>}
                   <p className="muted small">
-                    {featured.steps.length} steps · {featured.slots.length} operators. No floor plan in the library has been verified against the game yet, so the board isn't previewed here. Open the plan to see it on the real map, marked unverified.
+                    {t('cmd.neutral', { steps: featured.steps.length, operators: featured.slots.length })}
                   </p>
                 </div>
               )}
               <div className="toolbar">
                 <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}/coach`)} disabled={!featured.steps.length}>
-                  <Icon name="play" size={16} /> Coach mode
+                  <Icon name="play" size={16} /> {t('commandView.coachMode')}
                 </button>
                 <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}`)}>
-                  Open plan
+                  {t('commandView.openPlan')}
                 </button>
               </div>
             </>
           ) : (
-            <p className="muted">Your plans show here once you build one.</p>
+            <p className="muted">{t('commandView.yourPlansShowHereOnce')}</p>
           )}
         </section>
       </div>
@@ -191,11 +196,11 @@ export default function CommandView({ profile, strategyData, navigate }) {
         <button type="button" className="cmd-card cmd-card--wide" onClick={() => navigate('maps')}>
           <Icon name="map" size={26} />
           <span>
-            <span className="cmd-card__title">Maps</span>
-            <span className="cmd-card__sub">Browse maps, sites and tactical plans</span>
+            <span className="cmd-card__title">{t('commandView.maps')}</span>
+            <span className="cmd-card__sub">{t('commandView.browseMapsSitesAndTactical')}</span>
           </span>
           <span className="cmd-card__stat">
-            <strong>{MAPS.filter((m) => mapsWithPlans.has(m.id)).length}</strong>/{MAPS.length} with plans
+            <T id="cmd.mapsStat" values={{ withPlans: MAPS.filter((m) => mapsWithPlans.has(m.id)).length, total: MAPS.length }} />
           </span>
         </button>
         <button type="button" className="cmd-card cmd-card--wide" onClick={() => navigate('operators')}>
@@ -205,8 +210,8 @@ export default function CommandView({ profile, strategyData, navigate }) {
             ))}
           </span>
           <span>
-            <span className="cmd-card__title">Operator library</span>
-            <span className="cmd-card__sub">Operators, roles, utility and synergy</span>
+            <span className="cmd-card__title">{t('commandView.operatorLibrary')}</span>
+            <span className="cmd-card__sub">{t('commandView.operatorsRolesUtilityAndSynergy')}</span>
           </span>
         </button>
       </div>

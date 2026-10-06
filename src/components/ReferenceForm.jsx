@@ -3,6 +3,9 @@ import { Sheet } from './ui.jsx';
 import { MAPS, sitesFor } from '../lib/maps.js';
 import { operatorsForSide } from '../lib/operators.js';
 import { STRATEGY_TYPES, createStrategy, newId } from '../lib/strategies.js';
+import { useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
+import { CodedError } from '../lib/errors.js';
 
 /**
  * Add (or edit) a link to a strategy found online. Only metadata is stored:
@@ -10,6 +13,7 @@ import { STRATEGY_TYPES, createStrategy, newId } from '../lib/strategies.js';
  * positions stay on the original page.
  */
 export default function ReferenceForm({ initial, defaults = {}, profile, onSave, onClose }) {
+  const { t } = useI18n();
   const [form, setForm] = useState(() => ({
     sourceName: initial?.sourceName ?? '',
     sourceUrl: initial?.sourceUrl ?? '',
@@ -32,8 +36,8 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
     e.preventDefault();
     setError('');
     try {
-      if (!/^https:\/\/\S+$/i.test(form.sourceUrl.trim())) throw new Error('Paste the https:// link to the original strategy.');
-      if (!form.sourceName.trim()) throw new Error('Name the source (website, creator or channel).');
+      if (!/^https:\/\/\S+$/i.test(form.sourceUrl.trim())) throw new CodedError('ref.badLink');
+      if (!form.sourceName.trim()) throw new CodedError('ref.noSource');
       const operators = form.operators.filter(Boolean);
       const strategy = createStrategy({
         ...(initial ?? {}),
@@ -60,23 +64,23 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
       setSaving(true);
       await onSave(strategy);
     } catch (err) {
-      setError(err.message || 'Could not save the reference.');
+      setError(err.message || t('ref.saveFailed'));
       setSaving(false);
     }
   }
 
   return (
     <Sheet
-      title={initial ? 'Edit reference' : 'Add online reference'}
+      title={initial ? t('ref.titleEdit') : t('ref.titleAdd')}
       onClose={onClose}
       labelId="ref-title"
       footer={
         <>
           <button type="button" className="btn btn--ghost" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('referenceForm.cancel')}
           </button>
           <button type="submit" form="ref-form" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save reference'}
+            {saving ? t('referenceForm.saving') : t('referenceForm.saveReference')}
           </button>
         </>
       }
@@ -84,8 +88,7 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
       <form id="ref-form" className="form" onSubmit={submit} noValidate>
         <p className="notice notice--info" role="note">
           <span>
-            Save a link with a short summary <strong>in your own words</strong>. Don't paste the source's text or images: the link takes
-            everyone to the original. Use <em>Duplicate &amp; customize</em> afterwards to build your team's version.
+            <T id="ref.intro" />
           </span>
         </p>
         {error && (
@@ -94,28 +97,28 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
           </p>
         )}
         <label className="field">
-          <span className="field__label">Link to the original</span>
-          <input className="input" type="url" inputMode="url" value={form.sourceUrl} placeholder="https://…" onChange={(e) => set({ sourceUrl: e.target.value })} />
+          <span className="field__label">{t('referenceForm.linkToTheOriginal')}</span>
+          <input className="input" type="url" inputMode="url" value={form.sourceUrl} placeholder={t('referenceForm.https')} onChange={(e) => set({ sourceUrl: e.target.value })} />
         </label>
         <div className="field-row">
           <label className="field">
-            <span className="field__label">Source</span>
-            <input className="input" value={form.sourceName} maxLength={80} placeholder="Website, creator or channel" onChange={(e) => set({ sourceName: e.target.value })} />
+            <span className="field__label">{t('referenceForm.source')}</span>
+            <input className="input" value={form.sourceName} maxLength={80} placeholder={t('referenceForm.websiteCreatorOrChannel')} onChange={(e) => set({ sourceName: e.target.value })} />
           </label>
           <label className="field">
-            <span className="field__label">Original title</span>
+            <span className="field__label">{t('referenceForm.originalTitle')}</span>
             <input className="input" value={form.sourceTitle} maxLength={160} onChange={(e) => set({ sourceTitle: e.target.value })} />
           </label>
         </div>
         <label className="field">
-          <span className="field__label">Name in our library</span>
-          <input className="input" value={form.title} maxLength={120} placeholder="Defaults to the original title" onChange={(e) => set({ title: e.target.value })} />
+          <span className="field__label">{t('referenceForm.nameInOurLibrary')}</span>
+          <input className="input" value={form.title} maxLength={120} placeholder={t('referenceForm.defaultsToTheOriginalTitle')} onChange={(e) => set({ title: e.target.value })} />
         </label>
         <div className="field-row">
           <label className="field">
-            <span className="field__label">Map</span>
+            <span className="field__label">{t('referenceForm.map')}</span>
             <select className="select" value={form.mapId} onChange={(e) => set({ mapId: e.target.value, site: '' })}>
-              <option value="any">Any map</option>
+              <option value="any">{t('referenceForm.anyMap')}</option>
               {MAPS.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
@@ -124,9 +127,9 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
             </select>
           </label>
           <label className="field">
-            <span className="field__label">Site</span>
+            <span className="field__label">{t('referenceForm.site')}</span>
             <select className="select" value={form.site} onChange={(e) => set({ site: e.target.value })} disabled={!sites.length}>
-              <option value="">Any site</option>
+              <option value="">{t('referenceForm.anySite')}</option>
               {sites.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -137,14 +140,14 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
         </div>
         <div className="field-row">
           <label className="field">
-            <span className="field__label">Side</span>
+            <span className="field__label">{t('referenceForm.side')}</span>
             <select className="select" value={form.side} onChange={(e) => set({ side: e.target.value, site: '', operators: [] })}>
-              <option value="attack">Attack</option>
-              <option value="defend">Defense</option>
+              <option value="attack">{t('referenceForm.attack')}</option>
+              <option value="defend">{t('referenceForm.defense')}</option>
             </select>
           </label>
           <label className="field">
-            <span className="field__label">Type</span>
+            <span className="field__label">{t('referenceForm.type')}</span>
             <select className="select" value={form.type} onChange={(e) => set({ type: e.target.value })}>
               {Object.entries(STRATEGY_TYPES).map(([id, l]) => (
                 <option key={id} value={id}>
@@ -155,13 +158,13 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
           </label>
         </div>
         <fieldset className="field">
-          <legend className="field__label">Operators it uses (optional, up to 5)</legend>
+          <legend className="field__label">{t('referenceForm.operatorsItUsesOptionalUp')}</legend>
           <div className="ref-ops">
             {[0, 1, 2, 3, 4].map((i) => (
               <select
                 key={i}
                 className="select input--sm"
-                aria-label={`Operator ${i + 1}`}
+                aria-label={t('ref.operatorN', { n: i + 1 })}
                 value={form.operators[i] ?? ''}
                 onChange={(e) => {
                   const next = [...form.operators];
@@ -178,10 +181,10 @@ export default function ReferenceForm({ initial, defaults = {}, profile, onSave,
               </select>
             ))}
           </div>
-          <span className="field__hint">Listing the operators lets the library match this reference to your composition.</span>
+          <span className="field__hint">{t('referenceForm.listingTheOperatorsLetsThe')}</span>
         </fieldset>
         <label className="field">
-          <span className="field__label">Short summary (your own words)</span>
+          <span className="field__label">{t('referenceForm.shortSummaryYourOwnWords')}</span>
           <textarea className="textarea" value={form.summary} maxLength={1000} onChange={(e) => set({ summary: e.target.value })} />
         </label>
       </form>

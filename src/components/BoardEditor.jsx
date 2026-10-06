@@ -10,6 +10,7 @@ import { boardSpace, primaryFloor, projectItem, projectStrategy, unprojectPatch 
 import { LIMITS, newId, slotColor, toFloorLayout } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, TOOL_GROUPS, ZONES, gadgetsForSide, toolLabel, utilityName } from '../lib/tactical.js';
 import { usePlans } from '../state/usePlans.js';
+import { useI18n } from '../i18n/index.js';
 
 const GROUP_ICON = {
   units: 'user',
@@ -23,13 +24,8 @@ const GROUP_ICON = {
   note: 'note',
 };
 
-const TOOL_HINT = {
-  select: 'Click an object to edit it. Drag to move; drag corner handles to resize areas.',
-  path: 'Click points along the route. Click the last point again (or press Enter) to finish.',
-  zone: 'Drag on the map to draw the area. A single click places a default-sized one.',
-  crossfire: 'Click player A, then player B, then the area they cover. Clicking a player snaps to them.',
-  note: 'Click the map to add a note, or click an object to attach a note to it.',
-};
+// Tools that have their own hint (board.hint.<tool>); others use the generic placing hint.
+const TOOL_HINT = ['select', 'path', 'zone', 'crossfire', 'note'];
 
 const inField = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable);
 
@@ -39,6 +35,7 @@ const inField = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTARE
  * history (`set`, `checkpoint`, `undo`, `redo`) owned by the parent.
  */
 export default function BoardEditor({ draft, history, mapName }) {
+  const { t } = useI18n();
   const { set, checkpoint, undo, redo, canUndo, canRedo } = history;
   const svgRef = useRef(null);
   const [tool, setTool] = useState('position');
@@ -94,11 +91,11 @@ export default function BoardEditor({ draft, history, mapName }) {
   };
 
   const defaultLabel = (kind) => {
-    if (kind === 'position') return op?.name ?? 'Player';
+    if (kind === 'position') return op?.name ?? t('object.position');
     if (kind === 'utility') return utilityName(gadget, op?.id);
-    if (kind === 'breach') return `${op ? `${op.name}: ` : ''}${BREACH_TYPES[breachType]}`;
-    if (kind === 'note') return 'Note';
-    if (kind === 'enemy') return 'Enemy';
+    if (kind === 'breach') return t(op ? 'board.breachLabelOp' : 'board.breachLabel', { operator: op?.name ?? '', type: BREACH_TYPES[breachType] });
+    if (kind === 'note') return t('object.note');
+    if (kind === 'enemy') return t('object.enemy');
     return OBJECTS[kind]?.label ?? '';
   };
 
@@ -286,17 +283,17 @@ export default function BoardEditor({ draft, history, mapName }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const hint = tool === 'select' ? TOOL_HINT.select : TOOL_HINT[toolKind] ?? `Click the map to place: ${toolLabel(tool)}. ${OBJECTS[tool]?.hint ?? ''}`;
+  const hint = tool === 'select' ? t('board.hint.select') : TOOL_HINT.includes(toolKind) ? t(`board.hint.${toolKind}`) : t('board.hint.place', { tool: toolLabel(tool), hint: OBJECTS[tool]?.hint ?? '' });
   const activeGroup = TOOL_GROUPS.find((g) => g.id === group);
   const sideOrder = (t) => (OBJECTS[t]?.side === draft.side || OBJECTS[t]?.side === 'both' || !OBJECTS[t] ? 0 : 1);
   const draftPreview = path.length ? { path, pathKind: toolArg, slotKey } : zoneDraft ? { zone: zoneDraft } : xf ? { crossfire: xf } : null;
 
   return (
     <div className="beditor">
-      <div className="beditor__rail" role="toolbar" aria-label="Board tools">
-        <button type="button" className="rail-btn" aria-pressed={tool === 'select'} onClick={() => pickTool('select')} title="Select / move (V)">
+      <div className="beditor__rail" role="toolbar" aria-label={t('boardEditor.boardTools')}>
+        <button type="button" className="rail-btn" aria-pressed={tool === 'select'} onClick={() => pickTool('select')} title={t('boardEditor.selectMoveV')}>
           <Icon name="cursor" size={20} />
-          <span>Select</span>
+          <span>{t('boardEditor.select')}</span>
         </button>
         <span className="rail-sep" aria-hidden="true" />
         {TOOL_GROUPS.map((g) => (
@@ -313,20 +310,20 @@ export default function BoardEditor({ draft, history, mapName }) {
           </button>
         ))}
         <span className="rail-sep" aria-hidden="true" />
-        <button type="button" className="rail-btn" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+        <button type="button" className="rail-btn" onClick={undo} disabled={!canUndo} title={t('boardEditor.undoCtrlZ')}>
           <Icon name="undo" size={20} />
-          <span>Undo</span>
+          <span>{t('boardEditor.undo')}</span>
         </button>
-        <button type="button" className="rail-btn" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+        <button type="button" className="rail-btn" onClick={redo} disabled={!canRedo} title={t('boardEditor.redoCtrlShiftZ')}>
           <Icon name="redo" size={20} />
-          <span>Redo</span>
+          <span>{t('boardEditor.redo')}</span>
         </button>
       </div>
 
       <div className="beditor__stage">
         <div className="beditor__context">
-          <div className="ctx-group" role="group" aria-label="Operator for new objects">
-            <span className="ctx-label">Who</span>
+          <div className="ctx-group" role="group" aria-label={t('boardEditor.operatorForNewObjects')}>
+            <span className="ctx-label">{t('boardEditor.who')}</span>
             {draft.slots.map((s) => {
               const o = OPERATORS_BY_ID[s.operatorId];
               return (
@@ -337,21 +334,21 @@ export default function BoardEditor({ draft, history, mapName }) {
                   style={{ '--slot': slotColor(draft, s.key) }}
                   aria-pressed={slotKey === s.key}
                   onClick={() => setSlotKey(s.key)}
-                  title={o?.name ?? 'Any operator'}
+                  title={o?.name ?? t('card.anyOperator')}
                 >
                   <OperatorIcon key={o?.id ?? 'none'} operator={o} size="xs" />
-                  <span className="ctx-chip__name">{o?.name ?? 'Any'}</span>
+                  <span className="ctx-chip__name">{o?.name ?? t('boardEditor.any')}</span>
                 </button>
               );
             })}
             <button type="button" className="ctx-chip" aria-pressed={slotKey === null} onClick={() => setSlotKey(null)}>
-              Team
+              {t('boardEditor.team')}
             </button>
           </div>
-          <div className="ctx-group" role="group" aria-label="Step for new objects">
-            <span className="ctx-label">When</span>
+          <div className="ctx-group" role="group" aria-label={t('boardEditor.stepForNewObjects')}>
+            <span className="ctx-label">{t('boardEditor.when')}</span>
             <button type="button" className="ctx-chip" aria-pressed={stepId === null} onClick={() => setStepId(null)}>
-              Setup
+              {t('boardEditor.setup')}
             </button>
             {draft.steps.map((s, i) => (
               <button key={s.id} type="button" className="ctx-chip" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)} title={s.title}>
@@ -364,7 +361,7 @@ export default function BoardEditor({ draft, history, mapName }) {
         </div>
 
         {tool !== 'select' && activeGroup && (
-          <div className="beditor__subtools" role="group" aria-label={`${activeGroup.label} tools`}>
+          <div className="beditor__subtools" role="group" aria-label={t('board.toolsAria', { group: activeGroup.label })}>
             {activeGroup.tools.map((t) => (
               <button key={t} type="button" className="subtool" aria-pressed={tool === t} onClick={() => pickTool(t, activeGroup.id)}>
                 <ToolSwatch tool={t} />
@@ -373,11 +370,11 @@ export default function BoardEditor({ draft, history, mapName }) {
             ))}
             {tool === 'utility' && (
               <label className="subtool-opt">
-                <span>Gadget</span>
+                <span>{t('boardEditor.gadget')}</span>
                 <select className="select input--sm" value={gadget} onChange={(e) => setGadget(e.target.value)}>
                   {gadgetsForSide(draft.side).map(([id, g]) => (
                     <option key={id} value={id}>
-                      {id === 'ability' ? `${utilityName('ability', op?.id)} (operator)` : g.label}
+                      {id === 'ability' ? t('gadget.operatorSuffix', { name: utilityName('ability', op?.id) }) : g.label}
                     </option>
                   ))}
                 </select>
@@ -385,7 +382,7 @@ export default function BoardEditor({ draft, history, mapName }) {
             )}
             {tool === 'breach' && (
               <label className="subtool-opt">
-                <span>Type</span>
+                <span>{t('boardEditor.type')}</span>
                 <select className="select input--sm" value={breachType} onChange={(e) => setBreachType(e.target.value)}>
                   {Object.entries(BREACH_TYPES).map(([id, l]) => (
                     <option key={id} value={id}>
@@ -398,10 +395,10 @@ export default function BoardEditor({ draft, history, mapName }) {
             {toolKind === 'path' && path.length > 0 && (
               <span className="subtool-opt">
                 <button type="button" className="btn btn--primary btn--sm" onClick={() => finishPath()} disabled={path.length < 2}>
-                  Finish route
+                  {t('boardEditor.finishRoute')}
                 </button>
                 <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPath((p) => p.slice(0, -1))}>
-                  Undo point
+                  {t('boardEditor.undoPoint')}
                 </button>
               </span>
             )}
@@ -409,25 +406,24 @@ export default function BoardEditor({ draft, history, mapName }) {
         )}
 
         <p className="beditor__hint" aria-live="polite">
-          {tool === 'crossfire' && xf ? (xf.b ? 'Now click the engagement area.' : 'Now click player B.') : hint}
+          {tool === 'crossfire' && xf ? (xf.b ? t('boardEditor.nowClickTheEngagementArea') : t('boardEditor.nowClickPlayerB')) : hint}
         </p>
 
         {space.approximate && (
           <p className="notice notice--warn beditor__layout">
-            This plan's positions come from the old abstract layout, so they don't match this map yet. Drag each object to its real spot on the{' '}
-            {floorLabel(space.floorId)} floor plan, then{' '}
+            {t('board.approx', { floor: floorLabel(space.floorId) })}{' '}
             <button type="button" className="link-btn" onClick={() => set((d) => toFloorLayout(d))}>
-              mark the positions as placed on the real map
+              {t('boardEditor.markThePositionsAsPlaced')}
             </button>
             .
           </p>
         )}
         {space.kind === 'none' && (
-          <p className="notice notice--warn beditor__layout">This plan isn't tied to a map. Choose a map and site in the details to plan it on the real floor plan.</p>
+          <p className="notice notice--warn beditor__layout">{t('boardEditor.thisPlanIsnTTied')}</p>
         )}
         {space.kind === 'missing' && (
           <p className="notice notice--warn beditor__layout">
-            No floor plan for {floorLabel(space.floorId)} yet. Objects you place here can't be checked against the real map. Add the plan in Maps → Floor plans.
+            {t('board.missingPlan', { floor: floorLabel(space.floorId) })}
           </p>
         )}
         <TacticalBoard
@@ -451,11 +447,11 @@ export default function BoardEditor({ draft, history, mapName }) {
           className={`tboard--tool-${toolKind}`}
         />
         <p className="muted small beditor__counts">
-          {counts.markers}/{LIMITS.markers} objects · {counts.paths}/{LIMITS.paths} routes · {counts.zones}/{LIMITS.zones} areas · {counts.crossfires}/{LIMITS.crossfires} crossfires
+          {t('board.counts', { markers: counts.markers, maxMarkers: LIMITS.markers, paths: counts.paths, maxPaths: LIMITS.paths, zones: counts.zones, maxZones: LIMITS.zones, crossfires: counts.crossfires, maxCrossfires: LIMITS.crossfires })}
         </p>
       </div>
 
-      <aside className="beditor__inspector" aria-label="Inspector">
+      <aside className="beditor__inspector" aria-label={t('boardEditor.inspector')}>
         <ObjectInspector draft={draft} selected={selected} update={update} remove={remove} onSelect={setSelected} stepFilter={stepId} />
       </aside>
     </div>

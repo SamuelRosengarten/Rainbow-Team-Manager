@@ -8,6 +8,7 @@ import { boardSpace, floorsInUse, projectStrategy } from '../lib/space.js';
 import { SLOT_COLORS } from '../lib/strategies.js';
 import { GADGETS, PATHS, ZONES } from '../lib/tactical.js';
 import { usePlans } from '../state/usePlans.js';
+import { useI18n } from '../i18n/index.js';
 
 const NEUTRAL = '#9aa7bb';
 const ENEMY = '#ff4757';
@@ -143,17 +144,18 @@ const textW = (t, size = 1.75) => Math.max(4, t.length * size * 0.52 + 2);
 
 /** Floor tabs for multi-floor maps: which floor the board shows. */
 export function FloorTabs({ strategy, floorId, onChange }) {
+  const { t } = useI18n();
   const floors = floorsFor(strategy.mapId);
   if (floors.length < 2) return null;
   const used = floorsInUse(strategy);
   return (
-    <div className="floor-tabs" role="group" aria-label="Floor">
+    <div className="floor-tabs" role="group" aria-label={t('tacticalBoard.floor')}>
       {floors.map((f) => (
         <button key={f} type="button" className="floor-tab" aria-pressed={f === floorId} onClick={() => onChange(f)}>
           {floorLabel(f)}
-          {f === strategy.floorId && <span className="floor-tab__site" title="Site floor">●</span>}
-          {used.has(f) && f !== strategy.floorId && <span className="floor-tab__dot" title="Has objects" />}
-          {!floorPlan(strategy.mapId, f) && <span className="floor-tab__missing">no plan</span>}
+          {f === strategy.floorId && <span className="floor-tab__site" title={t('tacticalBoard.siteFloor')}>●</span>}
+          {used.has(f) && f !== strategy.floorId && <span className="floor-tab__dot" title={t('tacticalBoard.hasObjects')} />}
+          {!floorPlan(strategy.mapId, f) && <span className="floor-tab__missing">{t('tacticalBoard.noPlan')}</span>}
         </button>
       ))}
     </div>
@@ -194,6 +196,7 @@ export default function TacticalBoard({
 }) {
   usePlans();
   const [ownFloor, setOwnFloor] = useState(null);
+  const { t } = useI18n();
   const floorId = floorProp ?? ownFloor ?? source.floorId;
   const space = boardSpace(source, floorId);
   const strategy = projectStrategy(source, space);
@@ -247,7 +250,7 @@ export default function TacticalBoard({
     ...strategy.markers
       .filter((m) => m.kind === 'note')
       .map((m) => {
-        const w = textW(m.label || 'Note');
+        const w = textW(m.label || t('object.note'));
         return { x: m.x - w / 2, y: m.y - 1.7, w, h: 3.4 };
       }),
     ...strategy.crossfires.flatMap((c) => [circleRect(c.a[0], c.a[1], 1.6), circleRect(c.b[0], c.b[1], 1.6)]),
@@ -258,7 +261,7 @@ export default function TacticalBoard({
     .map(({ c, v }) => {
       const [x, y] = c.target;
       const r = c.radius;
-      const text = `CROSSFIRE${c.label ? ` · ${c.label}` : ''}${c.timing ? ` · ${c.timing}` : ''}`;
+      const text = [t('board.crossfire'), c.label, c.timing].filter(Boolean).join(' · ');
       return {
         id: `x:${c.id}`,
         v,
@@ -321,7 +324,7 @@ export default function TacticalBoard({
         data-board-w={space.w}
         data-board-h={space.h}
         role="img"
-        aria-label={title ?? `Tactical board for ${strategy.title}`}
+        aria-label={title ?? t('board.ariaTitle', { title: strategy.title })}
         onPointerDown={onPointerDownBoard}
       >
         <defs>
@@ -460,7 +463,7 @@ export default function TacticalBoard({
           .map((m) => {
             const v = vis(m);
             if (!v) return null;
-            const text = m.label || 'Note';
+            const text = m.label || t('object.note');
             const w = textW(text);
             const anchor = m.anchorId && markersById[m.anchorId];
             const color = colorOf(m.slotKey);

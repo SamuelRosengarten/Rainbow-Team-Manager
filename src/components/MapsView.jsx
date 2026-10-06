@@ -9,23 +9,26 @@ import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { missingFloorPlans, planCoverage } from '../lib/floorPlans.js';
 import { createStrategy, latestVersions } from '../lib/strategies.js';
 import { usePlans } from '../state/usePlans.js';
+import { T } from '../i18n/Rich.jsx';
+import { useI18n } from '../i18n/index.js';
 
 function MapIndex({ strategies, navigate }) {
+  const { t } = useI18n();
   usePlans();
   const missing = missingFloorPlans();
   return (
     <>
       <header className="page__head">
         <div>
-          <p className="page__kicker">Maps</p>
-          <h1 className="page__title">Maps and sites</h1>
-          <p className="page__sub">Pick a map to see its sites, your plans for each, and the team's map notes.</p>
+          <p className="page__kicker">{t('mapsView.maps')}</p>
+          <h1 className="page__title">{t('mapsView.mapsAndSites')}</h1>
+          <p className="page__sub">{t('mapsView.pickAMapToSee')}</p>
         </div>
       </header>
       {missing.length > 0 && (
         <details className="notice notice--warn missing-plans">
           <summary>
-            {missing.length} map floor{missing.length === 1 ? ' has' : 's have'} no floor plan yet. Boards on those floors can't show the real map.
+            {t('maps.missingFloors', { count: missing.length })}
           </summary>
           <ul>
             {missing.map((m) => (
@@ -34,7 +37,7 @@ function MapIndex({ strategies, navigate }) {
               </li>
             ))}
           </ul>
-          <p className="small">See docs/MAP_ASSETS.md for how to add one.</p>
+          <p className="small">{t('mapsView.seeDocsMapAssetsMd')}</p>
         </details>
       )}
       <ul className="map-grid">
@@ -47,13 +50,13 @@ function MapIndex({ strategies, navigate }) {
             <li key={m.id}>
               <button type="button" className="map-card" onClick={() => navigate(`maps/${m.id}`)}>
                 <span className="map-card__name">{m.name}</span>
-                <span className="map-card__meta">{allSites(m.id).length ? `${allSites(m.id).length} sites` : 'Sites not listed yet'}</span>
+                <span className="map-card__meta">{allSites(m.id).length ? t('mapPicker.sites', { count: allSites(m.id).length }) : t('mapsView.sitesNotListedYet')}</span>
                 <span className={`map-card__plans${cov.floors && cov.withPlan === cov.floors ? ' map-card__plans--ok' : ''}`}>
-                  {cov.floors ? `Floor plans ${cov.withPlan}/${cov.floors}${cov.withPlan ? ` · ${cov.verified} verified` : ''}` : 'Floors not listed'}
+                  {cov.floors ? t(cov.withPlan ? 'maps.floorPlansVerified' : 'maps.floorPlans', { with: cov.withPlan, floors: cov.floors, verified: cov.verified }) : t('mapsView.floorsNotListed')}
                 </span>
                 <span className="map-card__counts">
-                  <span className="side-count side-count--attack">{atk} attack</span>
-                  <span className="side-count side-count--defend">{def} defense</span>
+                  <span className="side-count side-count--attack">{t('maps.attackCount', { count: atk })}</span>
+                  <span className="side-count side-count--defend">{t('maps.defenseCount', { count: def })}</span>
                 </span>
               </button>
             </li>
@@ -70,6 +73,7 @@ function MapIndex({ strategies, navigate }) {
  * the team's map notes.
  */
 export default function MapsView({ sub, strategyData, navigate, profile, notes }) {
+  const { t } = useI18n();
   usePlans();
   const map = MAPS_BY_ID[sub];
   if (!sub || !map) return <section className="page">{<MapIndex strategies={strategyData.strategies} navigate={navigate} />}</section>;
@@ -81,28 +85,28 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
   return (
     <section className="page" aria-labelledby="map-title">
       <button type="button" className="btn btn--ghost btn--sm back-btn" onClick={() => navigate('maps')}>
-        <Icon name="chevron" size={16} className="icon--flip" /> Maps
+        <Icon name="chevron" size={16} className="icon--flip" /> {t('mapsView.maps')}
       </button>
       <header className="page__head">
         <div>
-          <p className="page__kicker">Map</p>
+          <p className="page__kicker">{t('mapsView.map')}</p>
           <h1 id="map-title" className="page__title">
             {map.name}
           </h1>
           <p className="page__sub">
-            {sites.length} sites · {list.length} {list.length === 1 ? 'plan' : 'plans'}
+            {t('maps.summary', { sites: sites.length, plans: list.length })}
           </p>
         </div>
         <button type="button" className="btn btn--primary" onClick={() => navigate(`build/${map.id}`)}>
-          <Icon name="plus" size={18} /> Plan on {map.name}
+          <Icon name="plus" size={18} /> {t('maps.planOn', { map: map.name })}
         </button>
       </header>
 
       <FloorPlanPanel key={map.id} map={map} />
 
       {!sites.length && (
-        <EmptyState icon="map" title="Bomb sites aren't listed for this map yet">
-          Add them to <code>src/data/maps.json</code>. Plans for the whole map still work.
+        <EmptyState icon="map" title={t('mapsView.bombSitesArenTListed')}>
+          <T id="maps.addSites" />
         </EmptyState>
       )}
 
@@ -121,10 +125,10 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
                 <h2 className="site-card__title">{rooms.join(' / ')}</h2>
                 <div className="toolbar">
                   <button type="button" className="btn btn--secondary btn--sm side-btn--attack" onClick={() => navigate(`build/${map.id}/${siteIndex}/attack`)}>
-                    <Icon name="swords" size={16} /> Plan attack
+                    <Icon name="swords" size={16} /> {t('mapsView.planAttack')}
                   </button>
                   <button type="button" className="btn btn--secondary btn--sm side-btn--defend" onClick={() => navigate(`build/${map.id}/${siteIndex}/defend`)}>
-                    <Icon name="shield" size={16} /> Plan defense
+                    <Icon name="shield" size={16} /> {t('mapsView.planDefense')}
                   </button>
                 </div>
                 {forSite.length ? (
@@ -134,7 +138,7 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
                     ))}
                   </ul>
                 ) : (
-                  <p className="muted small">No plans for this site yet.</p>
+                  <p className="muted small">{t('mapsView.noPlansForThisSite')}</p>
                 )}
               </div>
             </section>
@@ -144,7 +148,7 @@ export default function MapsView({ sub, strategyData, navigate, profile, notes }
 
       {list.some((s) => !s.site) && (
         <section className="panel">
-          <h2 className="panel__title">Whole-map plans</h2>
+          <h2 className="panel__title">{t('mapsView.wholeMapPlans')}</h2>
           <ul className="tile-grid">
             {list
               .filter((s) => !s.site)

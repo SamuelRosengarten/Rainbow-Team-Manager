@@ -26,23 +26,28 @@ import { recommendStrategy } from '../lib/recommend.js';
 import { autoAssign, matchStrategy, substitutionsFor } from '../lib/strategyMatch.js';
 import { usePreferences } from '../state/usePreferences.js';
 import { TACTICAL_ROLES, slotAction } from '../lib/tactical.js';
+import { t as translate, tm, useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
-const opName = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any operator';
+const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
+// Blocked-by lists mix player names with the team ban.
+const byNames = (by) => by.map((x) => (x === 'team ban' ? translate('detail.teamBan') : x));
 
 /**
  * A strategy that needs a blocked operator: say so, and offer the engine's
  * replacement. Blocked operators are never used silently.
  */
 function BlockedPanel({ rec, subs, setSubs }) {
+  const { t } = useI18n();
   const open = rec.blockedReplaced.filter((b) => subs[b.slotKey] !== b.replacement);
   if (!open.length && !rec.blockedMissing.length) return null;
   return (
     <section className="adapt adapt--blocked" aria-labelledby="blocked-title">
       <div className="adapt__head">
-        <h3 id="blocked-title" className="section-title">🚫 Needs an operator nobody here can play</h3>
+        <h3 id="blocked-title" className="section-title">{t('strategyDetail.needsAnOperatorNobodyHere')}</h3>
         {open.length > 1 && (
           <button type="button" className="btn btn--secondary btn--sm" onClick={() => setSubs({ ...subs, ...Object.fromEntries(open.map((b) => [b.slotKey, b.replacement])) })}>
-            Use the adapted strategy
+            {t('strategyDetail.useTheAdaptedStrategy')}
           </button>
         )}
       </div>
@@ -50,17 +55,17 @@ function BlockedPanel({ rec, subs, setSubs }) {
         {open.map((b) => (
           <li key={b.slotKey} className="adapt__item adapt__item--missing">
             <span>
-              <strong>{opName(b.blocked)}</strong> is unavailable ({b.by.join(', ')}). Possible replacement: <strong>{opName(b.replacement)}</strong>.
+              <T id="detail.blocked.replace" values={{ operator: opName(b.blocked), by: byNames(b.by), replacement: opName(b.replacement) }} />
             </span>
             <button type="button" className="btn btn--primary btn--sm" onClick={() => setSubs({ ...subs, [b.slotKey]: b.replacement })}>
-              Use {opName(b.replacement)}
+              {t('detail.blocked.use', { operator: opName(b.replacement) })}
             </button>
           </li>
         ))}
         {rec.blockedMissing.map((b) => (
           <li key={b.slotKey} className="adapt__item adapt__item--missing">
             <span>
-              <strong>{opName(b.blocked)}</strong> is unavailable ({b.by.join(', ')}) and no usable operator can do this job. This strategy isn't recommended for this lineup.
+              <T id="detail.blocked.none" values={{ operator: opName(b.blocked), by: byNames(b.by) }} />
             </span>
           </li>
         ))}
@@ -70,6 +75,7 @@ function BlockedPanel({ rec, subs, setSubs }) {
 }
 
 function AdaptPanel({ match, subs, setSubs, strategy }) {
+  const { t } = useI18n();
   const pending = [...match.substitutes, ...match.missing].filter((x) => !subs[x.slotKey]);
   const applied = Object.entries(subs);
   if (!pending.length && !applied.length) return null;
@@ -77,10 +83,10 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
   return (
     <section className="adapt" aria-labelledby="adapt-title">
       <div className="adapt__head">
-        <h3 id="adapt-title" className="section-title">Adapt to your operators</h3>
+        <h3 id="adapt-title" className="section-title">{t('strategyDetail.adaptToYourOperators')}</h3>
         {match.substitutes.some((x) => !subs[x.slotKey]) && (
           <button type="button" className="btn btn--secondary btn--sm" onClick={() => setSubs({ ...subs, ...all })}>
-            Use all suggestions
+            {t('strategyDetail.useAllSuggestions')}
           </button>
         )}
       </div>
@@ -90,11 +96,13 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
           .map((x) => (
             <li key={x.slotKey} className="adapt__item">
               <span>
-                <strong>{opName(x.required)}</strong> is in the original strategy. You picked <strong>{opName(x.replacement)}</strong>
-                {x.reason === 'listed' ? ', a listed alternative.' : `, same role (${ROLE_LABEL[OPERATORS_BY_ID[x.replacement]?.roles?.[0]] ?? 'similar'}).`}
+                <T
+                  id={x.reason === 'listed' ? 'detail.adapt.listed' : 'detail.adapt.sameRole'}
+                  values={{ required: opName(x.required), replacement: opName(x.replacement), role: ROLE_LABEL[OPERATORS_BY_ID[x.replacement]?.roles?.[0]] ?? t('strategyDetail.similar') }}
+                />
               </span>
               <button type="button" className="btn btn--primary btn--sm" onClick={() => setSubs({ ...subs, [x.slotKey]: x.replacement })}>
-                Use {opName(x.replacement)}
+                {t('detail.blocked.use', { operator: opName(x.replacement) })}
               </button>
             </li>
           ))}
@@ -103,8 +111,8 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
           .map((x) => (
             <li key={x.slotKey} className="adapt__item adapt__item--missing">
               <span>
-                <strong>{opName(x.required)}</strong> ({ROLE_LABEL[x.role]}) is needed and nobody in your composition fits.
-                {x.suggestions.length > 0 && ' Suggested alternatives:'}
+                <T id="detail.adapt.missing" values={{ required: opName(x.required), role: ROLE_LABEL[x.role] }} />{' '}
+                {x.suggestions.length > 0 && t('strategyDetail.suggestedAlternatives')}
               </span>
               <span className="adapt__choices">
                 {x.suggestions.map((id) => (
@@ -120,7 +128,7 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
           return (
             <li key={key} className="adapt__item adapt__item--done">
               <span>
-                <Icon name="check" size={16} /> {opName(id)} replaces {opName(slot?.operatorId)}.
+                <Icon name="check" size={16} /> {t('detail.adapt.done', { operator: opName(id), original: opName(slot?.operatorId) })}
               </span>
               <button
                 type="button"
@@ -131,7 +139,7 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
                   setSubs(next);
                 }}
               >
-                Undo
+                {t('strategyDetail.undo')}
               </button>
             </li>
           );
@@ -142,16 +150,17 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
 }
 
 /** Step chips plus previous / next. */
-export function StepScrubber({ steps, stepId, setStepId, allLabel = 'All' }) {
+export function StepScrubber({ steps, stepId, setStepId, allLabel }) {
+  const { t } = useI18n();
   const i = steps.findIndex((s) => s.id === stepId);
   return (
     <div className="scrubber">
-      <button type="button" className="btn btn--ghost btn--icon" aria-label="Previous step" disabled={i < 0} onClick={() => setStepId(i <= 0 ? null : steps[i - 1].id)}>
+      <button type="button" className="btn btn--ghost btn--icon" aria-label={t('strategyDetail.previousStep')} disabled={i < 0} onClick={() => setStepId(i <= 0 ? null : steps[i - 1].id)}>
         <Icon name="chevron" size={18} className="icon--flip" />
       </button>
-      <div className="step-chips" role="group" aria-label="Show step">
+      <div className="step-chips" role="group" aria-label={t('strategyDetail.showStep')}>
         <button type="button" className="step-chip" aria-pressed={!stepId} onClick={() => setStepId(null)}>
-          {allLabel}
+          {allLabel ?? t('ui.all')}
         </button>
         {steps.map((s, n) => (
           <button key={s.id} type="button" className="step-chip" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)}>
@@ -163,7 +172,7 @@ export function StepScrubber({ steps, stepId, setStepId, allLabel = 'All' }) {
       <button
         type="button"
         className="btn btn--ghost btn--icon"
-        aria-label="Next step"
+        aria-label={t('strategyDetail.nextStep')}
         disabled={i >= steps.length - 1}
         onClick={() => setStepId(steps[i + 1]?.id ?? null)}
       >
@@ -178,6 +187,7 @@ export function StepScrubber({ steps, stepId, setStepId, allLabel = 'All' }) {
  * timing; adapt, version, favourite, compare, and open coach/player mode.
  */
 export default function StrategyDetail({ strategy, picks, profile, strategyData, navigate }) {
+  const { t } = useI18n();
   const [subs, setSubs] = useState({});
   const [stepId, setStepId] = useState(null);
   const [slotKey, setSlotKey] = useState(null);
@@ -206,7 +216,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
     try {
       await fn();
     } catch (e) {
-      setError(e.message || 'Something went wrong.');
+      setError(e.message || t('common.wentWrong'));
     } finally {
       setBusy(false);
     }
@@ -240,14 +250,14 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
   return (
     <article className="sview" aria-labelledby="strat-title">
       <button type="button" className="btn btn--ghost btn--sm back-btn" onClick={() => navigate('strategies')}>
-        <Icon name="chevron" size={16} className="icon--flip" /> Strategy library
+        <Icon name="chevron" size={16} className="icon--flip" /> {t('strategyDetail.strategyLibrary')}
       </button>
 
       <header className="sview__head">
         <div className="sview__title-row">
           <div>
             <div className="strat-detail__badges">
-              <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? 'Attack' : 'Defense'}</span>
+              <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? t('strategyDetail.attack') : t('strategyDetail.defense')}</span>
               <span className="type-tag">{STRATEGY_TYPES[strategy.type]}</span>
               <OriginBadge strategy={strategy} />
               {isTeam && <span className="version-chip">v{strategy.version}</span>}
@@ -256,7 +266,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
               {view.title}
             </h1>
             <p className="sview__meta">
-              {mapName || 'Any map'}
+              {mapName || t('strategyDetail.anyMap')}
               {strategy.site ? ` · ${strategy.site}` : ''} · {DIFFICULTY[strategy.difficulty]}
               {view.timing ? ` · ${view.timing}` : ''}
             </p>
@@ -268,40 +278,40 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
               aria-pressed={strategy.favorite}
               onClick={toggleFavorite}
               disabled={busy || !strategyData.canSave}
-              title={strategy.favorite ? 'Remove from favourites' : 'Add to favourites'}
+              title={t(strategy.favorite ? 'detail.favRemove' : 'detail.favAdd')}
             >
               <Icon name="star" size={22} />
-              <span className="visually-hidden">Favourite</span>
+              <span className="visually-hidden">{t('strategyDetail.favourite')}</span>
             </button>
           )}
         </div>
 
         <div className="sview__actions">
           <button type="button" className="btn btn--primary" onClick={() => navigate(`${base}/coach`)} disabled={!view.steps.length}>
-            <Icon name="play" size={18} /> Coach mode
+            <Icon name="play" size={18} /> {t('strategyDetail.coachMode')}
           </button>
           <button type="button" className="btn btn--secondary" onClick={() => navigate(`${base}/player`)} disabled={!view.slots.length}>
-            <Icon name="user" size={18} /> Player view
+            <Icon name="user" size={18} /> {t('strategyDetail.playerView')}
           </button>
           {editable && strategy.origin === 'team' && (
             <button type="button" className="btn btn--secondary" onClick={() => navigate(`${base}/edit`)} disabled={busy}>
-              <Icon name="edit" size={18} /> Edit
+              <Icon name="edit" size={18} /> {t('strategyDetail.edit')}
             </button>
           )}
           {isTeam && (
             <button type="button" className="btn btn--secondary" onClick={version} disabled={busy || !strategyData.canSave}>
-              <Icon name="layers" size={18} /> New version
+              <Icon name="layers" size={18} /> {t('strategyDetail.newVersion')}
             </button>
           )}
           <button type="button" className="btn btn--secondary" onClick={duplicate} disabled={busy || !strategyData.canSave}>
-            <Icon name="copy" size={18} /> {isTeam ? 'Duplicate' : adapted ? 'Save adapted copy' : 'Save to team library'}
+            <Icon name="copy" size={18} /> {isTeam ? t('strategyDetail.duplicate') : adapted ? t('strategyDetail.saveAdaptedCopy') : t('strategyDetail.saveToTeamLibrary')}
           </button>
           <button type="button" className="btn btn--ghost" onClick={() => navigate(`strategies/compare/${strategy.id}`)}>
-            <Icon name="compare" size={18} /> Compare
+            <Icon name="compare" size={18} /> {t('strategyDetail.compare')}
           </button>
           {editable && strategy.origin === 'reference' && (
             <button type="button" className="btn btn--ghost" onClick={() => navigate(`${base}/edit`)} disabled={busy}>
-              Edit link
+              {t('strategyDetail.editLink')}
             </button>
           )}
         </div>
@@ -310,25 +320,25 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
         {strategy.origin === 'reference' && strategy.sourceUrl && (
           <a className="source-box" href={strategy.sourceUrl} target="_blank" rel="noopener noreferrer">
             <span>
-              <span className="source-box__label">Source: {strategy.sourceName || 'Online'}</span>
-              <span className="source-box__title">Original strategy: {strategy.sourceTitle || strategy.sourceUrl}</span>
+              <span className="source-box__label">{t('detail.source', { name: strategy.sourceName || t('strategyDetail.online') })}</span>
+              <span className="source-box__title">{t('detail.original', { title: strategy.sourceTitle || strategy.sourceUrl })}</span>
             </span>
             <Icon name="external" />
-            <span className="visually-hidden"> (opens in a new tab)</span>
+            <span className="visually-hidden"> {t('strategyDetail.opensInANewTab')}</span>
           </a>
         )}
         {strategy.origin === 'suggested' && (
           <p className="notice notice--warn" role="note">
             <span>
-              <strong>Suggested starting point.</strong> {ORIGINS.suggested.note}
+              <strong>{t('strategyDetail.suggestedStartingPoint')}</strong> {ORIGINS.suggested.note}
             </span>
           </p>
         )}
         {versions.length > 1 && (
-          <nav className="versions" aria-label="Versions">
+          <nav className="versions" aria-label={t('strategyDetail.versions')}>
             {versions.map((v) => (
               <button key={v.id} type="button" className="version-pill" aria-current={v.id === strategy.id ? 'page' : undefined} onClick={() => navigate(`strategies/s/${v.id}`)}>
-                <strong>v{v.version}</strong> {v.versionNote || (v.version === 1 ? 'Original' : '')}
+                <strong>v{v.version}</strong> {v.versionNote || (v.version === 1 ? t('strategyDetail.original') : '')}
               </button>
             ))}
           </nav>
@@ -341,9 +351,9 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       {match.scored && !isTeam && picks.some((p) => p.operatorId) && <AdaptPanel match={match} subs={subs} setSubs={setSubs} strategy={strategy} />}
       {warnings.length > 0 && (
         <ul className="warn-list">
-          {warnings.map((w) => (
-            <li key={w}>
-              <Icon name="alert" size={15} /> {w}
+          {warnings.map((w, i) => (
+            <li key={i}>
+              <Icon name="alert" size={15} /> {tm(w)}
             </li>
           ))}
         </ul>
@@ -351,7 +361,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
       {view.summary && <p className="strat-detail__summary">{view.summary}</p>}
 
       <div className="sview__grid">
-        <section className="sview__board" aria-label="Tactical board">
+        <section className="sview__board" aria-label={t('strategyDetail.tacticalBoard')}>
           {view.steps.length > 0 && <StepScrubber steps={view.steps} stepId={stepId} setStepId={setStepId} />}
           <TacticalBoard
             strategy={view}
@@ -365,25 +375,25 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
           {view.boardImageUrl && (
             <p className="small">
               <a href={view.boardImageUrl} target="_blank" rel="noopener noreferrer">
-                <Icon name="external" size={13} /> Open the image attached to this plan
+                <Icon name="external" size={13} /> {t('strategyDetail.openTheImageAttachedTo')}
               </a>
             </p>
           )}
           <ExecuteTimeline strategy={view} stepId={stepId} onSelect={setStepId} />
           {!view.markers.length && !view.paths.length && !view.zones.length && (
             <p className="muted small">
-              Nothing on this board yet.{' '}
+              {t('detail.emptyBoard')}{' '}
               {strategy.origin === 'reference'
-                ? 'The source describes the strategy in text: save it to your team library and draw it yourself.'
+                ? t('strategyDetail.theSourceDescribesTheStrategy')
                 : editable
-                  ? 'Edit the strategy to plan it on the map.'
-                  : 'Save it to your team library to plan it on the map.'}
+                  ? t('strategyDetail.editTheStrategyToPlan')
+                  : t('strategyDetail.saveItToYourTeam')}
             </p>
           )}
           {step && (
             <div className="step-detail">
               <p className="step-detail__title">
-                Step {view.steps.indexOf(step) + 1}: {step.title}
+                {t('timeline.step', { n: view.steps.indexOf(step) + 1, title: step.title })}
                 {step.clock && <span className="clock-tag">{step.clock}</span>}
                 {step.timing && <span className="muted small"> · {step.timing}</span>}
               </p>
@@ -409,7 +419,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
               )}
               {step.utility && (
                 <p className="small">
-                  <strong>Utility:</strong> {step.utility}
+                  <strong>{t('strategyDetail.utility')}</strong> {step.utility}
                 </p>
               )}
               {step.notes && <p className="small step-detail__note">{step.notes}</p>}
@@ -421,8 +431,8 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
           {view.slots.length > 0 && (
             <section className="panel" aria-labelledby="squad-title">
               <div className="panel__head">
-                <h2 id="squad-title" className="panel__title">Squad</h2>
-                {!strategyData.canSave && <span className="muted small">Assignments aren't saved until the database is updated.</span>}
+                <h2 id="squad-title" className="panel__title">{t('strategyDetail.squad')}</h2>
+                {!strategyData.canSave && <span className="muted small">{t('strategyDetail.assignmentsArenTSavedUntil')}</span>}
               </div>
               <ul className="squad">
                 {view.slots.map((s) => {
@@ -435,21 +445,21 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                         <span className="squad__id">
                           <span className="squad__op">
                             {opName(s.operatorId)}
-                            {s.defuser && <span className="defuser-tag" title="Defuser carrier">Defuser</span>}
+                            {s.defuser && <span className="defuser-tag" title={t('strategyDetail.defuserCarrier')}>{t('strategyDetail.defuser')}</span>}
                           </span>
                           <span className="role-tag">{TACTICAL_ROLES[s.tacticalRole]}</span>
-                          {s.originalOperatorId && <span className="muted small">replaces {opName(s.originalOperatorId)}</span>}
+                          {s.originalOperatorId && <span className="muted small">{t('detail.replaces', { operator: opName(s.originalOperatorId) })}</span>}
                         </span>
                       </button>
                       <label className="squad__player">
-                        <span className="visually-hidden">Player for {opName(s.operatorId)}</span>
+                        <span className="visually-hidden">{t('detail.playerFor', { operator: opName(s.operatorId) })}</span>
                         <select
                           className="select input--sm"
                           value={assigned[s.key] ?? ''}
                           onChange={(e) => guard(() => (strategyData.canSave ? strategyData.setAssignment(strategy.id, s.key, e.target.value || null) : Promise.resolve()))}
                           disabled={!strategyData.canSave}
                         >
-                          <option value="">Unassigned</option>
+                          <option value="">{t('strategyDetail.unassigned')}</option>
                           {players.map((p) => (
                             <option key={p} value={p}>
                               {p}
@@ -461,7 +471,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                         <div className="squad__body">
                           {s.spawn && (
                             <p className="small">
-                              <strong>Spawn:</strong> {s.spawn}
+                              <strong>{t('strategyDetail.spawn')}</strong> {s.spawn}
                             </p>
                           )}
                           {s.instructions.length ? (
@@ -471,10 +481,10 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                               ))}
                             </ol>
                           ) : (
-                            <p className="muted small">No instructions for this operator yet.</p>
+                            <p className="muted small">{t('strategyDetail.noInstructionsForThisOperator')}</p>
                           )}
                           <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate(`${base}/player/${s.key}`)}>
-                            <Icon name="eye" size={16} /> Open {opName(s.operatorId)}'s player view
+                            <Icon name="eye" size={16} /> {t('detail.openPlayer', { operator: opName(s.operatorId) })}
                           </button>
                         </div>
                       )}
@@ -482,7 +492,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                   );
                 })}
               </ul>
-              <p className="muted small">Tap an operator to highlight their part on the board.</p>
+              <p className="muted small">{t('strategyDetail.tapAnOperatorToHighlight')}</p>
             </section>
           )}
           <SynergyList ops={view.slots.map((s) => s.operatorId)} compact />
@@ -491,7 +501,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
 
       {view.steps.length > 0 && (
         <section className="panel" aria-labelledby="steps-title">
-          <h2 id="steps-title" className="panel__title steps-title">Steps</h2>
+          <h2 id="steps-title" className="panel__title steps-title">{t('strategyDetail.steps')}</h2>
           <ol className="step-list">
             {view.steps.map((s, i) => (
               <li key={s.id}>
@@ -512,7 +522,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
 
       {view.notes && (
         <section className="panel" aria-labelledby="snotes-title">
-          <h2 id="snotes-title" className="panel__title steps-title">Coach notes</h2>
+          <h2 id="snotes-title" className="panel__title steps-title">{t('strategyDetail.coachNotes')}</h2>
           <p className="notes-text">{view.notes}</p>
         </section>
       )}
@@ -525,8 +535,8 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
             disabled={busy}
             onClick={() => {
               const q = strategy.builtin
-                ? `Hide "${strategy.title}" from the library for everyone? You can show it again later.`
-                : `Delete "${strategy.title}"${isTeam ? ` v${strategy.version}` : ''}? Everyone on the team loses it.`;
+                ? t('detail.hideConfirm', { title: strategy.title })
+                : t(isTeam ? 'detail.deleteConfirmVersion' : 'detail.deleteConfirm', { title: strategy.title, version: strategy.version });
               if (window.confirm(q))
                 guard(async () => {
                   await strategyData.removeStrategy(strategy);
@@ -534,7 +544,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
                 });
             }}
           >
-            <Icon name="trash" size={16} /> {strategy.builtin ? 'Hide from library' : 'Delete'}
+            <Icon name="trash" size={16} /> {strategy.builtin ? t('strategyDetail.hideFromLibrary') : t('strategyDetail.delete')}
           </button>
         </div>
       )}

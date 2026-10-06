@@ -9,7 +9,7 @@ export default [
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.vite(),
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

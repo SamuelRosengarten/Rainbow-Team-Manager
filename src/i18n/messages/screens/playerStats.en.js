@@ -1,0 +1,20 @@
+// Strings extracted from components/PlayerStats.jsx (English).
+export default {
+  "playerStats.earlier": "earlier",
+  "playerStats.refreshing": "Refreshing…",
+  "playerStats.refresh": "Refresh",
+  "playerStats.statsUnavailable": "Stats unavailable",
+  "playerStats.bestOperators": "Best operators",
+  "playerStats.bestMaps": "Best maps",
+  "playerStats.viewDetailedStats": "View detailed stats",
+  "playerStats.attackDefense": "Attack / Defense",
+  "playerStats.needsImprovement": "Needs improvement",
+  "playerStats.operatorPerformance": "Operator performance",
+  "playerStats.operator": "Operator",
+  "playerStats.wins": "Wins",
+  "playerStats.games": "Games",
+  "playerStats.teamSnapshot": "Team snapshot",
+  "playerStats.player": "Player",
+  "playerStats.rank": "Rank",
+  "playerStats.bestRole": "Best role",
+};

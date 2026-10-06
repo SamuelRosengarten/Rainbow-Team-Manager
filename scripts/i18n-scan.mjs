@@ -12,7 +12,7 @@ const USER_ATTRS = new Set(['aria-label', 'aria-description', 'aria-roledescript
 const hasWords = (s) => /\p{L}{2,}/u.test(s.replace(/\{\{.*?\}\}/g, ''));
 
 /** Text that is allowed untranslated: symbols, units, product names. */
-const ALLOWED = new Set(['K/D', 'HS%', 'RP', 'PC', 'Xbox', 'PlayStation', 'R6', 'Siege', 'Supabase', 'Ubisoft', 'IGL', 'EN', 'FR', 'OK', 'WASD']);
+const ALLOWED = new Set(['Tactical', 'Command', 'R6 Tactical Command', 'K/D', 'HS%', 'RP', 'PC', 'Xbox', 'PlayStation', 'R6', 'Siege', 'Supabase', 'Ubisoft', 'IGL', 'EN', 'FR', 'OK', 'WASD']);
 
 export function walk(node, visit, parent = null) {
   if (!node || typeof node.type !== 'string') return;
@@ -25,8 +25,6 @@ export function walk(node, visit, parent = null) {
   }
 }
 
-const isTCall = (n) => n?.type === 'CallExpression' && ((n.callee.type === 'Identifier' && ['t', 'tm', 'tx'].includes(n.callee.name)) || (n.callee.type === 'MemberExpression' && ['t', 'tm'].includes(n.callee.property?.name)));
-
 /** @returns {{ file, line, kind, text }[]} */
 export function scanSource(src, file = '') {
   const ast = espree.parse(src, { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true }, loc: true });
@@ -36,8 +34,6 @@ export function scanSource(src, file = '') {
     if (!hasWords(t) || ALLOWED.has(t)) return;
     found.push({ file, line: node.loc.start.line, kind, text: t.slice(0, 80) });
   };
-  // Strings inside {expressions} that are children of JSX (not attributes, not t() arguments).
-  const inChildExpression = (node, parents) => parents.some((p) => p.type === 'JSXExpressionContainer' && p.__child);
   const stack = [];
   const visit = (node, parent) => {
     node.__parent = parent;

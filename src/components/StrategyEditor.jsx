@@ -6,12 +6,13 @@ import { DetailsForm, SquadForm, StepsForm } from './StrategyForms.jsx';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { attribution, cleanDraft } from '../lib/strategies.js';
 import { useHistory } from '../state/useHistory.js';
+import { useI18n } from '../i18n/index.js';
 
 const TABS = [
-  { id: 'board', label: 'Tactical map', icon: 'map' },
-  { id: 'steps', label: 'Steps & timing', icon: 'timer' },
-  { id: 'squad', label: 'Squad', icon: 'users' },
-  { id: 'details', label: 'Details', icon: 'edit' },
+  { id: 'board', icon: 'map' },
+  { id: 'steps', icon: 'timer' },
+  { id: 'squad', icon: 'users' },
+  { id: 'details', icon: 'edit' },
 ];
 
 /**
@@ -20,6 +21,7 @@ const TABS = [
  * document at once.
  */
 export default function StrategyEditor({ initial, isNew, strategyData, onSaved, onCancel }) {
+  const { t } = useI18n();
   const history = useHistory(initial);
   const draft = history.value;
   const [tab, setTab] = useState(isNew ? 'details' : 'board');
@@ -35,7 +37,7 @@ export default function StrategyEditor({ initial, isNew, strategyData, onSaved, 
       await strategyData.saveStrategy({ ...clean, owner: draft.owner ?? null });
       onSaved(clean);
     } catch (e) {
-      setError(e.message || 'Could not save the strategy.');
+      setError(e.message || t('strategy.saveFailed'));
       setSaving(false);
     }
   }
@@ -48,17 +50,17 @@ export default function StrategyEditor({ initial, isNew, strategyData, onSaved, 
           {draft.version > 1 && <span className="version-chip">v{draft.version}</span>}
           <span className="muted small">{attribution(draft)}</span>
         </div>
-        <h1 className="page__title">{isNew ? 'New strategy' : draft.title || 'Strategy'}</h1>
+        <h1 className="page__title">{isNew ? t('strategyEditor.newStrategy') : draft.title || t('strategyEditor.strategy')}</h1>
       </header>
       {error && (
         <p className="notice notice--error" role="alert">
           {error}
         </p>
       )}
-      <div className="segmented segmented--full editor-tabs" role="group" aria-label="Editor sections">
-        {TABS.map((t) => (
-          <button key={t.id} type="button" className="segmented__btn" aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
-            <Icon name={t.icon} size={16} /> {t.label}
+      <div className="segmented segmented--full editor-tabs" role="group" aria-label={t('strategyEditor.editorSections')}>
+        {TABS.map((tb) => (
+          <button key={tb.id} type="button" className="segmented__btn" aria-pressed={tab === tb.id} onClick={() => setTab(tb.id)}>
+            <Icon name={tb.icon} size={16} /> {t(`editor.tab.${tb.id}`)}
           </button>
         ))}
       </div>
@@ -73,13 +75,13 @@ export default function StrategyEditor({ initial, isNew, strategyData, onSaved, 
       )}
       <div className="strat-actions strat-actions--sticky">
         <button type="button" className="btn btn--ghost" onClick={onCancel} disabled={saving}>
-          Cancel
+          {t('strategyEditor.cancel')}
         </button>
         <button type="button" className="btn btn--ghost" onClick={history.undo} disabled={!history.canUndo || saving}>
-          <Icon name="undo" size={16} /> Undo
+          <Icon name="undo" size={16} /> {t('strategyEditor.undo')}
         </button>
         <button type="button" className="btn btn--primary" onClick={save} disabled={saving || !strategyData.canSave}>
-          {saving ? 'Saving…' : 'Save strategy'}
+          {saving ? t('strategyEditor.saving') : t('strategyEditor.saveStrategy')}
         </button>
       </div>
     </div>

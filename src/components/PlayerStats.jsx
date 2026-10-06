@@ -17,16 +17,18 @@ import {
   timeAgo,
   weakMaps,
 } from '../lib/playerStats.js';
+import { useI18n } from '../i18n/index.js';
 
 const mapName = (id) => MAPS_BY_ID[id]?.name ?? id;
 
 /** The few numbers that help coaching, nothing else. */
 function Essentials({ stats }) {
+  const { t } = useI18n();
   const items = [
     [fmtRatio(stats.kd), 'K/D'],
-    [fmtPct(stats.winRate), 'Win rate'],
+    [fmtPct(stats.winRate), t('playerStats.winRate')],
     [fmtPct(stats.hsPct), 'HS%'],
-    [stats.matches ?? '', 'Matches'],
+    [stats.matches ?? '', t('playerStats.matches')],
   ].filter(([v]) => v !== '' && v !== null);
   return (
     <>
@@ -52,6 +54,7 @@ function Essentials({ stats }) {
  * `onRefresh` re-runs the lookup from the saved username (no re-entry).
  */
 export default function PlayerStats({ player, onRefresh }) {
+  const { t } = useI18n();
   const { stats } = player;
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
@@ -63,7 +66,7 @@ export default function PlayerStats({ player, onRefresh }) {
       const res = await onRefresh();
       if (!res.ok) setProblem(STATS_REASON[res.reason] ?? STATS_REASON.unavailable);
     } catch (e) {
-      setProblem(e.message || 'Could not save the stats.');
+      setProblem(e.message || t('playerStats.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -72,11 +75,10 @@ export default function PlayerStats({ player, onRefresh }) {
   const refreshRow = STATS_CONFIGURED && player.username && onRefresh && (
     <div className="pstats__refresh">
       {stats && player.statsUpdatedAt && (
-        <span className="muted small">Stats updated {timeAgo(player.statsUpdatedAt) || 'earlier'}</span>
+        <span className="muted small">{t('playerStats.updated', { when: timeAgo(player.statsUpdatedAt) || t('playerStats.earlier') })}</span>
       )}
-      <button type="button" className="btn btn--ghost btn--sm" onClick={refresh} disabled={busy}>
-        <Icon name="refresh" size={15} /> {busy ? 'Refreshing…' : 'Refresh'}
-        <span className="visually-hidden"> stats for {player.name}</span>
+      <button type="button" className="btn btn--ghost btn--sm" onClick={refresh} disabled={busy} aria-label={t('playerStats.refreshFor', { player: player.name })}>
+        <Icon name="refresh" size={15} /> {busy ? t('playerStats.refreshing') : t('playerStats.refresh')}
       </button>
     </div>
   );
@@ -86,7 +88,7 @@ export default function PlayerStats({ player, onRefresh }) {
     return (
       <div className="pstats pstats--empty">
         <span className="muted small">
-          {STATS_CONFIGURED ? 'Stats unavailable' : `Stats unavailable: ${STATS_REASON['not-configured']} Nothing is wrong with this player.`}
+          {STATS_CONFIGURED ? t('playerStats.statsUnavailable') : t('playerStats.noSource', { reason: STATS_REASON['not-configured'] })}
         </span>
         {refreshRow}
         {problem && (
@@ -107,7 +109,7 @@ export default function PlayerStats({ player, onRefresh }) {
       <Essentials stats={stats} />
       {ops.length > 0 && (
         <p className="pstats__line">
-          <span className="pstats__label">Best operators</span>
+          <span className="pstats__label">{t('playerStats.bestOperators')}</span>
           {ops.map((o) => (
             <span key={o.id} className="pstats__op">
               <OperatorIcon operator={OPERATORS_BY_ID[o.id]} size="xs" /> {OPERATORS_BY_ID[o.id].name}
@@ -117,45 +119,45 @@ export default function PlayerStats({ player, onRefresh }) {
       )}
       {best.length > 0 && (
         <p className="pstats__line">
-          <span className="pstats__label">Best maps</span> {best.map((m) => mapName(m.id)).join(' • ')}
+          <span className="pstats__label">{t('playerStats.bestMaps')}</span> {best.map((m) => mapName(m.id)).join(' • ')}
         </p>
       )}
       <details className="pstats__more">
-        <summary>View detailed stats</summary>
+        <summary>{t('playerStats.viewDetailedStats')}</summary>
         <div className="pstats__detail">
           <p className="muted small">
             {PLATFORMS[stats.platform]} · {stats.username}
-            {role && ` · Plays ${PLAYER_ROLES[role].toLowerCase()}`}
+            {role && ` · ${t('playerStats.playsRole', { role: PLAYER_ROLES[role].toLowerCase() })}`}
           </p>
           {(stats.attack || stats.defense) && (
             <p className="pstats__line">
-              <span className="pstats__label">Attack / Defense</span>
+              <span className="pstats__label">{t('playerStats.attackDefense')}</span>
               {[
-                ['Attack', stats.attack],
-                ['Defense', stats.defense],
+                [t('playerStats.attack'), stats.attack],
+                [t('playerStats.defense'), stats.defense],
               ]
                 .filter(([, s]) => s)
                 .map(([label, s]) => (
                   <span key={label}>
-                    {label}: {[fmtRatio(s.kd) && `${fmtRatio(s.kd)} K/D`, fmtPct(s.winRate) && `${fmtPct(s.winRate)} wins`].filter(Boolean).join(', ')}
+                    {t('playerStats.splitLine', { label, parts: [fmtRatio(s.kd) && t('playerStats.kdPart', { kd: fmtRatio(s.kd) }), fmtPct(s.winRate) && t('playerStats.winsPart', { win: fmtPct(s.winRate) })].filter(Boolean).join(', ') })}
                   </span>
                 ))}
             </p>
           )}
           {weak.length > 0 && (
             <p className="pstats__line">
-              <span className="pstats__label">Needs improvement</span> {weak.map((m) => mapName(m.id)).join(' • ')}
+              <span className="pstats__label">{t('playerStats.needsImprovement')}</span> {weak.map((m) => mapName(m.id)).join(' • ')}
             </p>
           )}
           {stats.operators.length > 0 && (
             <table className="pstats__table">
-              <caption className="visually-hidden">Operator performance</caption>
+              <caption className="visually-hidden">{t('playerStats.operatorPerformance')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Operator</th>
+                  <th scope="col">{t('playerStats.operator')}</th>
                   <th scope="col">K/D</th>
-                  <th scope="col">Wins</th>
-                  <th scope="col">Games</th>
+                  <th scope="col">{t('playerStats.wins')}</th>
+                  <th scope="col">{t('playerStats.games')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,7 +180,7 @@ export default function PlayerStats({ player, onRefresh }) {
       {refreshRow}
       {problem && (
         <p className="muted small" role="status">
-          {problem} Showing the last saved stats.
+          {t('playerStats.lastSaved', { problem })}
         </p>
       )}
     </div>
@@ -187,20 +189,21 @@ export default function PlayerStats({ player, onRefresh }) {
 
 /** Compact team table: who is strong where, at a glance. Hidden until anyone has stats. */
 export function TeamSnapshot({ players }) {
+  const { t } = useI18n();
   const rows = teamSnapshot(players);
   if (!rows.some((r) => r.hasStats)) return null;
   return (
     <section className="snapshot" aria-labelledby="snapshot-title">
       <h2 id="snapshot-title" className="snapshot__title">
-        Team snapshot
+        {t('playerStats.teamSnapshot')}
       </h2>
       <table className="snapshot__table">
         <thead>
           <tr>
-            <th scope="col">Player</th>
-            <th scope="col">Rank</th>
+            <th scope="col">{t('playerStats.player')}</th>
+            <th scope="col">{t('playerStats.rank')}</th>
             <th scope="col">K/D</th>
-            <th scope="col">Best role</th>
+            <th scope="col">{t('playerStats.bestRole')}</th>
           </tr>
         </thead>
         <tbody>

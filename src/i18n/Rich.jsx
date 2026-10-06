@@ -1,8 +1,8 @@
 import { useI18n } from './index.js';
 
-// Messages may use a few inline tags (<b>, <strong>, <em>, <code>). They are
+// Messages may use a few inline tags (<b>, <strong>, <em>, <code>, <kbd>). They are
 // turned into React elements here: no HTML is ever injected.
-const TAG = /<(b|strong|em|code)>(.*?)<\/\1>/g;
+const TAG = /<(b|strong|em|code|kbd)>(.*?)<\/\1>/g;
 
 /** Split a translated string into text and tag elements. */
 function rich(text) {

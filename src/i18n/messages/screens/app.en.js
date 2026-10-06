@@ -1,0 +1,20 @@
+// Strings extracted from components/App.jsx (English).
+export default {
+  "app.skipToContent": "Skip to content",
+  "app.r6TacticalCommandGoHome": "R6 Tactical Command, go home",
+  "app.main": "Main",
+  "app.newStrategy": "New strategy",
+  "app.youReOfflineChangesWon": "You're offline. Changes won't reach the team until your connection is back.",
+  "app.offlineModeChangesStayOn": "Offline mode: changes stay on this device and are lost on reload.",
+  "app.signedIn": "Signed in as {name}. Switch profile",
+  "nav.home": "Command",
+  "nav.strategies": "Strategies",
+  "nav.maps": "Maps",
+  "nav.operators": "Operators",
+  "nav.team": "Team",
+  "live.live": "Live",
+  "live.connecting": "Connecting…",
+  "live.reconnecting": "Reconnecting…",
+  "live.offline": "Offline mode",
+  "live.disconnected": "No connection",
+};

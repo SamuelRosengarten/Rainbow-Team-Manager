@@ -14,6 +14,9 @@ import {
   setSessionCallouts,
 } from '../lib/floorPlans.js';
 import { usePlans } from '../state/usePlans.js';
+import { CodedError } from '../lib/errors.js';
+import { T } from '../i18n/Rich.jsx';
+import { useI18n } from '../i18n/index.js';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -22,7 +25,7 @@ function imageSize(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error('That file could not be read as an image.'));
+    img.onerror = () => reject(new CodedError('fplan.badImage'));
     img.src = url;
   });
 }
@@ -34,6 +37,7 @@ function imageSize(url) {
  * the JSON to commit in src/data/floorPlans.json.
  */
 export default function FloorPlanPanel({ map }) {
+  const { t } = useI18n();
   usePlans();
   const floors = floorsFor(map.id);
   const [floorId, setFloorId] = useState(floors[0] ?? '');
@@ -51,9 +55,9 @@ export default function FloorPlanPanel({ map }) {
   if (!floors.length) {
     return (
       <section className="panel" aria-labelledby="fp-title">
-        <h2 id="fp-title" className="panel__title">Floor plans</h2>
+        <h2 id="fp-title" className="panel__title">{t('floorPlanPanel.floorPlans')}</h2>
         <p className="muted">
-          Floors aren't listed for {map.name} yet. Add its bomb sites or a <code>floors</code> list to <code>src/data/maps.json</code>.
+          <T id="fplan.notListed" values={{ map: map.name }} />
         </p>
       </section>
     );
@@ -61,7 +65,7 @@ export default function FloorPlanPanel({ map }) {
 
   const plan = floorPlan(map.id, floorId);
   const size = plan ? planSize(plan) : null;
-  const allChecked = VERIFY_CHECKS.every(([id]) => checks.has(id));
+  const allChecked = VERIFY_CHECKS.every((id) => checks.has(id));
   const pick = (f) => {
     setFloorId(f);
     setCalibrating(false);
@@ -88,7 +92,7 @@ export default function FloorPlanPanel({ map }) {
     if (!calibrating || !plan || !svgRef.current) return;
     const name_ = name.trim();
     if (!name_) {
-      setError('Type the callout name first, then click its spot on the plan.');
+      setError(t('fplan.typeNameFirst'));
       return;
     }
     const p = svgRef.current.createSVGPoint();
@@ -118,18 +122,18 @@ export default function FloorPlanPanel({ map }) {
   return (
     <section className="panel fplan" aria-labelledby="fp-title">
       <div className="panel__head">
-        <h2 id="fp-title" className="panel__title">Floor plans</h2>
+        <h2 id="fp-title" className="panel__title">{t('floorPlanPanel.floorPlans')}</h2>
         <span className="muted small">
-          {floors.filter((f) => floorPlan(map.id, f)).length}/{floors.length} floors have a plan
+          {t('fplan.haveAPlan', { with: floors.filter((f) => floorPlan(map.id, f)).length, floors: floors.length })}
         </span>
       </div>
-      <div className="floor-tabs fplan__tabs" role="group" aria-label="Floor">
+      <div className="floor-tabs fplan__tabs" role="group" aria-label={t('floorPlanPanel.floor')}>
         {floors.map((f) => {
           const p = floorPlan(map.id, f);
           return (
             <button key={f} type="button" className="floor-tab" aria-pressed={f === floorId} onClick={() => pick(f)}>
               {floorLabel(f)}
-              {!p ? <span className="floor-tab__missing">missing</span> : p.verified ? <span className="floor-tab__ok">verified</span> : <span className="floor-tab__missing">unverified</span>}
+              {!p ? <span className="floor-tab__missing">{t('floorPlanPanel.missing')}</span> : p.verified ? <span className="floor-tab__ok">{t('floorPlanPanel.verified')}</span> : <span className="floor-tab__missing">{t('floorPlanPanel.unverified')}</span>}
             </button>
           );
         })}
@@ -144,18 +148,15 @@ export default function FloorPlanPanel({ map }) {
       {!plan && (
         <div className="fplan__missing">
           <p>
-            <strong>
-              No floor plan for {map.name} {floorLabel(floorId)}.
-            </strong>{' '}
-            The app doesn't draw maps: a plan must come from a source your team is allowed to use.
+            <strong>{t('fplan.missingTitle', { map: map.name, floor: floorLabel(floorId) })}</strong> {t('fplan.missingBody')}
           </p>
           <ol className="fplan__steps">
-            <li>Get an accurate top-down image of this floor that you have the right to use.</li>
+            <li>{t('floorPlanPanel.getAnAccurateTopDown')}</li>
             <li>
-              Save it as <code>public/maps/{map.id}/{floorId}.webp</code> (PNG, JPG or SVG work too).
+              <T id="fplan.saveAs" values={{ map: map.id, floor: floorId }} />
             </li>
             <li>
-              Add its entry to <code>src/data/floorPlans.json</code>: try the image below, calibrate the callouts, then copy the entry.
+              <T id="fplan.addEntry" />
             </li>
           </ol>
         </div>
@@ -164,16 +165,16 @@ export default function FloorPlanPanel({ map }) {
       <div className="fplan__toolbar toolbar">
         <input ref={fileRef} type="file" accept="image/png,image/webp,image/jpeg,image/svg+xml" hidden onChange={tryLocal} />
         <button type="button" className="btn btn--secondary btn--sm" onClick={() => fileRef.current?.click()}>
-          {plan?.local ? 'Try another image' : plan ? 'Try a replacement image' : 'Try an image from this computer'}
+          {plan?.local ? t('floorPlanPanel.tryAnotherImage') : plan ? t('floorPlanPanel.tryAReplacementImage') : t('floorPlanPanel.tryAnImageFromThis')}
         </button>
         {plan?.local && (
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setLocalPlan(map.id, floorId, null)}>
-            Stop using this image
+            {t('floorPlanPanel.stopUsingThisImage')}
           </button>
         )}
         {plan && (
           <button type="button" className="btn btn--ghost btn--sm" aria-pressed={calibrating} onClick={() => setCalibrating(!calibrating)}>
-            {calibrating ? 'Done calibrating' : 'Calibrate callouts'}
+            {calibrating ? t('floorPlanPanel.doneCalibrating') : t('floorPlanPanel.calibrateCallouts')}
           </button>
         )}
       </div>
@@ -181,10 +182,11 @@ export default function FloorPlanPanel({ map }) {
       {plan && (
         <>
           <p className="fplan__meta">
-            {plan.local && <Badge tone="warn">Session only: not saved</Badge>}
-            {plan.verified ? <Badge tone="ok">Verified by {plan.verifiedBy || 'the team'}{plan.verifiedAt ? ` · ${plan.verifiedAt}` : ''}</Badge> : <Badge tone="warn">Not verified against the game</Badge>}
+            {plan.local && <Badge tone="warn">{t('floorPlanPanel.sessionOnlyNotSaved')}</Badge>}
+            {plan.verified ? <Badge tone="ok">{t(plan.verifiedAt ? 'fplan.verifiedByDate' : 'fplan.verifiedBy', { name: plan.verifiedBy || t('floorPlanPanel.theTeam'), date: plan.verifiedAt })}</Badge> : <Badge tone="warn">{t('floorPlanPanel.notVerifiedAgainstTheGame')}</Badge>}
             <span className="muted small">
-              {plan.width}×{plan.height}px · {plan.callouts.length} callouts{plan.source ? ` · Source: ${plan.source}` : ''}
+              {t('fplan.dims', { width: plan.width, height: plan.height, callouts: plan.callouts.length })}
+              {plan.source ? t('fplan.sourceLine', { source: plan.source }) : ''}
               {plan.license ? ` · ${plan.license}` : ''}
             </span>
           </p>
@@ -192,11 +194,11 @@ export default function FloorPlanPanel({ map }) {
           {calibrating && (
             <div className="fplan__calib">
               <label className="field">
-                <span className="field__label">Callout name</span>
-                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="CEO Office" maxLength={40} />
+                <span className="field__label">{t('floorPlanPanel.calloutName')}</span>
+                <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('floorPlanPanel.ceoOffice')} maxLength={40} />
               </label>
               <label className="field">
-                <span className="field__label">Kind</span>
+                <span className="field__label">{t('floorPlanPanel.kind')}</span>
                 <select className="select" value={kind} onChange={(e) => setKind(e.target.value)}>
                   {Object.entries(CALLOUT_KINDS).map(([id, label]) => (
                     <option key={id} value={id}>
@@ -205,12 +207,12 @@ export default function FloorPlanPanel({ map }) {
                   ))}
                 </select>
               </label>
-              <p className="muted small">Type a name, then click its exact spot on the plan. Re-using a name moves it.</p>
+              <p className="muted small">{t('floorPlanPanel.typeANameThenClick')}</p>
             </div>
           )}
 
           <div className={`tboard tboard--floor fplan__board${calibrating ? ' fplan__board--calib' : ''}`}>
-            <svg ref={svgRef} className="tboard__svg" viewBox={`0 0 ${size.w} ${size.h}`} onClick={addCallout} role="img" aria-label={`${map.name} ${floorLabel(floorId)} floor plan`}>
+            <svg ref={svgRef} className="tboard__svg" viewBox={`0 0 ${size.w} ${size.h}`} onClick={addCallout} role="img" aria-label={t('fplan.boardAria', { map: map.name, floor: floorLabel(floorId) })}>
               <rect x="0" y="0" width={size.w} height={size.h} className="tboard__bg" />
               <image href={plan.url} x="0" y="0" width={size.w} height={size.h} preserveAspectRatio="none" />
               <CalloutLayer plan={plan} size={size} mapId={map.id} />
@@ -226,7 +228,7 @@ export default function FloorPlanPanel({ map }) {
                   </span>
                   {calibrating && (
                     <button type="button" className="link-btn" onClick={() => removeCallout(c.id)}>
-                      Remove
+                      {t('floorPlanPanel.remove')}
                     </button>
                   )}
                 </li>
@@ -235,12 +237,12 @@ export default function FloorPlanPanel({ map }) {
           )}
 
           <details className="fplan__verify">
-            <summary>Verify and export</summary>
+            <summary>{t('floorPlanPanel.verifyAndExport')}</summary>
             <p className="muted small">
-              Compare the plan with the game (or a reference you trust) before marking it verified. Every box must be ticked and a reviewer named.
+              {t('floorPlanPanel.compareThePlanWithThe')}
             </p>
             <ul className="fplan__checks">
-              {VERIFY_CHECKS.map(([id, label]) => (
+              {VERIFY_CHECKS.map((id) => (
                 <li key={id}>
                   <label>
                     <input
@@ -255,27 +257,27 @@ export default function FloorPlanPanel({ map }) {
                         })
                       }
                     />{' '}
-                    {label}
+                    {t(`verify.${id}`)}
                   </label>
                 </li>
               ))}
             </ul>
             <div className="setup-grid">
               <label className="field">
-                <span className="field__label">Reviewed by</span>
+                <span className="field__label">{t('floorPlanPanel.reviewedBy')}</span>
                 <input className="input" value={reviewer} onChange={(e) => setReviewer(e.target.value)} maxLength={60} />
               </label>
               <label className="field">
-                <span className="field__label">Source</span>
-                <input className="input" value={source} onChange={(e) => setSource(e.target.value)} placeholder={plan.source || 'Where the image came from'} maxLength={300} />
+                <span className="field__label">{t('floorPlanPanel.source')}</span>
+                <input className="input" value={source} onChange={(e) => setSource(e.target.value)} placeholder={plan.source || t('fplan.sourcePlaceholder')} maxLength={300} />
               </label>
               <label className="field">
-                <span className="field__label">License / permission</span>
-                <input className="input" value={license} onChange={(e) => setLicense(e.target.value)} placeholder={plan.license || 'e.g. own work, permission from…'} maxLength={200} />
+                <span className="field__label">{t('floorPlanPanel.licensePermission')}</span>
+                <input className="input" value={license} onChange={(e) => setLicense(e.target.value)} placeholder={plan.license || t('fplan.licensePlaceholder')} maxLength={200} />
               </label>
             </div>
             <pre className="fplan__json">{entry()}</pre>
-            <CopyButton getText={entry} label="Copy manifest entry" />
+            <CopyButton getText={entry} label={t('fplan.copyEntry')} />
           </details>
         </>
       )}

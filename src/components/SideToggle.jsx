@@ -1,8 +1,10 @@
 import { SIDES } from '../lib/constants.js';
+import { useI18n } from '../i18n/index.js';
 
 export default function SideToggle({ side, onChange }) {
+  const { t } = useI18n();
   return (
-    <div className="segmented" role="group" aria-label="Side">
+    <div className="segmented" role="group" aria-label={t('sideToggle.side')}>
       {SIDES.map((s) => (
         <button
           key={s.id}

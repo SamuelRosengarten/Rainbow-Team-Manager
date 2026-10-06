@@ -1,4 +1,5 @@
 import { floorLabel, siteCallouts } from '../lib/floorPlans.js';
+import { useI18n } from '../i18n/index.js';
 
 // The bottom layers of the tactical board, in board units (see space.js):
 //   1. the real floor plan image, untouched (never stretched: the board takes
@@ -73,19 +74,20 @@ export function CalloutLayer({ plan, size, site, mapId, showRooms = true, highli
 }
 
 function Missing({ size, mapName, floorId, mapId }) {
+  const { t } = useI18n();
   const cx = size.w / 2;
   const cy = size.h / 2;
   return (
     <g className="ml-missing">
       <rect x="2" y="2" width={size.w - 4} height={size.h - 4} rx="1.5" className="ml-missing__frame" />
       <text className="ml-missing__title" x={cx} y={cy - 3}>
-        No floor plan for {mapName || 'this map'} · {floorLabel(floorId) || 'this floor'}
+        {t('mapLayer.missingTitle', { map: mapName || t('mapLayer.thisMap'), floor: floorLabel(floorId) || t('mapLayer.thisFloor') })}
       </text>
       <text className="ml-missing__sub" x={cx} y={cy + 1.5}>
-        Positions on this board are kept, but can't be shown on the real map yet.
+        {t('mapLayer.positionsOnThisBoardAre')}
       </text>
       <text className="ml-missing__sub" x={cx} y={cy + 5}>
-        Add public/maps/{mapId || '<map>'}/{floorId || '<floor>'}.webp · see Maps → Floor plans
+        {t('mapLayer.addFile', { file: `public/maps/${mapId || t('mapLayer.map')}/${floorId || t('mapLayer.floor')}.webp` })}
       </text>
     </g>
   );
@@ -93,14 +95,15 @@ function Missing({ size, mapName, floorId, mapId }) {
 
 /** A strategy that isn't tied to a map: say so, draw nothing. */
 function NoMap({ size }) {
+  const { t } = useI18n();
   return (
     <g className="ml-missing">
       <rect x="2" y="2" width={size.w - 4} height={size.h - 4} rx="1.5" className="ml-missing__frame" />
       <text className="ml-missing__title" x={size.w / 2} y={size.h / 2 - 1}>
-        Generic plan: not tied to a map
+        {t('mapLayer.genericPlanNotTiedTo')}
       </text>
       <text className="ml-missing__sub" x={size.w / 2} y={size.h / 2 + 3.5}>
-        Choose a map and site in the details to plan it on the real floor plan.
+        {t('mapLayer.chooseAMapAndSite')}
       </text>
     </g>
   );
@@ -110,6 +113,7 @@ function NoMap({ size }) {
  * @param {{ space: ReturnType<import('../lib/space.js').boardSpace>, strategy, mapName?, compact?, showRooms? }} props
  */
 export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true }) {
+  const { t } = useI18n();
   if (space.kind === 'floor') {
     return (
       <g className="ml">
@@ -117,14 +121,14 @@ export default function MapLayer({ space, strategy, mapName, compact = false, sh
         <CalloutLayer plan={space.plan} size={space} site={strategy.site} mapId={strategy.mapId} showRooms={showRooms} />
         {!space.plan.verified && !compact && (
           <text className="ml-unverified" x={space.w - 1.5} y="3.2">
-            UNVERIFIED FLOOR PLAN
+            {t('mapLayer.unverifiedFloorPlan')}
           </text>
         )}
         {space.approximate && !compact && (
           <g className="ml-approx">
             <rect x="0" y={space.h - 4.2} width={space.w} height="4.2" />
             <text x={space.w / 2} y={space.h - 1.4}>
-              Positions come from the old abstract layout and haven't been placed on this map yet
+              {t('mapLayer.positionsComeFromTheOld')}
             </text>
           </g>
         )}

@@ -4,6 +4,8 @@ import { Sheet } from './ui.jsx';
 import { AVAILABILITY, LINEUP_SIZE, MAIN_ROLES, PLAYER_STATUS, nameError } from '../lib/roster.js';
 import { PLATFORMS } from '../lib/playerStats.js';
 import { STATS_CONFIGURED, STATS_REASON, lookupPlayer } from '../lib/statsProvider.js';
+import { useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
 function Choice({ label, options, value, onChange }) {
   return (
@@ -26,6 +28,7 @@ function Choice({ label, options, value, onChange }) {
  * player can't be found they are still added, just without stats.
  */
 export default function PlayerEditor({ player, roster, detailsEnabled, onSave, onClose }) {
+  const { t } = useI18n();
   const isNew = !player;
   const startersElsewhere = roster.filter((p) => p.status === 'starter' && p.name !== player?.name).length;
   const [form, setForm] = useState(() => ({
@@ -70,7 +73,7 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
       if (problem) return setError(problem);
     }
     if (form.status === 'starter' && startersElsewhere >= LINEUP_SIZE) {
-      return setError(`There are already ${LINEUP_SIZE} starters. Make someone a substitute first.`);
+      return setError(t('playerEditor.tooManyStarters', { count: LINEUP_SIZE }));
     }
     setSaving(true);
     try {
@@ -86,7 +89,7 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
         statsUpdatedAt: current ? details.statsUpdatedAt : null,
       });
     } catch (err) {
-      setError(err.message || 'Could not save the player.');
+      setError(err.message || t('playerEditor.saveFailed'));
       setSaving(false);
     }
   }
@@ -95,16 +98,16 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
 
   return (
     <Sheet
-      title={isNew ? 'Add player' : `Edit ${player.name}`}
+      title={isNew ? t('playerEditor.addPlayer') : t('playerEditor.edit', { player: player.name })}
       onClose={onClose}
       labelId="player-editor-title"
       footer={
         <>
           <button type="button" className="btn btn--ghost" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('playerEditor.cancel')}
           </button>
           <button type="submit" form="player-form" className="btn btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : isNew ? 'Add player' : 'Save'}
+            {saving ? t('playerEditor.saving') : isNew ? t('playerEditor.addPlayer') : t('playerEditor.save')}
           </button>
         </>
       }
@@ -117,12 +120,12 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
         )}
         {!detailsEnabled && (
           <p className="notice notice--warn" role="status">
-            Ubisoft username, role, status, availability and notes need the latest database setup. Re-run <code>supabase/schema.sql</code>.
+            <T id="playerEditor.needsSchema" />
           </p>
         )}
         <fieldset className="form" disabled={!detailsEnabled}>
           <label className="field">
-            <span className="field__label">Ubisoft username</span>
+            <span className="field__label">{t('playerEditor.ubisoftUsername')}</span>
             <input
               className="input"
               value={form.username}
@@ -138,12 +141,12 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
               autoCapitalize="off"
               spellCheck={false}
               autoFocus
-              placeholder="e.g. Samuie"
+              placeholder={t('playerEditor.eGSamuie')}
             />
           </label>
           <div className="find-row">
             <label className="field">
-              <span className="field__label">Platform</span>
+              <span className="field__label">{t('playerEditor.platform')}</span>
               <select className="select" value={form.platform} onChange={(e) => set({ platform: e.target.value })}>
                 {Object.entries(PLATFORMS).map(([id, label]) => (
                   <option key={id} value={id}>
@@ -154,35 +157,35 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
             </label>
             {STATS_CONFIGURED && (
               <button type="button" className="btn btn--secondary" onClick={find} disabled={finding || !form.username.trim()}>
-                {finding ? 'Searching…' : 'Find Player'}
+                {finding ? t('playerEditor.searching') : t('playerEditor.findPlayer')}
               </button>
             )}
           </div>
-          {!STATS_CONFIGURED && <p className="muted small">{STATS_REASON['not-configured']} The username is still saved, and stats aren't needed to use the team manager.</p>}
+          {!STATS_CONFIGURED && <p className="muted small">{t('playerEditor.noSource', { reason: STATS_REASON['not-configured'] })}</p>}
           {lookup && !lookup.ok && (
             <p className="notice notice--warn" role="status">
-              Stats unavailable. {STATS_REASON[lookup.reason]} {isNew ? 'You can still add the player without stats.' : 'The player is unaffected.'}
+              {t(isNew ? 'playerEditor.lookupFailedNew' : 'playerEditor.lookupFailedExisting', { reason: STATS_REASON[lookup.reason] })}
             </p>
           )}
           {form.stats && (
             <div className="found" role="status">
-              {lookup?.ok && <p className="found__title">Found {form.stats.username}</p>}
-              {staleStats && <p className="muted small">These stats are for “{form.stats.username}”. Press Find Player to update them.</p>}
+              {lookup?.ok && <p className="found__title">{t('playerEditor.found', { username: form.stats.username })}</p>}
+              {staleStats && <p className="muted small">{t('playerEditor.stale', { username: form.stats.username })}</p>}
               <PlayerStats player={{ ...form, name: form.name || form.username }} />
             </div>
           )}
 
           {isNew && (
             <label className="field">
-              <span className="field__label">Name in the app</span>
-              <input className="input" value={form.name} onChange={(e) => set({ name: e.target.value })} maxLength={24} autoComplete="off" placeholder="e.g. Alex" />
-              <span className="field__hint">This can't be changed later. It's how the app knows who's who.</span>
+              <span className="field__label">{t('playerEditor.nameInTheApp')}</span>
+              <input className="input" value={form.name} onChange={(e) => set({ name: e.target.value })} maxLength={24} autoComplete="off" placeholder={t('playerEditor.eGAlex')} />
+              <span className="field__hint">{t('playerEditor.thisCanTBeChanged')}</span>
             </label>
           )}
           <label className="field">
-            <span className="field__label">Main role</span>
+            <span className="field__label">{t('playerEditor.mainRole')}</span>
             <select className="select" value={form.mainRole} onChange={(e) => set({ mainRole: e.target.value })}>
-              <option value="">{form.stats ? 'Work it out from their stats' : 'Not set'}</option>
+              <option value="">{form.stats ? t('playerEditor.workItOutFromTheir') : t('playerEditor.notSet')}</option>
               {Object.entries(MAIN_ROLES).map(([id, label]) => (
                 <option key={id} value={id}>
                   {label}
@@ -190,16 +193,16 @@ export default function PlayerEditor({ player, roster, detailsEnabled, onSave, o
               ))}
             </select>
           </label>
-          <Choice label="Status" options={PLAYER_STATUS} value={form.status} onChange={(status) => set({ status })} />
-          <Choice label="Availability" options={AVAILABILITY} value={form.availability} onChange={(availability) => set({ availability })} />
+          <Choice label={t('playerEditor.status')} options={PLAYER_STATUS} value={form.status} onChange={(status) => set({ status })} />
+          <Choice label={t('playerEditor.availability')} options={AVAILABILITY} value={form.availability} onChange={(availability) => set({ availability })} />
           <label className="field">
-            <span className="field__label">Notes</span>
+            <span className="field__label">{t('playerEditor.notes')}</span>
             <textarea
               className="textarea"
               value={form.notes}
               onChange={(e) => set({ notes: e.target.value })}
               maxLength={2000}
-              placeholder="Strengths, what to work on, when they can play…"
+              placeholder={t('playerEditor.strengthsWhatToWorkOn')}
             />
           </label>
         </fieldset>

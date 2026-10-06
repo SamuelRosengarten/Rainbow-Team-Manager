@@ -16,11 +16,12 @@ import { autoAssign } from '../lib/strategyMatch.js';
 import { useRoster } from '../state/roster-context.js';
 import { useSessionState } from '../state/useSessionState.js';
 import { parseStrategiesSub, setupFromTeam } from '../lib/strategySetup.js';
+import { useI18n } from '../i18n/index.js';
 
 const TABS = [
-  ['', 'Team library', 'book'],
-  ['find', 'Find by composition', 'target'],
-  ['quick', 'Quick tactics', 'dice'],
+  ['', 'library', 'book'],
+  ['find', 'find', 'target'],
+  ['quick', 'quick', 'dice'],
 ];
 
 /**
@@ -29,6 +30,7 @@ const TABS = [
  * (detail, editor, coach mode, player mode, compare).
  */
 export default function StrategiesView({ profile, sub, navigate, tacticsStore, strategyData, team, updateTeam }) {
+  const { t } = useI18n();
   const { players, lineupPlayers } = useRoster();
   const [setup, setSetup] = useSessionState('r6tp.strategy-setup', () => setupFromTeam(team, lineupPlayers));
   const [referenceFor, setReferenceFor] = useState(null); // null | 'new' | strategy
@@ -41,20 +43,20 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
   const header = (
     <header className="page__head">
       <div>
-        <p className="page__kicker">Strategy library</p>
-        <h1 className="page__title">Strategies</h1>
-        <p className="page__sub">Your team's attack and defense plans, by map. Favourite, version and compare them.</p>
+        <p className="page__kicker">{t('strategiesView.strategyLibrary')}</p>
+        <h1 className="page__title">{t('strategiesView.strategies')}</h1>
+        <p className="page__sub">{t('strategiesView.yourTeamSAttackAnd')}</p>
       </div>
       <button type="button" className="btn btn--primary" onClick={() => navigate('build')}>
-        <Icon name="plus" size={18} /> Create strategy
+        <Icon name="plus" size={18} /> {t('strategiesView.createStrategy')}
       </button>
     </header>
   );
   const tabs = (
-    <div className="segmented segmented--full" role="group" aria-label="Library sections">
+    <div className="segmented segmented--full" role="group" aria-label={t('strategiesView.librarySections')}>
       {TABS.map(([to, label, icon]) => (
         <button key={to || 'lib'} type="button" className="segmented__btn" aria-pressed={(mode === 'library' && !to) || mode === to} onClick={() => navigate(to ? `strategies/${to}` : 'strategies')}>
-          <Icon name={icon} size={16} /> {label}
+          <Icon name={icon} size={16} /> {t(`strategiesView.tab.${label}`)}
         </button>
       ))}
     </div>
@@ -65,14 +67,14 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
   ) : (
     <EmptyState
       icon="book"
-      title="Strategy not found"
+      title={t('strategiesView.strategyNotFound')}
       action={
         <button type="button" className="btn btn--secondary" onClick={() => navigate('strategies')}>
-          Back to the library
+          {t('strategiesView.backToTheLibrary')}
         </button>
       }
     >
-      It may have been deleted or hidden.
+      {t('strategiesView.itMayHaveBeenDeleted')}
     </EmptyState>
   );
 
@@ -94,7 +96,7 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
     );
   } else if (mode === 'new') {
     const blank = createStrategy({
-      title: 'New strategy',
+      title: t('library.newStrategy'),
       origin: 'team',
       side: setup.side,
       mapId: setup.mapId || 'any',
@@ -156,7 +158,7 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
   }
 
   return (
-    <section className="page" aria-label="Strategies">
+    <section className="page" aria-label={t('strategiesView.strategies')}>
       {listMode && header}
       {listMode && tabs}
       {body}

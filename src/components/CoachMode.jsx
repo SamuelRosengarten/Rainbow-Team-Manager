@@ -6,10 +6,12 @@ import { SETUP } from '../lib/board.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { slotColor } from '../lib/strategies.js';
 import { TACTICAL_ROLES, stepBriefing, utilityName } from '../lib/tactical.js';
+import { t as translate, useI18n } from '../i18n/index.js';
 
-const opName = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any operator';
+const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
 
 function Actor({ strategy, slot, player, action, utility = [], sub }) {
+  const { t } = useI18n();
   const op = OPERATORS_BY_ID[slot.operatorId];
   return (
     <li className="actor" style={{ '--slot': slotColor(strategy, slot.key) }}>
@@ -19,9 +21,9 @@ function Actor({ strategy, slot, player, action, utility = [], sub }) {
           <span className="actor__op">{opName(slot.operatorId)}</span>
           {player && <span className="actor__player">{player}</span>}
           <span className="role-tag">{TACTICAL_ROLES[slot.tacticalRole]}</span>
-          {slot.defuser && <span className="defuser-tag">Defuser</span>}
+          {slot.defuser && <span className="defuser-tag">{t('coachMode.defuser')}</span>}
         </p>
-        {action ? <p className="actor__action">“{action}”</p> : <p className="actor__action actor__action--none">{sub || 'Involved in this step.'}</p>}
+        {action ? <p className="actor__action">“{action}”</p> : <p className="actor__action actor__action--none">{sub || t('coachMode.involvedInThisStep')}</p>}
         {utility.length > 0 && (
           <p className="actor__util">
             {utility.map((m) => (m.kind === 'utility' ? utilityName(m.gadget, slot.operatorId) : m.label || m.kind)).join(' · ')}
@@ -38,6 +40,7 @@ function Actor({ strategy, slot, player, action, utility = [], sub }) {
  * Arrow keys / space move between steps; Escape exits.
  */
 export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) {
+  const { t } = useI18n();
   const [i, setI] = useState(0); // 0 = setup, 1..n = steps
   const n = strategy.steps.length;
   const step = i > 0 ? strategy.steps[i - 1] : null;
@@ -68,12 +71,12 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
     <div className="coach" role="dialog" aria-modal="true" aria-labelledby="coach-step">
       <header className="coach__bar">
         <div className="coach__title">
-          <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? 'Attack' : 'Defense'}</span>
+          <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? t('coachMode.attack') : t('coachMode.defense')}</span>
           <span className="coach__name">{strategy.title}</span>
           <span className="muted small">{[mapName, strategy.site].filter(Boolean).join(' · ')}</span>
         </div>
         <button type="button" className="btn btn--ghost btn--sm" onClick={onExit}>
-          <Icon name="close" size={18} /> Exit coach mode
+          <Icon name="close" size={18} /> {t('coachMode.exitCoachMode')}
         </button>
       </header>
 
@@ -92,14 +95,14 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
           <p id="coach-step" className="coach__step">
             {step ? (
               <>
-                STEP {i} <span className="muted">/ {n}</span>
+                {t('coach.stepWord')} {i} <span className="muted">/ {n}</span>
               </>
             ) : (
-              'SETUP'
+              t('coachMode.setup')
             )}
             {step?.clock && <span className="coach__clock">{step.clock}</span>}
           </p>
-          <h2 className="coach__heading">{step ? step.title : 'Round start: who plays what'}</h2>
+          <h2 className="coach__heading">{step ? step.title : t('coachMode.roundStartWhoPlaysWhat')}</h2>
           {step?.description && <p className="coach__desc">{step.description}</p>}
 
           <ul className="actors">
@@ -111,22 +114,22 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
                     strategy={strategy}
                     slot={s}
                     player={assigned[s.key]}
-                    action={s.spawn ? `Spawn: ${s.spawn}` : s.instructions[0] ?? ''}
-                    sub="Ready."
+                    action={s.spawn ? t('coach.spawn', { spawn: s.spawn }) : s.instructions[0] ?? ''}
+                    sub={t('coach.ready')}
                   />
                 ))}
           </ul>
-          {step && !briefing.length && <p className="muted">No operators are assigned to this step yet.</p>}
+          {step && !briefing.length && <p className="muted">{t('coachMode.noOperatorsAreAssignedTo')}</p>}
           {step?.utility && (
             <p className="coach__util">
-              <strong>Utility:</strong> {step.utility}
+              <strong>{t('coachMode.utility')}</strong> {step.utility}
             </p>
           )}
           {step?.notes && <p className="coach__note">{step.notes}</p>}
 
           {next && (
             <div className="coach__next">
-              <span className="coach__next-label">Next</span>
+              <span className="coach__next-label">{t('coachMode.next')}</span>
               <span>
                 {next.clock && <span className="clock-tag">{next.clock}</span>} {next.title}
               </span>
@@ -137,16 +140,16 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
 
       <footer className="coach__nav">
         <button type="button" className="btn btn--secondary btn--lg" onClick={() => go(-1)} disabled={i === 0}>
-          <Icon name="chevron" size={20} className="icon--flip" /> Back
+          <Icon name="chevron" size={20} className="icon--flip" /> {t('coachMode.back')}
         </button>
-        <span className="muted small coach__keys">← → or space</span>
+        <span className="muted small coach__keys">{t('coachMode.orSpace')}</span>
         {i < n ? (
           <button type="button" className="btn btn--primary btn--lg" onClick={() => go(1)}>
-            Next step <Icon name="arrow" size={20} />
+            {t('coachMode.nextStep')} <Icon name="arrow" size={20} />
           </button>
         ) : (
           <button type="button" className="btn btn--primary btn--lg" onClick={onExit}>
-            Done <Icon name="check" size={20} />
+            {t('coachMode.done')} <Icon name="check" size={20} />
           </button>
         )}
       </footer>

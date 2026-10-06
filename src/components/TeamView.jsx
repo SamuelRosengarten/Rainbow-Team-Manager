@@ -8,10 +8,13 @@ import { Avatar, Badge, EmptyState } from './ui.jsx';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { AVAILABILITY, LINEUP_SIZE, MAIN_ROLES, PLAYER_STATUS, trackerUrl } from '../lib/roster.js';
 import { useRoster } from '../state/roster-context.js';
+import { useI18n } from '../i18n/index.js';
+import { T } from '../i18n/Rich.jsx';
 
 const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 
 function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
+  const { t } = useI18n();
   const p = prefs[player.name] ?? { owned: [], favorites: [] };
   const favorites = p.favorites.map((id) => OPERATORS_BY_ID[id]).filter(Boolean);
   const tracker = trackerUrl(player.username);
@@ -22,11 +25,11 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
         <div className="player__id">
           <span className="player__name">
             {player.name}
-            {isMe && <span className="tag tag--me">you</span>}
+            {isMe && <span className="tag tag--me">{t('teamView.you')}</span>}
           </span>
-          <span className="player__user">{player.username ? `Ubisoft: ${player.username}` : 'No Ubisoft username'}</span>
+          <span className="player__user">{player.username ? t('team.ubisoft', { username: player.username }) : t('teamView.noUbisoftUsername')}</span>
         </div>
-        <button type="button" className="btn btn--ghost btn--icon" onClick={onEdit} aria-label={`Edit ${player.name}`}>
+        <button type="button" className="btn btn--ghost btn--icon" onClick={onEdit} aria-label={t('team.edit', { player: player.name })}>
           <Icon name="edit" />
         </button>
       </div>
@@ -40,7 +43,7 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
       </div>
       <div className="player__ops">
         {favorites.length ? (
-          <span className="player__fav-list" aria-label={`Favourites: ${favorites.map((op) => op.name).join(', ')}`}>
+          <span className="player__fav-list" aria-label={t('team.favouritesAria', { operators: favorites.map((op) => op.name) })}>
             {favorites.slice(0, 5).map((op) => (
               <span key={op.id} title={op.name}>
                 <OperatorIcon operator={op} size="sm" />
@@ -49,17 +52,17 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
             {favorites.length > 5 && <span className="muted small">+{favorites.length - 5}</span>}
           </span>
         ) : (
-          <span className="muted small">No favourite operators yet</span>
+          <span className="muted small">{t('teamView.noFavouriteOperatorsYet')}</span>
         )}
-        <span className="player__owned" title="Owned operators">
-          <strong>{p.owned.length}</strong>/{OPERATORS.length} owned
+        <span className="player__owned" title={t('teamView.ownedOperators')}>
+          <T id="team.owned" values={{ owned: p.owned.length, total: OPERATORS.length }} />
         </span>
       </div>
       {player.notes && <p className="player__notes">{player.notes}</p>}
       {tracker && (
         <a className="player__link" href={tracker} target="_blank" rel="noopener noreferrer">
-          R6 Tracker stats <Icon name="external" size={14} />
-          <span className="visually-hidden"> (opens in a new tab)</span>
+          {t('team.tracker')} <Icon name="external" size={14} />
+          <span className="visually-hidden"> {t('teamView.opensInANewTab')}</span>
         </a>
       )}
     </li>
@@ -67,6 +70,7 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
 }
 
 function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
+  const { t } = useI18n();
   const { roster, rosterReady } = useRoster();
   const [editing, setEditing] = useState(null); // null | 'new' | player
   const current = roster.filter((p) => p.status !== 'archived');
@@ -77,15 +81,15 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
     <>
       <div className="roster-bar">
         <span className="muted">
-          <strong className="roster-bar__count">{starters}</strong>/{LINEUP_SIZE} starters · {current.length - starters} subs
+          <T id="team.starters" values={{ starters, size: LINEUP_SIZE, subs: current.length - starters }} />
         </span>
         <button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing('new')}>
-          <Icon name="plus" size={16} /> Add player
+          <Icon name="plus" size={16} /> {t('teamView.addPlayer')}
         </button>
       </div>
       {starters < LINEUP_SIZE && current.length >= LINEUP_SIZE && (
         <p className="notice notice--warn" role="status">
-          Only {starters} starter{starters === 1 ? '' : 's'}. The lineup roller uses starters, so set {LINEUP_SIZE - starters} more.
+          {t('team.onlyStarters', { starters, more: LINEUP_SIZE - starters })}
         </p>
       )}
       <TeamSnapshot players={current} />
@@ -98,19 +102,19 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
       ) : (
         <EmptyState
           icon="users"
-          title="No active players"
+          title={t('teamView.noActivePlayers')}
           action={
             <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-              <Icon name="plus" size={18} /> Add player
+              <Icon name="plus" size={18} /> {t('teamView.addPlayer')}
             </button>
           }
         >
-          Add your players so you can assign them to strategies and give them roles.
+          {t('teamView.addYourPlayersSoYou')}
         </EmptyState>
       )}
       {former.length > 0 && (
         <details className="former">
-          <summary>Former players ({former.length})</summary>
+          <summary>{t('team.former', { count: former.length })}</summary>
           <ul className="player-grid">
             {former.map((p) => (
               <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} onRefresh={() => refreshStats(p.name)} />
@@ -137,22 +141,23 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
 
 /** Players: the roster (roles, notes) plus everyone's operator pools. */
 export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, refreshStats, setOwned, setPreference }) {
+  const { t } = useI18n();
   const tab = sub === 'operators' ? 'operators' : 'roster';
   return (
     <section className="page" aria-labelledby="team-title">
       <header className="page__head">
         <div>
-          <p className="page__kicker">Players</p>
-          <h1 id="team-title" className="page__title">Team</h1>
-          <p className="page__sub">Who plays, their main roles and the operators they own, favour or avoid. Strategies assign players to operators.</p>
+          <p className="page__kicker">{t('teamView.players')}</p>
+          <h1 id="team-title" className="page__title">{t('teamView.team')}</h1>
+          <p className="page__sub">{t('teamView.whoPlaysTheirMainRoles')}</p>
         </div>
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('plan')}>
-          <Icon name="dice" size={16} /> Lineup roller
+          <Icon name="dice" size={16} /> {t('teamView.lineupRoller')}
         </button>
       </header>
-      <div className="segmented segmented--full" role="group" aria-label="Team sections">
+      <div className="segmented segmented--full" role="group" aria-label={t('teamView.teamSections')}>
         <button type="button" className="segmented__btn" aria-pressed={tab === 'roster'} onClick={() => navigate('team')}>
-          <Icon name="users" size={16} /> Roster
+          <Icon name="users" size={16} /> {t('teamView.roster')}
         </button>
         <button
           type="button"
@@ -160,7 +165,7 @@ export default function TeamView({ sub, navigate, profile, prefs, addPlayer, upd
           aria-pressed={tab === 'operators'}
           onClick={() => navigate('team/operators')}
         >
-          <Icon name="shield" size={16} /> Operator pools
+          <Icon name="shield" size={16} /> {t('teamView.operatorPools')}
         </button>
       </div>
       {tab === 'roster' ? (

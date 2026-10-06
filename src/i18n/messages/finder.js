@@ -9,7 +9,7 @@ export const en = {
   'finder.favPlayers': '{used} of {total, plural, one {# player} other {# players}} on a favourite',
   'finder.favPlayers.none': 'No player has a favourite for this side',
   'finder.reason.favPlayers': '{used} of {total, plural, one {# player is} other {# players are}} on one of their own favourites',
-  'finder.reason.personalBlock': '{blockers, list} blocked {operator}, so {player} plays it',
+  'finder.reason.personalBlock': '{blockers, list} {count, plural, other {blocked}} {operator}, so {player} plays it',
 
   'finder.warn.unownedPick': '{player} doesn’t own {operator}, and owned operators only is on.',
   'finder.warn.useOperator': 'Use {operator} for {player}',

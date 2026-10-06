@@ -43,7 +43,7 @@ export const en = {
 
   'lineup.why.none': 'No usable operator can do this job with the current blocks.',
   'lineup.why.replacedAll': '{original} is blocked by everyone here, so {operator} takes the job.',
-  'lineup.why.personalBlock': '{blockers, list} blocked {operator}, so {player} plays it.',
+  'lineup.why.personalBlock': '{blockers, list} {count, plural, other {blocked}} {operator}, so {player} plays it.',
   'lineup.why.ownFavorite': '{operator} is {player}’s favourite.',
   'lineup.why.teamFavorite': '{operator} is a team favourite.',
   'lineup.why.strong.kdwin': '{player} has strong performance on {operator} ({kd} K/D, {win} wins).',

@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { t } from '../i18n/index.js';
 
 /** Last line of defence: show a message instead of a blank page. */
 export default class ErrorBoundary extends Component {
@@ -17,15 +18,16 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (!this.state.error) return this.props.children;
+    // A class can't use the hook; this screen is only ever shown once, in the language at the time of the crash.
     return (
       <main className="screen" id="main">
         <section className="screen__card panel" role="alert">
-          <h1 className="screen__title">Something broke</h1>
-          <p>The planner hit an unexpected error. Reloading usually fixes it.</p>
+          <h1 className="screen__title">{t('errorBoundary.title')}</h1>
+          <p>{t('errorBoundary.body')}</p>
           <pre className="error-detail">{String(this.state.error?.message ?? this.state.error)}</pre>
           <div className="actions">
             <button type="button" className="btn btn--primary" onClick={() => window.location.reload()}>
-              Reload
+              {t('errorBoundary.reload')}
             </button>
           </div>
         </section>

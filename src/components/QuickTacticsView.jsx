@@ -6,13 +6,11 @@ import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { ROLE_LABEL } from '../lib/fit.js';
+import { errorMsg } from '../lib/errors.js';
 import { exportTactics, parseImport, tacticsForTab } from '../lib/tactics.js';
+import { msg, useI18n } from '../i18n/index.js';
 
-const TABS = [
-  { id: 'mine', label: 'My tactics' },
-  { id: 'team', label: 'Team tactics' },
-  { id: 'profile', label: 'By player' },
-];
+const TABS = ['mine', 'team', 'profile'];
 
 function download(filename, text) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -27,19 +25,20 @@ function download(filename, text) {
 
 /** The original quick tactics: role-based tactics the Plan screen can roll. */
 export default function QuickTacticsView({ profile, tacticsStore }) {
+  const { t } = useI18n();
   const { tactics, saveTactic, deleteTactic, importTactics } = tacticsStore;
   const [tab, setTab] = useState('team');
   const { players, lineupPlayers } = useRoster();
   const [viewing, setViewing] = useState(() => players.find((p) => p !== profile) ?? players[0]);
   const [sideFilter, setSideFilter] = useState('all');
   const [editing, setEditing] = useState(null);
-  const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
+  const [error, setError] = useState(null); // a message descriptor (or null)
+  const [info, setInfo] = useState(null);
   const [shown, setShown] = useState(() => new Set());
   const fileRef = useRef(null);
 
   const list = tacticsForTab(tactics, { tab, profile, viewing })
-    .filter((t) => sideFilter === 'all' || t.side === sideFilter)
+    .filter((tc) => sideFilter === 'all' || tc.side === sideFilter)
     .sort(
       (a, b) =>
         a.side.localeCompare(b.side) ||
@@ -47,16 +46,16 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
         a.name.localeCompare(b.name),
     );
 
-  const canEdit = (t) => t.owner === null || t.owner === profile;
+  const canEdit = (tc) => tc.owner === null || tc.owner === profile;
 
   async function run(action, success) {
-    setError('');
-    setInfo('');
+    setError(null);
+    setInfo(null);
     try {
       await action();
       if (success) setInfo(success);
     } catch (e) {
-      setError(e.message || 'Something went wrong.');
+      setError(errorMsg(e, 'quick.failed'));
     }
   }
 
@@ -67,11 +66,10 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
     const owner = tab === 'mine' ? profile : null;
     const { tactics: parsed, errors } = parseImport(await file.text(), { owner });
     if (parsed.length === 0) {
-      setError(errors.join(' ') || 'No tactics found in the file.');
+      setError(errors[0] ?? msg('quick.noneInFile'));
       return;
     }
-    const skipped = errors.length ? ` (${errors.length} skipped: ${errors.join(' ')})` : '';
-    await run(() => importTactics(parsed), `Imported ${parsed.length} tactic${parsed.length === 1 ? '' : 's'}${skipped}.`);
+    await run(() => importTactics(parsed), msg(errors.length ? 'quick.importedSkipped' : 'quick.imported', { count: parsed.length, skipped: errors.length, errors }));
   }
 
   if (editing) {
@@ -79,11 +77,11 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
       <TacticEditor
         initial={editing}
         onCancel={() => setEditing(null)}
-        onSave={async (t) => {
-          await saveTactic(t);
+        onSave={async (saved) => {
+          await saveTactic(saved);
           setEditing(null);
-          setError('');
-          setInfo(`Saved "${t.name}".`);
+          setError(null);
+          setInfo(msg('quick.saved', { name: saved.name }));
         }}
       />
     );
@@ -92,7 +90,7 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
   return (
     <div className="page">
       <div className="section-bar">
-        <p className="muted small section-bar__text">Role-based tactics the Plan screen can roll.</p>
+        <p className="muted small section-bar__text">{t('quickTacticsView.roleBasedTacticsThePlan')}</p>
         <div className="toolbar">
           <button
             type="button"
@@ -101,7 +99,7 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
               setEditing({ owner: profile ?? null, shared: true, side: 'attack', mapId: 'any', requiredRoles: [] })
             }
           >
-            + New tactic
+            {t('quickTacticsView.newTactic')}
           </button>
           <button
             type="button"
@@ -109,10 +107,10 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
             onClick={() => download('tactics.json', exportTactics(list))}
             disabled={list.length === 0}
           >
-            Export JSON
+            {t('quickTacticsView.exportJson')}
           </button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => fileRef.current?.click()}>
-            Import JSON
+            {t('quickTacticsView.importJson')}
           </button>
           <input
             ref={fileRef}
@@ -120,82 +118,78 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
             accept="application/json,.json"
             hidden
             onChange={onImport}
-            aria-label="Import tactics JSON file"
+            aria-label={t('quickTacticsView.importTacticsJsonFile')}
           />
         </div>
       </div>
 
       <div className="panel">
         <div className="tabs-row">
-          <div className="segmented" role="group" aria-label="Tactic lists">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                aria-pressed={tab === t.id}
-                className="segmented__btn"
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
+          <div className="segmented" role="group" aria-label={t('quickTacticsView.tacticLists')}>
+            {TABS.map((id) => (
+              <button key={id} type="button" aria-pressed={tab === id} className="segmented__btn" onClick={() => setTab(id)}>
+                {t(`quick.tab.${id}`)}
               </button>
             ))}
           </div>
           {tab === 'profile' && (
             <label className="inline-field">
-              <span className="visually-hidden">Player</span>
+              <span className="visually-hidden">{t('quickTacticsView.player')}</span>
               <select className="select input--sm" value={viewing} onChange={(e) => setViewing(e.target.value)}>
                 {players.map((p) => (
-                  <option key={p} value={p}>{p === profile ? `${p} (you)` : p}</option>
+                  <option key={p} value={p}>{p === profile ? t('opsPool.you', { name: p }) : p}</option>
                 ))}
               </select>
             </label>
           )}
           <label className="inline-field">
-            <span className="visually-hidden">Side</span>
+            <span className="visually-hidden">{t('quickTacticsView.side')}</span>
             <select className="select input--sm" value={sideFilter} onChange={(e) => setSideFilter(e.target.value)}>
-              <option value="all">Both sides</option>
-              <option value="attack">Attack</option>
-              <option value="defend">Defense</option>
+              <option value="all">{t('quickTacticsView.bothSides')}</option>
+              <option value="attack">{t('quickTacticsView.attack')}</option>
+              <option value="defend">{t('quickTacticsView.defense')}</option>
             </select>
           </label>
         </div>
 
-        <Notice onDismiss={() => setError('')}>{error}</Notice>
-        {info && <Notice kind="ok" onDismiss={() => setInfo('')}>{info}</Notice>}
-        {tab === 'mine' && !profile && <Notice kind="info">Pick a profile to see your tactics.</Notice>}
+        <Notice onDismiss={() => setError(null)}>{error}</Notice>
+        {info && <Notice kind="ok" onDismiss={() => setInfo(null)}>{info}</Notice>}
+        {tab === 'mine' && !profile && <Notice kind="info">{t('quickTacticsView.pickAProfileToSee')}</Notice>}
 
         {list.length === 0 ? (
-          <p className="empty">No tactics here yet.</p>
+          <p className="empty">{t('quickTacticsView.noTacticsHereYet')}</p>
         ) : (
           <ul className="tactic-list">
-            {list.map((t) => (
-              <li key={t.id} className={`tactic-card tactic-card--${t.side}`}>
+            {list.map((tc) => (
+              <li key={tc.id} className={`tactic-card tactic-card--${tc.side}`}>
                 <div className="tactic-card__head">
                   <h3 className="tactic__name">
-                    {t.name}
-                    {t.example && <span className="tag tag--example">example</span>}
-                    {t.owner && t.shared && <span className="tag tag--shared">shared</span>}
+                    {tc.name}
+                    {tc.example && <span className="tag tag--example">{t('quick.tag.example')}</span>}
+                    {tc.owner && tc.shared && <span className="tag tag--shared">{t('quick.tag.shared')}</span>}
                   </h3>
                   <span className="muted tactic__meta">
-                    {t.side === 'attack' ? 'Attack' : 'Defense'} ·{' '}
-                    {t.mapId === 'any' ? 'Any map' : MAPS_BY_ID[t.mapId]?.name ?? t.mapId}
-                    {t.site ? ` · ${t.site}` : ''} · {t.owner ? `by ${t.owner}` : 'team'}
+                    {[
+                      t(tc.side === 'attack' ? 'card.side.attack' : 'card.side.defend'),
+                      [tc.mapId === 'any' ? t('card.anyMap') : MAPS_BY_ID[tc.mapId]?.name ?? tc.mapId, tc.site].filter(Boolean).join(' · '),
+                      tc.owner ? t('quick.by', { owner: tc.owner }) : t('quick.team'),
+                    ].join(' · ')}
                   </span>
                 </div>
-                {t.description && <p className="tactic__desc">{t.description}</p>}
-                {t.requiredRoles.length > 0 && (
-                  <ul className="fit__roles" aria-label="Required roles">
-                    {t.requiredRoles.map((r, i) => (
+                {tc.description && <p className="tactic__desc">{tc.description}</p>}
+                {tc.requiredRoles.length > 0 && (
+                  <ul className="fit__roles" aria-label={t('quick.requiredRoles')}>
+                    {tc.requiredRoles.map((r, i) => (
                       <li key={i} className={`role role--${r}`}>{ROLE_LABEL[r]}</li>
                     ))}
                   </ul>
                 )}
-                {shown.has(t.id) && (
+                {shown.has(tc.id) && (
                   <TacticDiagram
-                    tactic={t}
+                    tactic={tc}
                     players={lineupPlayers}
                     operatorsById={OPERATORS_BY_ID}
-                    mapName={MAPS_BY_ID[t.mapId]?.name}
+                    mapName={MAPS_BY_ID[tc.mapId]?.name}
                     compact
                   />
                 )}
@@ -203,53 +197,55 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
                   <button
                     type="button"
                     className="btn btn--ghost btn--sm"
-                    aria-expanded={shown.has(t.id)}
+                    aria-expanded={shown.has(tc.id)}
+                    aria-label={t(shown.has(tc.id) ? 'quick.hideDiagramAria' : 'quick.diagramAria', { name: tc.name })}
                     onClick={() =>
                       setShown((prev) => {
                         const next = new Set(prev);
-                        if (next.has(t.id)) next.delete(t.id);
-                        else next.add(t.id);
+                        if (next.has(tc.id)) next.delete(tc.id);
+                        else next.add(tc.id);
                         return next;
                       })
                     }
                   >
-                    {shown.has(t.id) ? 'Hide diagram' : 'Diagram'}
-                    <span className="visually-hidden"> for {t.name}</span>
+                    {shown.has(tc.id) ? t('quick.hideDiagram') : t('quick.diagram')}
                   </button>
-                  {canEdit(t) && (
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditing(t)}>
-                      Edit<span className="visually-hidden"> {t.name}</span>
+                  {canEdit(tc) && (
+                    <button type="button" className="btn btn--ghost btn--sm" aria-label={t('quick.editAria', { name: tc.name })} onClick={() => setEditing(tc)}>
+                      {t('ui.edit')}
                     </button>
                   )}
                   {profile && (
                     <button
                       type="button"
                       className="btn btn--ghost btn--sm"
+                      aria-label={t('quick.duplicateAria', { name: tc.name })}
                       onClick={() =>
                         setEditing({
-                          ...t,
+                          ...tc,
                           id: undefined,
                           owner: profile,
                           example: false,
                           builtin: false,
-                          name: `${t.name.replace(/^\[Example\]\s*/, '')} (copy)`,
+                          name: t('strategy.copyTitle', { title: tc.name.replace(/^\[Example\]\s*/, '') }),
                         })
                       }
                     >
-                      Duplicate<span className="visually-hidden"> {t.name}</span>
+                      {t('quick.duplicate')}
                     </button>
                   )}
-                  {canEdit(t) && (
+                  {canEdit(tc) && (
                     <button
                       type="button"
                       className="btn btn--danger btn--sm"
+                      aria-label={t('quick.deleteAria', { name: tc.name })}
                       onClick={() => {
-                        if (window.confirm(`Delete "${t.name}"? Everyone on the team will lose it.`)) {
-                          run(() => deleteTactic(t), `Deleted "${t.name}".`);
+                        if (window.confirm(t('quick.deleteConfirm', { name: tc.name }))) {
+                          run(() => deleteTactic(tc), msg('quick.deleted', { name: tc.name }));
                         }
                       }}
                     >
-                      Delete<span className="visually-hidden"> {t.name}</span>
+                      {t('ui.delete')}
                     </button>
                   )}
                 </div>

@@ -1,0 +1,48 @@
+// Hand-written messages: strategy detail page.
+export const en = {
+  'common.wentWrong': 'Something went wrong.',
+
+  'detail.teamBan': 'team ban',
+  'detail.blocked.replace': '<strong>{operator}</strong> is unavailable ({by, list}). Possible replacement: <strong>{replacement}</strong>.',
+  'detail.blocked.use': 'Use {operator}',
+  'detail.blocked.none': '<strong>{operator}</strong> is unavailable ({by, list}) and no usable operator can do this job. This strategy isn’t recommended for this lineup.',
+  'detail.adapt.listed': '<strong>{required}</strong> is in the original strategy. You picked <strong>{replacement}</strong>, a listed alternative.',
+  'detail.adapt.sameRole': '<strong>{required}</strong> is in the original strategy. You picked <strong>{replacement}</strong>, same role ({role}).',
+  'detail.adapt.missing': '<strong>{required}</strong> ({role}) is needed and nobody in your composition fits.',
+  'detail.adapt.done': '{operator} replaces {original}.',
+  'detail.favRemove': 'Remove from favourites',
+  'detail.favAdd': 'Add to favourites',
+  'detail.source': 'Source: {name}',
+  'detail.original': 'Original strategy: {title}',
+  'detail.emptyBoard': 'Nothing on this board yet.',
+  'detail.replaces': 'replaces {operator}',
+  'detail.playerFor': 'Player for {operator}',
+  'detail.openPlayer': 'Open player view: {operator}',
+  'detail.hideConfirm': 'Hide “{title}” from the library for everyone? You can show it again later.',
+  'detail.deleteConfirm': 'Delete “{title}”? Everyone on the team loses it.',
+  'detail.deleteConfirmVersion': 'Delete “{title}” v{version}? Everyone on the team loses it.',
+};
+
+export const fr = {
+  'common.wentWrong': 'Quelque chose a mal tourné.',
+
+  'detail.teamBan': 'bannissement d’équipe',
+  'detail.blocked.replace': '<strong>{operator}</strong> est indisponible ({by, list}). Remplaçant possible : <strong>{replacement}</strong>.',
+  'detail.blocked.use': 'Utiliser {operator}',
+  'detail.blocked.none': '<strong>{operator}</strong> est indisponible ({by, list}) et aucun opérateur utilisable ne peut tenir ce rôle. Cette stratégie n’est pas recommandée pour cette formation.',
+  'detail.adapt.listed': '<strong>{required}</strong> est dans la stratégie d’origine. Tu as choisi <strong>{replacement}</strong>, une alternative prévue.',
+  'detail.adapt.sameRole': '<strong>{required}</strong> est dans la stratégie d’origine. Tu as choisi <strong>{replacement}</strong>, même rôle ({role}).',
+  'detail.adapt.missing': '<strong>{required}</strong> ({role}) est nécessaire et personne dans ta composition ne convient.',
+  'detail.adapt.done': '{operator} remplace {original}.',
+  'detail.favRemove': 'Retirer des favoris',
+  'detail.favAdd': 'Ajouter aux favoris',
+  'detail.source': 'Source : {name}',
+  'detail.original': 'Stratégie d’origine : {title}',
+  'detail.emptyBoard': 'Rien sur ce plan pour l’instant.',
+  'detail.replaces': 'remplace {operator}',
+  'detail.playerFor': 'Joueur pour {operator}',
+  'detail.openPlayer': 'Ouvrir la vue joueur : {operator}',
+  'detail.hideConfirm': 'Masquer « {title} » de la bibliothèque pour tout le monde ? Tu pourras la réafficher plus tard.',
+  'detail.deleteConfirm': 'Supprimer « {title} » ? Toute l’équipe la perdra.',
+  'detail.deleteConfirmVersion': 'Supprimer « {title} » v{version} ? Toute l’équipe la perdra.',
+};

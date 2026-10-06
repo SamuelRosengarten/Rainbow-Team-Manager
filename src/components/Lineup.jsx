@@ -1,8 +1,10 @@
 import OperatorIcon from './OperatorIcon.jsx';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
+import { useI18n } from '../i18n/index.js';
 
 export default function Lineup({ players, lineup, highlight = [], onReroll, currentProfile }) {
+  const { t } = useI18n();
   return (
     <ol className="lineup">
       {players.map((player) => {
@@ -17,9 +19,9 @@ export default function Lineup({ players, lineup, highlight = [], onReroll, curr
             <div className="player-card__body">
               <span className="player-card__player">
                 {player}
-                {isMe && <span className="tag tag--me">you</span>}
+                {isMe && <span className="tag tag--me">{t('lineup.you')}</span>}
               </span>
-              <span className="player-card__op">{op ? op.name : 'Not rolled'}</span>
+              <span className="player-card__op">{op ? op.name : t('lineup.notRolled')}</span>
               {op && (
                 <span className="player-card__roles">
                   {op.roles.map((r) => (
@@ -33,8 +35,8 @@ export default function Lineup({ players, lineup, highlight = [], onReroll, curr
               className="btn btn--ghost btn--icon"
               onClick={() => onReroll(player)}
               disabled={!lineup}
-              aria-label={`Re-roll ${player}`}
-              title={`Re-roll ${player}`}
+              aria-label={t('lineupCard.reroll', { player })}
+              title={t('lineupCard.reroll', { player })}
             >
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path fill="currentColor" d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z" />

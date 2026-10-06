@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
 import { operatorsForSide } from '../lib/operators.js';
+import { useI18n } from '../i18n/index.js';
 
 export default function BansPanel({ side, bans, onToggle, onClear }) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState('');
   const ops = operatorsForSide(side);
   const banned = new Set(bans);
@@ -13,18 +15,18 @@ export default function BansPanel({ side, bans, onToggle, onClear }) {
     <section className="panel" aria-labelledby="bans-title">
       <div className="panel__head">
         <h2 id="bans-title" className="panel__title">
-          Bans <span className="count">{sideBanCount}</span>
+          {t('bans.title')} <span className="count">{sideBanCount}</span>
         </h2>
         <button type="button" className="btn btn--ghost btn--sm" onClick={onClear} disabled={sideBanCount === 0}>
-          Clear bans
+          {t('bansPanel.clearBans')}
         </button>
       </div>
-      <label className="visually-hidden" htmlFor="ban-filter">Filter operators</label>
+      <label className="visually-hidden" htmlFor="ban-filter">{t('bansPanel.filterOperators')}</label>
       <input
         id="ban-filter"
         className="input input--sm"
         type="search"
-        placeholder="Filter operators…"
+        placeholder={t('bansPanel.filterOperators2')}
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
       />
@@ -38,7 +40,7 @@ export default function BansPanel({ side, bans, onToggle, onClear }) {
                 className={`op-chip${isBanned ? ' op-chip--banned' : ''}`}
                 aria-pressed={isBanned}
                 onClick={() => onToggle(op.id)}
-                title={isBanned ? `Unban ${op.name}` : `Ban ${op.name}`}
+                title={t(isBanned ? 'bans.unban' : 'bans.ban', { operator: op.name })}
               >
                 <OperatorIcon operator={op} size="sm" />
                 <span className="op-chip__name">{op.name}</span>
