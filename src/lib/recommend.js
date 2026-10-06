@@ -314,3 +314,41 @@ export function prefWho(pref, id) {
   }
   return '';
 }
+
+/** "Anthony and Mathis", "A, B and C". */
+export const joinNames = (names) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+
+/**
+ * Operators that two or more of the lineup's players favorite. The engine does
+ * not settle these here: it only reports them (lineup.js decides who gets the
+ * operator, by best fit, then roster order).
+ * @returns {{ id: string, players: string[], text: string }[]}
+ */
+export function sharedFavorites(pref, ids = null) {
+  return [...pref.favorites]
+    .filter(([id, who]) => who.length > 1 && isUsable(pref, id) && (!ids || ids.includes(id)))
+    .map(([id, players]) => ({ id, players, text: `${joinNames(players)} ${players.length > 2 ? 'all' : 'both'} favour ${OPERATORS_BY_ID[id].name}` }));
+}
+
+/**
+ * Player moves: when the recommended lineup uses an operator a player in the
+ * setup favorites but that player is on something else, "Put Anthony on Mute".
+ * `fallback` is the operator already picked that could cover the slot instead
+ * (the existing substitution), so the move is an alternative, not a replacement.
+ * @param picks {player, operatorId}[]
+ * @returns {{ player, operatorId, slotKey, from: string|null, fallback: string|null }[]}
+ */
+export function playerMoves(strategy, rec, picks, pref) {
+  const composition = picks.map((p) => p.operatorId).filter(Boolean);
+  const inLineup = new Set(rec.lineup.map((l) => l.operatorId).filter(Boolean));
+  const out = [];
+  for (const l of rec.lineup) {
+    if (!l.operatorId) continue;
+    const owner = (pref.favorites.get(l.operatorId) ?? []).map((name) => picks.find((p) => p.player === name)).find((p) => p && p.operatorId !== l.operatorId);
+    if (!owner) continue;
+    const slot = strategy.slots.find((x) => x.key === l.slotKey);
+    const fallback = slot ? composition.find((id) => !inLineup.has(id) && isUsable(pref, id) && fitKind(slot, id)) ?? null : null;
+    out.push({ player: owner.player, operatorId: l.operatorId, slotKey: l.slotKey, from: owner.operatorId ?? null, fallback });
+  }
+  return out;
+}

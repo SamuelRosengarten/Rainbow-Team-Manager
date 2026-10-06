@@ -170,10 +170,12 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
     const pick = best.picks[si];
     const job = jobOf(slot);
     const base = { slotKey: slot.key, original: slot.operatorId ?? null, job, jobLabel: JOB_LABEL[job] ?? ROLE_LABEL[slot.role] ?? 'Flex' };
-    if (!pick) return { ...base, player: null, operatorId: null, favorite: false, why: 'No usable operator can do this job with the current blocks.', alternative: null, reasons: [] };
+    if (!pick) return { ...base, player: null, operatorId: null, favorite: false, conflict: [], why: 'No usable operator can do this job with the current blocks.', alternative: null, reasons: [] };
     const { c, choice } = pick;
     const who = c.who === null ? null : info[c.who];
     const alt = c.list.find((x) => x.id !== choice.id && !taken.has(x.id)) ?? null;
+    // Reported, not resolved: who gets a shared favorite is decided above by fit.
+    const favoredBy = info.filter((x) => x.ownFavs.includes(choice.id)).map((x) => x.p.name);
 
     const reasons = [];
     const blockedOriginal = slot.operatorId && !isUsable(pref, slot.operatorId);
@@ -200,6 +202,7 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
       player: who?.p.name ?? null,
       operatorId: choice.id,
       favorite: choice.own || choice.team,
+      conflict: favoredBy.length > 1 ? favoredBy : [],
       why,
       alternative: alt?.id ?? null,
       reasons,

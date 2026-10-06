@@ -3221,3 +3221,12 @@ button.op-pill {
   font-size: 0.85rem;
   font-weight: 600;
 }
+
+.coach__conflict,
+.pref-summary__conflict {
+  color: var(--accent);
+}
+.coach__conflict {
+  margin: 0;
+  font-size: 0.85rem;
+}

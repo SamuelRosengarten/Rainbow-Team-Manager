@@ -1,5 +1,6 @@
 import OperatorIcon from './OperatorIcon.jsx';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
+import { joinNames } from '../lib/recommend.js';
 
 /**
  * The coach's recommended lineup: one row per job with the player, the
@@ -47,6 +48,11 @@ export default function LineupCoach({ lineup, strategy, onUse }) {
                 <p className="coach__why">
                   <span className="coach__why-label">Why</span> {s.why}
                 </p>
+                {s.conflict.length > 1 && (
+                  <p className="coach__conflict">
+                    ⚠ {joinNames(s.conflict)} {s.conflict.length > 2 ? 'all' : 'both'} favour {op.name}. {s.player} has it here.
+                  </p>
+                )}
                 {alt && (
                   <p className="coach__alt">
                     Alternative: <OperatorIcon operator={alt} size="xs" /> {alt.name}

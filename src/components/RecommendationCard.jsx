@@ -6,6 +6,7 @@ import { MAPS_BY_ID } from '../lib/maps.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { DIFFICULTY, STRATEGY_TYPES, attribution } from '../lib/strategies.js';
 import { starsText } from '../lib/strategyMatch.js';
+import { playerMoves, sharedFavorites } from '../lib/recommend.js';
 
 const name = (id) => OPERATORS_BY_ID[id]?.name ?? 'Any';
 
@@ -32,7 +33,10 @@ function StarRow({ stars, label, detail }) {
  * operators replaced) and the reasons, good and bad.
  * `fits` maps an idle favorite to another strategy that uses it.
  */
-export default function RecommendationCard({ strategy, rec, pref, onOpen, fits = {}, onOpenOther, top = false, where = '' }) {
+export default function RecommendationCard({ strategy, rec, pref, onOpen, fits = {}, onOpenOther, top = false, where = '', picks = [] }) {
+  const used = rec.lineup.map((l) => l.operatorId).filter(Boolean);
+  const conflicts = sharedFavorites(pref, used);
+  const moves = playerMoves(strategy, rec, picks, pref);
   const map = strategy.mapId === 'any' ? 'Any map' : MAPS_BY_ID[strategy.mapId]?.name ?? strategy.mapId;
   const hasFavs = pref.favorites.size > 0;
   return (
@@ -99,6 +103,22 @@ export default function RecommendationCard({ strategy, rec, pref, onOpen, fits =
         </span>
       </button>
 
+      {(conflicts.length > 0 || moves.length > 0) && (
+        <ul className="rec-idle rec-moves">
+          {conflicts.map((c) => (
+            <li key={c.id}>
+              <OperatorIcon operator={OPERATORS_BY_ID[c.id]} size="xs" /> {c.text}. The lineup gives it to one of them.
+            </li>
+          ))}
+          {moves.map((m) => (
+            <li key={m.slotKey}>
+              <OperatorIcon operator={OPERATORS_BY_ID[m.operatorId]} size="xs" /> <strong>Put {m.player} on {name(m.operatorId)}</strong>
+              {m.from ? ` (their favorite; they're on ${name(m.from)})` : ' (their favorite)'}
+              {m.fallback ? `, or keep ${name(m.fallback)} in that slot as a substitute.` : '.'}
+            </li>
+          ))}
+        </ul>
+      )}
       {rec.favoritesIdle.length > 0 && (
         <ul className="rec-idle">
           {rec.favoritesIdle.map((f) => (

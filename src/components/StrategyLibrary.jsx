@@ -9,7 +9,7 @@ import { MAPS, MAPS_BY_ID, sitesFor } from '../lib/maps.js';
 import { DIFFICULTY, ORIGINS, STRATEGY_TYPES } from '../lib/strategies.js';
 import { FIND_LIMIT, findStrategies } from '../lib/finder.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
-import { prefWho, sideFavorites, whereFavoritesFit } from '../lib/recommend.js';
+import { prefWho, sharedFavorites, sideFavorites, whereFavoritesFit } from '../lib/recommend.js';
 import { usePreferences } from '../state/usePreferences.js';
 
 /** The favorites and blocks the recommendations are using, so it's clear why. */
@@ -45,6 +45,11 @@ function PreferenceSummary({ pref, side }) {
           <span className="muted small">None</span>
         )}
       </span>
+      {sharedFavorites(pref).filter((c) => OPERATORS_BY_ID[c.id].side === side).map((c) => (
+        <span key={c.id} className="pref-summary__conflict small">
+          ⚠ {c.text}
+        </span>
+      ))}
       {pref.players.length > 0 && <span className="muted small">From: {pref.players.join(', ')}</span>}
     </div>
   );
@@ -240,6 +245,7 @@ export default function StrategyLibrary({ setup, setSetup, players, onSyncPlan, 
                   pref={pref}
                   top={i === 0 && item.rec.status !== 'unscored' && (item.kind === 'exact' || item.kind === 'generic')}
                   where={item.where}
+                  picks={picks}
                   fits={whereFavoritesFit(found.results, item)}
                   onOpen={() => navigate(`strategies/s/${item.strategy.id}`)}
                   onOpenOther={(s) => navigate(`strategies/s/${s.id}`)}

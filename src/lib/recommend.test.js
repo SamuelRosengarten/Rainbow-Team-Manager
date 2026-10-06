@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import strategiesJson from '../data/strategies.json';
 import { normalizeStrategy } from './strategies.js';
-import { preferenceSet, prefState, recommendStrategies, recommendStrategy, whereFavoritesFit } from './recommend.js';
+import { playerMoves, preferenceSet, prefState, recommendStrategies, recommendStrategy, sharedFavorites, whereFavoritesFit } from './recommend.js';
+import { recommendLineup } from './lineup.js';
 import { suggestAlternatives } from './strategyMatch.js';
 import { suggestedPartners } from './synergy.js';
 import { OPERATORS } from './operators.js';
@@ -116,5 +117,39 @@ describe('suggestions respect blocks', () => {
     expect(alts[0]).toBe('ace');
     const partners = suggestedPartners(['thermite'], 'attack', 20, pref);
     expect(partners.map((p) => p.id)).not.toContain('maverick');
+  });
+});
+
+describe('player moves and shared favorites', () => {
+  const picks = [
+    { player: 'Anthony', operatorId: 'aruni' },
+    { player: 'Mathis', operatorId: 'jager' },
+  ];
+  const prefs = { Anthony: { favorites: ['mute'] }, Mathis: { favorites: ['mute'] } };
+  const pref = preferenceSet(prefs, ['Anthony', 'Mathis']);
+  const strategy = normalizeStrategy({ title: 'Mute plan', side: 'defend', mapId: 'oregon', site: 'B Laundry Room / Supply Room', slots: [{ key: 'a', operatorId: 'mute' }] });
+
+  it('offers "Put Anthony on Mute" next to the existing substitute', () => {
+    const rec = recommendStrategy(strategy, { pref, selected: ['aruni', 'jager'] });
+    const moves = playerMoves(strategy, rec, picks, pref);
+    expect(moves).toHaveLength(1);
+    expect(moves[0]).toMatchObject({ player: 'Anthony', operatorId: 'mute', from: 'aruni' });
+    expect(moves[0].fallback).toBeTruthy(); // an operator already picked that can cover the slot
+  });
+
+  it('offers no move when the favorite is already on the operator', () => {
+    const on = [{ player: 'Anthony', operatorId: 'mute' }, picks[1]];
+    const rec = recommendStrategy(strategy, { pref, selected: ['mute', 'jager'] });
+    expect(playerMoves(strategy, rec, on, pref).filter((m) => m.player === 'Anthony')).toHaveLength(0);
+  });
+
+  it('reports two players favouring the same operator, without choosing between them', () => {
+    expect(sharedFavorites(pref)).toEqual([{ id: 'mute', players: ['Anthony', 'Mathis'], text: 'Anthony and Mathis both favour Mute' }]);
+    const lineup = recommendLineup({ strategy, side: 'defend', players: [{ name: 'Anthony', stats: null }, { name: 'Mathis', stats: null }], prefs, pref });
+    const slot = lineup.slots[0];
+    expect(slot.operatorId).toBe('mute');
+    expect(slot.conflict).toEqual(['Anthony', 'Mathis']);
+    // Unchanged tie rule: equal fit goes to the first player in the lineup order.
+    expect(slot.player).toBe('Anthony');
   });
 });
