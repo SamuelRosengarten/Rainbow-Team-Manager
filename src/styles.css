@@ -3355,3 +3355,154 @@ button.op-pill {
   font-weight: 600;
   margin-left: 6px;
 }
+
+/* ---------- Language toggle ---------- */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+}
+.lang-toggle__group .segmented__btn {
+  min-width: 40px;
+  padding: 0 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.screen__lang {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+/* ---------- Finder card: assignment, reasons, details ---------- */
+.rec-card__rank {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+.rec-card__flag {
+  font-size: 0.78rem;
+  color: var(--warn);
+}
+.rec-assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 8px 0;
+}
+.rec-assign__row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.rec-assign__who {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rec-assign__op {
+  font-weight: 700;
+  color: var(--text);
+}
+.rec-assign__fav {
+  color: var(--accent);
+}
+.rec-assign__row--empty {
+  opacity: 0.6;
+}
+.rec-assign__job {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.rec-why {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.rec-why--ok {
+  color: var(--ok);
+}
+.rec-why--warn {
+  color: var(--warn);
+}
+.rec-idle {
+  font-size: 0.82rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.rec-idle.rec-warn {
+  color: var(--warn);
+}
+.rec-fix {
+  margin-top: 6px;
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+}
+.rec-details {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+.rec-details > summary {
+  cursor: pointer;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+.rec-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 6px 0;
+}
+.rec-score {
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+}
+.rec-score__label {
+  color: var(--muted);
+}
+
+/* Visually hidden text inside a scrolling list must be clipped by it, not escape to the page. */
+.stepper,
+.stepper__item {
+  position: relative;
+}
+
+/* Long French labels: tabs may wrap to two lines instead of being cut off. */
+@media (max-width: 420px) {
+  .segmented--full .segmented__btn {
+    white-space: normal;
+    line-height: 1.1;
+    text-overflow: clip;
+  }
+}
+.op-row__info,
+.op-row__shared {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* The header also holds the language toggle: the name may take two lines on phones. */
+@media (max-width: 440px) {
+  .brand {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .brand__name {
+    white-space: normal;
+    line-height: 1;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+  }
+}
+.rec-assign__who > strong::after {
+  content: ':';
+  font-weight: 400;
+  color: var(--muted);
+}

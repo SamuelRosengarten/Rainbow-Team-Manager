@@ -159,7 +159,7 @@ export const fr = {
   'teamLib.empty': 'La bibliothèque de ton équipe est vide',
 
   'strategiesView.tab.library': 'Bibliothèque d’équipe',
-  'strategiesView.tab.find': 'Chercher par composition',
+  'strategiesView.tab.find': 'Par composition',
   'strategiesView.tab.quick': 'Tactiques rapides',
 
   'cmp.row.type': 'Type',

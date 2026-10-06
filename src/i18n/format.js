@@ -138,7 +138,13 @@ const PSEUDO = { a: 'á', e: 'é', i: 'í', o: 'ó', u: 'ú', y: 'ý', A: 'Á', 
 
 /** Pseudo-locale for literal text: accented letters, ~30% longer, so layout and leaks show up. */
 export function pseudoLiteral(text) {
-  const accented = text.replace(/[A-Za-z]/g, (ch) => PSEUDO[ch] ?? ch);
-  const pad = text.trim().length > 3 ? '~'.repeat(Math.ceil(text.length * 0.3)) : '';
+  // Markup such as <strong> stays as it is, so rich messages still render.
+  const accented = text
+    .split(/(<\/?[a-z]+>)/)
+    .map((part, i) => (i % 2 ? part : part.replace(/[A-Za-z]/g, (ch) => PSEUDO[ch] ?? ch)))
+    .join('');
+  const n = text.trim().length > 3 ? Math.ceil(text.length * 0.3) : 0;
+  // Padding breaks every few characters so it can wrap like real words.
+  const pad = '~'.repeat(n).replace(/(~{4})(?=~)/g, '$1 ');
   return accented + pad;
 }
