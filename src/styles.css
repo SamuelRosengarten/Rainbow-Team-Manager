@@ -2522,3 +2522,12 @@ button.op-pill {
   font-weight: 400;
   color: var(--muted);
 }
+
+/* Composition check (lineup coach): warnings, never a block */
+.comp-checks__list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+.comp-checks__list li + li {
+  margin-top: 2px;
+}

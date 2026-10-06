@@ -6,6 +6,7 @@ import { MAPS, sitesFor } from '../lib/maps.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { DIFFICULTY, LIMITS, newId, slotColor } from '../lib/strategies.js';
 import { STRATEGY_TYPES_BY_SIDE, TACTICAL_ROLES, normalizeClock, normalizeType } from '../lib/tactical.js';
+import { keySlots } from '../lib/composition.js';
 import { t as translate, useI18n } from '../i18n/index.js';
 
 const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
@@ -149,6 +150,8 @@ export function DetailsForm({ draft, set, compact = false }) {
 
 /** The five (up to six) operator slots: operator, tactical role, defuser, alternatives, spawn and instructions. */
 export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) {
+  // Key slots the plan gets automatically (hard breach, its denial clear, a hold's breach denial).
+  const derivedKeys = keySlots({ ...draft, slots: draft.slots.map(({ essential: _e, ...x }) => x) });
   const { t } = useI18n();
   const ops = operatorsForSide(draft.side);
   const update = (i, patch, key) => set({ slots: draft.slots.map((s, j) => (j === i ? { ...s, ...patch } : s)) }, key ? { key: `slot-${i}-${key}` } : undefined);
@@ -229,6 +232,21 @@ export function SquadForm({ draft, set, roster = [], assigned = {}, onAssign }) 
                 {t('strategyForms.carriesTheDefuser')}
               </label>
             )}
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={Boolean(s.essential) || derivedKeys.has(s.key)}
+                disabled={derivedKeys.has(s.key) && !s.essential}
+                aria-describedby={`key-hint-${s.key}`}
+                onChange={(e) => update(i, { essential: e.target.checked || undefined })}
+              />
+              {t('comp.keySlot')}
+              <span id={`key-hint-${s.key}`} className="muted small">
+                {' '}
+                {derivedKeys.has(s.key) ? `(${t(`utility.${derivedKeys.get(s.key)}`)}) ` : ''}
+                {t('comp.keySlot.hint')}
+              </span>
+            </label>
             <div className="field">
               <span className="field__label">{t('strategyForms.alternatives')}</span>
               <div className="chip-row">

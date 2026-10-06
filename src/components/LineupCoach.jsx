@@ -32,6 +32,18 @@ export default function LineupCoach({ lineup, strategy, onUse }) {
           {tm(n)}
         </p>
       ))}
+      {lineup.checks?.length > 0 && (
+        <div className="notice notice--warn comp-checks" role="status">
+          <span>
+            <strong>{t('comp.checks')}</strong>
+            <ul className="comp-checks__list">
+              {lineup.checks.map((c, i) => (
+                <li key={`${c.id}-${i}`}>{tm(c.msg)}</li>
+              ))}
+            </ul>
+          </span>
+        </div>
+      )}
       <ol className="coach__list">
         {lineup.slots.map((s) => {
           const op = OPERATORS_BY_ID[s.operatorId];

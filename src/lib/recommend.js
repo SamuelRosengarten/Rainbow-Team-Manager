@@ -10,19 +10,28 @@
 //   3. The team's SELECTED operators (the composition) come next.
 //   4. The strategy's own requirements keep it tactically sound: a favorite
 //      only replaces an operator it shares a role with or is listed as an
-//      alternative to. Favorites with no job in a strategy are reported, not
-//      forced in.
+//      alternative to. A KEY slot (the only source of a utility the plan
+//      depends on, see composition.js: the hard breach, its denial clear, a
+//      hold's breach denial) only takes an operator with that same utility;
+//      anything else is a heavy penalty that wins only when nothing can do the
+//      job, and is then reported as a broken key utility. Synergy pairs the
+//      plan relies on are worth keeping; new pairs a swap creates add a little.
+//      Favorites with no job in a strategy are reported, not forced in.
 //   5. Other available operators fill whatever is left.
-// Strategies are then ranked by favorite coverage first, tactical quality
-// second.
+// Strategies are then ranked by tactical integrity (no broken key utility)
+// first, favorite coverage second, tactical quality third.
 // Who plays which operator, and why, is lineup.js; it applies the same rules
 // and adds the players (roles, stats) underneath them.
 import { OPERATORS, OPERATORS_BY_ID } from './operators.js';
+import { hasUtility, integrityIssues, isPair, keySlots, pairsAmong, swapNotes } from './composition.js';
 import { msg } from '../i18n/index.js';
 
 // Weights for a candidate operator in a slot. Favorites outweigh everything so
 // a favorite that can do the job always wins the slot.
-export const W = { exact: 3, listed: 2, role: 1, favorite: 6, selected: 2.5 };
+// breakKey: a key slot taken by an operator without the utility it exists for;
+// it outweighs a favorite (6 + 1) so a favorite never breaks a plan by itself.
+// keepPair / newPair: per synergy pair the lineup keeps from the plan / adds.
+export const W = { exact: 3, listed: 2, role: 1, favorite: 6, selected: 2.5, breakKey: -9, keepPair: 2, newPair: 0.5 };
 const MAX_CANDIDATES = 5;
 // Stars on the favorite match only mean something with a real sample: 1 of 1
 // is 100% of almost nothing. Below this many relevant favorites show the raw count.
@@ -100,8 +109,14 @@ export function fitKind(slot, id) {
   return null;
 }
 
+/**
+ * A role fit that drops the utility a key slot exists for. The plan's own
+ * operator and its author-listed alternatives are trusted.
+ */
+export const breaksKey = (keyTag, kind, id) => Boolean(keyTag) && kind === 'role' && !hasUtility(id, keyTag);
+
 /** Candidates for one slot with their weights, best first. Blocked/banned never appear. */
-function slotCandidates(slot, side, pref, selected) {
+function slotCandidates(slot, side, pref, selected, keyTag) {
   const out = [];
   for (const op of OPERATORS) {
     if (op.side !== side || !isUsable(pref, op.id)) continue;
@@ -109,7 +124,8 @@ function slotCandidates(slot, side, pref, selected) {
     if (!kind) continue;
     const favorite = pref.favorites.has(op.id);
     const isSelected = selected.has(op.id);
-    out.push({ id: op.id, kind, favorite, selected: isSelected, w: W[kind] + (favorite ? W.favorite : 0) + (isSelected ? W.selected : 0) });
+    const breaks = breaksKey(keyTag, kind, op.id);
+    out.push({ id: op.id, kind, favorite, selected: isSelected, breaks, w: W[kind] + (favorite ? W.favorite : 0) + (isSelected ? W.selected : 0) + (breaks ? W.breakKey : 0) });
   }
   // Keep the strategy's own operator and listed alternatives reachable even
   // when many favorites compete for the slot.
@@ -119,13 +135,23 @@ function slotCandidates(slot, side, pref, selected) {
   return top;
 }
 
-/** Maximum-weight assignment of distinct operators to slots (small exhaustive search). */
-function bestAssignment(slots, candidates) {
-  let best = { score: -1, pick: [] };
+/**
+ * Maximum-weight assignment of distinct operators to slots (small exhaustive
+ * search). Synergy pairs add W.keepPair when the plan already had the pair
+ * (`planPairs`), W.newPair otherwise.
+ */
+function bestAssignment(slots, candidates, planPairs = new Set()) {
+  let best = { score: -Infinity, pick: [] };
   const used = new Set();
   const pick = [];
-  // Upper bound of what the remaining slots can still add, for pruning.
-  const rest = slots.map((_, i) => candidates.slice(i).reduce((sum, c) => sum + (c[0]?.w ?? 0), 0));
+  const pairBonus = (id) => {
+    let b = 0;
+    for (const p of pick) if (p && isPair(p.id, id)) b += planPairs.has([p.id, id].sort().join('+')) ? W.keepPair : W.newPair;
+    return b;
+  };
+  // Upper bound of what the remaining slots can still add, for pruning (pairs included, generously).
+  const pairMax = W.keepPair * planPairs.size + W.newPair * slots.length * 2;
+  const rest = slots.map((_, i) => candidates.slice(i).reduce((sum, c) => sum + Math.max(0, c[0]?.w ?? 0), 0) + pairMax);
   const walk = (i, score) => {
     if (score + (rest[i] ?? 0) <= best.score) return;
     if (i === slots.length) {
@@ -137,8 +163,9 @@ function bestAssignment(slots, candidates) {
       if (used.has(c.id)) continue;
       placed = true;
       used.add(c.id);
+      const bonus = pairBonus(c.id);
       pick.push(c);
-      walk(i + 1, score + c.w);
+      walk(i + 1, score + c.w + bonus);
       pick.pop();
       used.delete(c.id);
     }
@@ -179,6 +206,7 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     lineup: [],
     blockedReplaced: [],
     blockedMissing: [],
+    brokenKeys: [],
     favoritesUsed: [],
     favoritesIdle: [],
     favoriteCoverage: 0,
@@ -199,8 +227,9 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
     return out;
   }
 
-  const candidates = slots.map((s) => slotCandidates(s, side, pref, chosen));
-  const pick = bestAssignment(slots, candidates);
+  const keys = keySlots(strategy);
+  const candidates = slots.map((s) => slotCandidates(s, side, pref, chosen, keys.get(s.key)));
+  const pick = bestAssignment(slots, candidates, pairsAmong(slots.map((s) => s.operatorId).filter(Boolean)));
   slots.forEach((slot, i) => {
     const c = pick[i];
     // Only a whole-lineup exclusion (a ban, or everyone blocked it) makes the plan's own operator unusable.
@@ -225,7 +254,8 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   const unowned = slots
     .map((slot, i) => ({ slot, c: pick[i] }))
     .filter(({ slot }) => slot.operatorId && isUnowned(pref, slot.operatorId));
-  out.status = out.blockedMissing.length ? 'excluded' : out.blockedReplaced.length || unowned.length ? 'adapted' : 'ok';
+  out.brokenKeys = integrityIssues(strategy, out.lineup);
+  out.status = out.blockedMissing.length ? 'excluded' : out.blockedReplaced.length || unowned.length || out.brokenKeys.length ? 'adapted' : 'ok';
 
   // Favorite coverage: favorites used / favorites that could have a job here
   // (capped at the number of slots, so five favorites in a five-slot plan is 5/5).
@@ -242,7 +272,11 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   for (const id of favs) {
     if (used.includes(id)) continue;
     const name = OPERATORS_BY_ID[id].name;
-    if (relevant.includes(id)) {
+    const keyOnly = slots.filter((s) => fitKind(s, id)).every((s) => breaksKey(keys.get(s.key), fitKind(s, id), id));
+    if (relevant.includes(id) && keyOnly) {
+      const s = slots.find((x) => fitKind(x, id));
+      out.favoritesIdle.push({ id, msg: msg('comp.idle.key', { operator: name, original: OPERATORS_BY_ID[s.operatorId]?.name ?? '', utility: msg(`utility.${keys.get(s.key)}`) }) });
+    } else if (relevant.includes(id)) {
       out.favoritesIdle.push({ id, msg: msg('rec.idle.taken', { operator: name }) });
     } else {
       const role = rolesOf(id).find((r) => !neededRoles.has(r)) ?? rolesOf(id)[0];
@@ -303,6 +337,8 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   };
   for (const b of out.blockedReplaced) out.reasons.push({ ok: false, msg: unavailable(b, true) });
   for (const b of out.blockedMissing) out.reasons.push({ ok: false, msg: unavailable(b, false) });
+  // Every other swap: what it keeps or costs, and the synergy pairs it changes.
+  out.reasons.push(...swapNotes(strategy, out.lineup, { skip: new Set(out.blockedReplaced.map((b) => b.slotKey)) }));
   for (const p of unownedPicks) {
     out.reasons.push({ ok: false, msg: msg('rec.unownedPick', { player: p.player, operator: OPERATORS_BY_ID[p.operatorId].name }) });
   }
@@ -337,6 +373,7 @@ const ORIGIN_RANK = { team: 0, suggested: 1, reference: 2 };
 /** The criteria that order strategies, strongest first (the finder also explains the first one that differs). */
 export const RANK_CRITERIA = [
   ['scored', (x) => Number(x.rec.status !== 'unscored')],
+  ['integrity', (x) => -(x.rec.brokenKeys?.length ?? 0)],
   ['favorites', (x) => x.rec.favoriteCoverage],
   ['favoriteCount', (x) => x.rec.favoritesUsed.length],
   ['replacement', (x) => -Number(x.rec.status === 'adapted')],
