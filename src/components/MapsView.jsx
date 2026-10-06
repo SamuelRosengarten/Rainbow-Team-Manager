@@ -55,8 +55,8 @@ function MapIndex({ strategies, navigate }) {
                   {cov.floors ? t(cov.withPlan ? 'maps.floorPlansVerified' : 'maps.floorPlans', { with: cov.withPlan, floors: cov.floors, verified: cov.verified }) : t('mapsView.floorsNotListed')}
                 </span>
                 <span className="map-card__counts">
-                  <span className="side-count side-count--attack">{t('maps.attackCount', { count: atk })}</span>
-                  <span className="side-count side-count--defend">{t('maps.defenseCount', { count: def })}</span>
+                  <span className={`side-count side-count--attack${atk ? '' : ' side-count--zero'}`}>{t('maps.attackCount', { count: atk })}</span>
+                  <span className={`side-count side-count--defend${def ? '' : ' side-count--zero'}`}>{t('maps.defenseCount', { count: def })}</span>
                 </span>
               </button>
             </li>

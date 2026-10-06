@@ -7,6 +7,8 @@ import { usePlans } from '../state/usePlans.js';
 import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { STRATEGY_TYPES, latestVersions } from '../lib/strategies.js';
 import { useI18n } from '../i18n/index.js';
+import { useRoster } from '../state/roster-context.js';
+import { LINEUP_SIZE } from '../lib/roster.js';
 import { T } from '../i18n/Rich.jsx';
 
 const FEATURE_OPS = ['thermite', 'ash', 'buck', 'smoke', 'jager', 'mira', 'bandit', 'hibana'];
@@ -75,54 +77,130 @@ export default function CommandView({ profile, strategyData, navigate }) {
   const mapsWithPlans = new Set(all.map((s) => s.mapId));
   const wip = builderInProgress();
 
+  const { roster, lineupPlayers } = useRoster();
+  const lineup = roster.filter((p) => lineupPlayers.includes(p.name));
+  const ready = lineup.filter((p) => p.availability === 'available').length;
+  const allReady = lineup.length === LINEUP_SIZE && ready === LINEUP_SIZE;
+  const library = latestVersions(all).filter((s) => s.origin !== 'team' || s.builtin).length;
+  const mapsCovered = MAPS.filter((m) => mapsWithPlans.has(m.id)).length;
+
   return (
     <section className="page command" aria-labelledby="cmd-title">
-      <header className="command__head">
-        <p className="page__kicker">{t('cmd.welcome', { name: profile })}</p>
-        <h1 id="cmd-title" className="command__title">
-          R6 Tactical Command
-        </h1>
-        <p className="command__q">{t('commandView.whatAreWePlayingWhere')}</p>
-      </header>
-
-      <div className="command__grid">
-        <div className="command__primary">
-          <button type="button" className="cmd-card cmd-card--create" onClick={() => navigate('build')}>
-            <span className="cmd-card__icon">
-              <Icon name="plus" size={30} />
-            </span>
-            <span>
-              <span className="cmd-card__title">{t('commandView.createStrategy')}</span>
-              <span className="cmd-card__sub">{t('commandView.planANewAttackOr')}</span>
-            </span>
-            <Icon name="arrow" size={22} className="cmd-card__go" />
-          </button>
+      <header className="page__head">
+        <div>
+          <p className="eyebrow">{t('cmd.welcome', { name: profile })}</p>
+          <h1 id="cmd-title" className="page__title">
+            {t('nav.home')}
+          </h1>
+          <p className="page__sub">{t('commandView.whatAreWePlayingWhere')}</p>
+        </div>
+        <div className="page__actions">
           {wip && (
-            <button type="button" className="cmd-resume" onClick={() => navigate('build')}>
+            <button type="button" className="btn btn--secondary" onClick={() => navigate('build')}>
               <Icon name="edit" size={16} />{' '}
               {wip.draft?.title ? t('cmd.resume.title', { title: wip.draft.title }) : MAPS_BY_ID[wip.mapId] ? t('cmd.resume.map', { map: MAPS_BY_ID[wip.mapId].name }) : t('cmd.resume')}
             </button>
           )}
-          <div className="command__sides">
-            <button type="button" className="cmd-card cmd-card--attack" onClick={() => navigate('strategies/attack')}>
-              <Icon name="swords" size={26} />
-              <span className="cmd-card__title">{t('commandView.attackStrategies')}</span>
-              <span className="cmd-card__stat">
-                <T id={atk.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: atk.team, total: atk.all, any: atk.anyMap }} />
-              </span>
-            </button>
-            <button type="button" className="cmd-card cmd-card--defend" onClick={() => navigate('strategies/defense')}>
-              <Icon name="shield" size={26} />
-              <span className="cmd-card__title">{t('commandView.defenseStrategies')}</span>
-              <span className="cmd-card__stat">
-                <T id={def.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: def.team, total: def.all, any: def.anyMap }} />
-              </span>
-            </button>
-          </div>
+          <button type="button" className="btn btn--primary" onClick={() => navigate('build')} title={t('commandView.planANewAttackOr')}>
+            <Icon name="plus" size={16} /> {t('commandView.createStrategy')}
+          </button>
+        </div>
+      </header>
+
+      <section className="kpis" aria-label={t('cmd.overview')}>
+        <button type="button" className="kpi" onClick={() => navigate('strategies')}>
+          <span className="kpi__label">{t('cmd.kpi.plans')}</span>
+          <span className="kpi__value">{team.length}</span>
+          <span className="kpi__meta">
+            {t('cmd.kpi.plansSides', { attack: atk.team, defend: def.team })}
+          </span>
+        </button>
+        <button type="button" className="kpi" onClick={() => navigate('team')}>
+          <span className="kpi__label">{t('cmd.kpi.lineup')}</span>
+          <span className="kpi__value">
+            {ready}
+            <span className="kpi__of">/{LINEUP_SIZE}</span>
+          </span>
+          <span className="kpi__meta">
+            <span className={`badge ${allReady ? 'badge--ok' : 'badge--warn'}`}>
+              <span className="badge__dot" aria-hidden="true" />
+              {allReady ? t('cmd.kpi.ready') : t('cmd.kpi.notReady')}
+            </span>
+            <span className="visually-hidden">{t('cmd.kpi.available', { ready, total: LINEUP_SIZE })}</span>
+          </span>
+        </button>
+        <button type="button" className="kpi" onClick={() => navigate('maps')}>
+          <span className="kpi__label">{t('cmd.kpi.maps')}</span>
+          <span className="kpi__value">
+            {mapsCovered}
+            <span className="kpi__of">/{MAPS.length}</span>
+          </span>
+          <span className="kpi__meta">{t('cmd.kpi.mapsHint')}</span>
+        </button>
+        <button type="button" className="kpi" onClick={() => navigate('strategies/find')}>
+          <span className="kpi__label">{t('cmd.kpi.library')}</span>
+          <span className="kpi__value">{library}</span>
+          <span className="kpi__meta">{t('cmd.kpi.libraryHint')}</span>
+        </button>
+      </section>
+
+      <div className="command__grid">
+        <section className="command__featured panel" aria-labelledby="feat-title">
+          {featured ? (
+            <>
+              <div className="featured__head">
+                <div className="featured__text">
+                  <p className="eyebrow">{featured.origin === 'team' ? (featured.favorite ? t('commandView.favouritePlan') : t('commandView.latestTeamPlan')) : t('commandView.startingPoint')}</p>
+                  <h2 id="feat-title" className="featured__title">
+                    {featured.title}
+                  </h2>
+                  <p className="featured__meta">
+                    <span className={`badge badge--${featured.side === 'attack' ? 'attack' : 'defend'}`}>
+                      {featured.side === 'attack' ? t('commandView.attack') : t('commandView.defense')}
+                    </span>
+                    <span>
+                      {MAPS_BY_ID[featured.mapId]?.name ?? t('commandView.anyMap')}
+                      {featured.site ? ` · ${featured.site}` : ''}
+                    </span>
+                  </p>
+                </div>
+                <div className="featured__ops" aria-hidden="true">
+                  {featured.slots.slice(0, 5).map((x) => (
+                    <OperatorIcon key={x.key} operator={OPERATORS_BY_ID[x.operatorId]} size="sm" />
+                  ))}
+                </div>
+              </div>
+              {showBoard ? (
+                <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={t('cmd.open', { title: featured.title })}>
+                  <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
+                </button>
+              ) : (
+                <div className="featured-neutral">
+                  {featured.summary && <p className="featured-neutral__summary">{featured.summary}</p>}
+                  <p className="muted small">
+                    {t('cmd.neutral', { steps: featured.steps.length, operators: featured.slots.length })}
+                  </p>
+                </div>
+              )}
+              <div className="toolbar">
+                <button type="button" className="btn btn--primary" onClick={() => navigate(`strategies/s/${featured.id}/coach`)} disabled={!featured.steps.length}>
+                  <Icon name="play" size={16} /> {t('commandView.coachMode')}
+                </button>
+                <button type="button" className="btn btn--secondary" onClick={() => navigate(`strategies/s/${featured.id}`)}>
+                  {t('commandView.openPlan')}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="muted">{t('commandView.yourPlansShowHereOnce')}</p>
+          )}
+        </section>
+
+        <div className="command__side">
           <section className="panel" aria-labelledby="mine-title">
             <div className="panel__head">
-              <h2 id="mine-title" className="panel__title card__title">
-                <Icon name="book" size={18} /> {t('commandView.myStrategies')}
+              <h2 id="mine-title" className="panel__title">
+                {t('commandView.myStrategies')}
               </h2>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => navigate('strategies')}>
                 {t('commandView.teamLibrary')} <Icon name="chevron" size={14} />
@@ -135,7 +213,7 @@ export default function CommandView({ profile, strategyData, navigate }) {
                 ))}
               </ul>
             ) : (
-              <p className="muted">
+              <p className="muted small">
                 {t('cmd.empty.lead')}{' '}
                 <button type="button" className="link-btn" onClick={() => navigate('build')}>
                   {t('commandView.buildYourFirstStrategy')}
@@ -148,74 +226,66 @@ export default function CommandView({ profile, strategyData, navigate }) {
               </p>
             )}
           </section>
+
+          <section aria-labelledby="short-title">
+            <h2 id="short-title" className="eyebrow shortcuts__title">
+              {t('cmd.shortcuts')}
+            </h2>
+            <ul className="shortcuts">
+              <li>
+                <button type="button" className="shortcut" onClick={() => navigate('strategies/attack')}>
+                  <Icon name="swords" size={18} className="shortcut__icon shortcut__icon--attack" />
+                  <span className="shortcut__text">
+                    <span className="shortcut__title">{t('commandView.attackStrategies')}</span>
+                    <span className="shortcut__meta">
+                      <T id={atk.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: atk.team, total: atk.all, any: atk.anyMap }} />
+                    </span>
+                  </span>
+                  <Icon name="chevron" size={16} className="shortcut__go" />
+                </button>
+              </li>
+              <li>
+                <button type="button" className="shortcut" onClick={() => navigate('strategies/defense')}>
+                  <Icon name="shield" size={18} className="shortcut__icon shortcut__icon--defend" />
+                  <span className="shortcut__text">
+                    <span className="shortcut__title">{t('commandView.defenseStrategies')}</span>
+                    <span className="shortcut__meta">
+                      <T id={def.anyMap > 0 ? 'cmd.stat.anyMap' : 'cmd.stat'} values={{ team: def.team, total: def.all, any: def.anyMap }} />
+                    </span>
+                  </span>
+                  <Icon name="chevron" size={16} className="shortcut__go" />
+                </button>
+              </li>
+              <li>
+                <button type="button" className="shortcut" onClick={() => navigate('maps')}>
+                  <Icon name="map" size={18} className="shortcut__icon" />
+                  <span className="shortcut__text">
+                    <span className="shortcut__title">{t('commandView.maps')}</span>
+                    <span className="shortcut__meta">
+                      <T id="cmd.mapsStat" values={{ withPlans: mapsCovered, total: MAPS.length }} />
+                    </span>
+                  </span>
+                  <Icon name="chevron" size={16} className="shortcut__go" />
+                </button>
+              </li>
+              <li>
+                <button type="button" className="shortcut" onClick={() => navigate('operators')}>
+                  <span className="shortcut__badges" aria-hidden="true">
+                    {FEATURE_OPS.slice(0, 3).map((id) => (
+                      <OperatorIcon key={id} operator={OPERATORS_BY_ID[id]} size="xs" />
+                    ))}
+                  </span>
+                  <span className="shortcut__text">
+                    <span className="shortcut__title">{t('commandView.operatorLibrary')}</span>
+                    <span className="shortcut__meta">{t('commandView.operatorsRolesUtilityAndSynergy')}</span>
+                  </span>
+                  <Icon name="chevron" size={16} className="shortcut__go" />
+                </button>
+              </li>
+            </ul>
+          </section>
         </div>
-
-        <section className="command__featured panel" aria-labelledby="feat-title">
-          {featured ? (
-            <>
-              <div className="panel__head">
-                <div>
-                  <p className="page__kicker">{featured.origin === 'team' ? (featured.favorite ? t('commandView.favouritePlan') : t('commandView.latestTeamPlan')) : t('commandView.startingPoint')}</p>
-                  <h2 id="feat-title" className="panel__title">
-                    {featured.title}
-                  </h2>
-                  <p className="muted small">
-                    {MAPS_BY_ID[featured.mapId]?.name ?? t('commandView.anyMap')}
-                    {featured.site ? ` · ${featured.site}` : ''} · {featured.side === 'attack' ? t('commandView.attack') : t('commandView.defense')}
-                  </p>
-                </div>
-              </div>
-              {showBoard ? (
-                <button type="button" className="featured-board" onClick={() => navigate(`strategies/s/${featured.id}`)} aria-label={t('cmd.open', { title: featured.title })}>
-                  <TacticalBoard strategy={featured} mapName={MAPS_BY_ID[featured.mapId]?.name} showFloorTabs={false} />
-                </button>
-              ) : (
-                <div className="featured-neutral">
-                  {featured.summary && <p>{featured.summary}</p>}
-                  <p className="muted small">
-                    {t('cmd.neutral', { steps: featured.steps.length, operators: featured.slots.length })}
-                  </p>
-                </div>
-              )}
-              <div className="toolbar">
-                <button type="button" className="btn btn--primary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}/coach`)} disabled={!featured.steps.length}>
-                  <Icon name="play" size={16} /> {t('commandView.coachMode')}
-                </button>
-                <button type="button" className="btn btn--secondary btn--sm" onClick={() => navigate(`strategies/s/${featured.id}`)}>
-                  {t('commandView.openPlan')}
-                </button>
-              </div>
-            </>
-          ) : (
-            <p className="muted">{t('commandView.yourPlansShowHereOnce')}</p>
-          )}
-        </section>
       </div>
-
-      <div className="command__row">
-        <button type="button" className="cmd-card cmd-card--wide" onClick={() => navigate('maps')}>
-          <Icon name="map" size={26} />
-          <span>
-            <span className="cmd-card__title">{t('commandView.maps')}</span>
-            <span className="cmd-card__sub">{t('commandView.browseMapsSitesAndTactical')}</span>
-          </span>
-          <span className="cmd-card__stat">
-            <T id="cmd.mapsStat" values={{ withPlans: MAPS.filter((m) => mapsWithPlans.has(m.id)).length, total: MAPS.length }} />
-          </span>
-        </button>
-        <button type="button" className="cmd-card cmd-card--wide" onClick={() => navigate('operators')}>
-          <span className="cmd-card__badges" aria-hidden="true">
-            {FEATURE_OPS.slice(0, 4).map((id) => (
-              <OperatorIcon key={id} operator={OPERATORS_BY_ID[id]} size="sm" />
-            ))}
-          </span>
-          <span>
-            <span className="cmd-card__title">{t('commandView.operatorLibrary')}</span>
-            <span className="cmd-card__sub">{t('commandView.operatorsRolesUtilityAndSynergy')}</span>
-          </span>
-        </button>
-      </div>
-
     </section>
   );
 }

@@ -21,7 +21,7 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
   return (
     <li className={`player${isMe ? ' player--me' : ''}${player.status === 'archived' ? ' player--archived' : ''}`}>
       <div className="player__head">
-        <Avatar name={player.name} size="lg" tone={player.status === 'starter' ? 'accent' : undefined} />
+        <Avatar name={player.name} size="md" tone={isMe ? 'accent' : undefined} />
         <div className="player__id">
           <span className="player__name">
             {player.name}
@@ -35,7 +35,7 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
       </div>
       <PlayerStats player={player} onRefresh={onRefresh} />
       <div className="player__badges">
-        <Badge tone={player.status === 'starter' ? 'accent' : 'neutral'}>{PLAYER_STATUS[player.status]}</Badge>
+        <Badge tone="neutral">{PLAYER_STATUS[player.status]}</Badge>
         <Badge tone={AVAIL_TONE[player.availability]} dot>
           {AVAILABILITY[player.availability]}
         </Badge>
@@ -155,13 +155,13 @@ export default function TeamView({ sub, navigate, profile, prefs, addPlayer, upd
           <Icon name="dice" size={16} /> {t('teamView.lineupRoller')}
         </button>
       </header>
-      <div className="segmented segmented--full" role="group" aria-label={t('teamView.teamSections')}>
-        <button type="button" className="segmented__btn" aria-pressed={tab === 'roster'} onClick={() => navigate('team')}>
+      <div className="tabs" role="group" aria-label={t('teamView.teamSections')}>
+        <button type="button" className="tabs__btn" aria-pressed={tab === 'roster'} onClick={() => navigate('team')}>
           <Icon name="users" size={16} /> {t('teamView.roster')}
         </button>
         <button
           type="button"
-          className="segmented__btn"
+          className="tabs__btn"
           aria-pressed={tab === 'operators'}
           onClick={() => navigate('team/operators')}
         >
