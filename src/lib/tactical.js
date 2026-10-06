@@ -184,6 +184,25 @@ export function executeTimeline(strategy) {
     .filter((x) => x.seconds !== null);
 }
 
+/**
+ * Label row for each timeline point: 0 (clock above, title below the track)
+ * or 1 (a second row further down), so labels closer than `minGap` (same
+ * unit as `lefts`) don't overlap. With both rows taken, a point goes to the
+ * row whose last label is furthest away.
+ */
+export function timelineLanes(lefts, minGap) {
+  const order = lefts.map((x, i) => i).sort((a, b) => lefts[a] - lefts[b]);
+  const last = [];
+  const lanes = [];
+  for (const i of order) {
+    let lane = last.findIndex((prev) => lefts[i] - prev >= minGap);
+    if (lane === -1) lane = last.length < 2 ? last.length : last[0] <= last[1] ? 0 : 1;
+    last[lane] = lefts[i];
+    lanes[i] = lane;
+  }
+  return lanes;
+}
+
 // ---------- Who does what ----------
 
 /** What a slot does in a step: its written action, else its markers' labels, else a stock line (or ''). */

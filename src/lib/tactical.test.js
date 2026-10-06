@@ -6,6 +6,7 @@ import { compositionSynergies, suggestedPartners, synergiesFor } from './synergy
 import { SETUP, moveItem, nearestPlayer, rectFrom, resizeZone, stepState } from './board.js';
 import {
   executeTimeline,
+  timelineLanes,
   normalizeClock,
   normalizeType,
   parseClock,
@@ -180,5 +181,23 @@ describe('synergy', () => {
     const partners = suggestedPartners(['thermite'], 'attack');
     expect(partners[0].pairs.length).toBeGreaterThan(0);
     expect(partners.every((p) => p.id !== 'thermite')).toBe(true);
+  });
+});
+
+describe('timelineLanes', () => {
+  it('keeps everything on one row when labels have room', () => {
+    expect(timelineLanes([4, 40, 96], 20)).toEqual([0, 0, 0]);
+  });
+
+  it('drops a label that would overlap to the second row, then back', () => {
+    // 2:50, 1:30, 0:40, 0:20 on a phone: the last two are 10% apart
+    expect(timelineLanes([4, 50, 86, 96], 33)).toEqual([0, 0, 0, 1]);
+    expect(timelineLanes([4, 10, 50, 56], 20)).toEqual([0, 1, 0, 1]);
+  });
+
+  it('works on unsorted input and never uses more than two rows', () => {
+    expect(timelineLanes([96, 4, 50], 33)).toEqual([0, 0, 0]);
+    const lanes = timelineLanes([0, 1, 2, 3], 50);
+    expect(Math.max(...lanes)).toBe(1);
   });
 });

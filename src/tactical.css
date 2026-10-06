@@ -835,6 +835,7 @@ kbd {
 }
 .sview__board {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   min-width: 0;
 }
@@ -1057,6 +1058,17 @@ span.squad__who {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Second row: the dot stays on the track, clock and title sit under the first row's titles. */
+.timeline--two-rows {
+  height: 104px;
+}
+.timeline__pt--low {
+  top: 20px;
+}
+.timeline__pt--low .timeline__dot {
+  order: -1;
+  margin-bottom: 26px;
 }
 .timeline__pt[aria-pressed='true'] .timeline__dot {
   background: var(--accent);
