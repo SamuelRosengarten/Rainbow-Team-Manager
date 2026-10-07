@@ -6869,5 +6869,1121 @@
     "steps": [],
     "markers": [],
     "paths": []
+  },
+  {
+    "id": "bb-atk-drone-stack-plant",
+    "origin": "suggested",
+    "title": "Beginner basics: drone, stack, plant",
+    "mapId": "any",
+    "site": "",
+    "side": "attack",
+    "type": "execute",
+    "difficulty": 1,
+    "summary": "The simplest attack: everyone drones the site, the whole team goes in through one entrance together, clears it one corner at a time and plants behind cover. Nothing to time, nobody alone.",
+    "timing": "Drone first, go in together around the middle of the round, plant with time to spare.",
+    "notes": "AI-generated beginner starting point. It only uses general Siege basics, not spots on a real map: positions are schematic. Try it in a custom game first and adapt it to your map.",
+    "tags": [
+      "beginner-basics",
+      "fundamentals"
+    ],
+    "slots": [
+      {
+        "key": "entry",
+        "operatorId": "ash",
+        "role": "soft-breacher",
+        "alternatives": [
+          "sledge",
+          "buck"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the site with the team in the preparation phase.",
+          "Use your Breaching Rounds to open the way in from a distance if it is blocked.",
+          "Go in first, with Sledge right behind you.",
+          "Clear the first corner, then call it clear."
+        ]
+      },
+      {
+        "key": "second",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the site with the team.",
+          "Open walls or hatches next to the entrance with your Tactical Breaching Hammer to give the team more angles.",
+          "Follow Ash in and shoot whoever shoots her (that is a trade).",
+          "You carry the defuser: plant it behind cover once the site is clear."
+        ],
+        "defuser": true
+      },
+      {
+        "key": "emp",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "twitch",
+          "kali"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the site with the team.",
+          "Throw your EG MK0-EMP Grenade into the room just before the team goes in: it switches off defender gadgets.",
+          "Go in third and clear the next corner.",
+          "Watch a door while Sledge plants."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "twitch",
+        "role": "intel",
+        "alternatives": [
+          "iq",
+          "thatcher"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Use your Shock Drones to find defenders and zap their gadgets.",
+          "Keep one drone in the site and call what you see during the push.",
+          "Go in last and watch the way behind the team.",
+          "After the plant, watch for defenders coming from behind."
+        ]
+      },
+      {
+        "key": "shield",
+        "operatorId": "montagne",
+        "role": "support",
+        "alternatives": [
+          "blitz",
+          "osa"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone with the team.",
+          "Walk in with your Le Roc Shield open so teammates can shoot from behind you.",
+          "Stand between the planter and the most open door.",
+          "Stay near the defuser until the round ends."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone together",
+        "timing": "Preparation phase",
+        "slots": [
+          "entry",
+          "second",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Everyone drives a drone to the site. Call out every defender and gadget you see, and where it is.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Pick one way in",
+        "timing": "Early round",
+        "slots": [
+          "entry",
+          "second",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Agree on one door, window or wall to go in through. Everyone gathers there. Nobody goes off alone.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Go in together",
+        "timing": "Middle of the round",
+        "slots": [
+          "entry",
+          "second",
+          "emp",
+          "shield"
+        ],
+        "description": "One player goes in, the next follows right behind to trade. Clear the site one corner at a time.",
+        "utility": "EMP grenade first",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Plant in the safest corner",
+        "timing": "Once the site is clear",
+        "slots": [
+          "second",
+          "shield",
+          "emp"
+        ],
+        "description": "Sledge plants behind cover, away from doors. The others each watch one door or window defenders can come from.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Hold the plant",
+        "timing": "Until the end",
+        "slots": [
+          "entry",
+          "second",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Stay spread around the defuser, each watching a different way in. Do not chase defenders: they have to come to you.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "drone",
+        "slotKey": "intel",
+        "x": 68,
+        "y": 30,
+        "label": "Drones find the defenders",
+        "stepId": "step1"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "entry",
+        "x": 60,
+        "y": 44,
+        "label": "Ash goes in first",
+        "stepId": "step3"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "second",
+        "x": 63,
+        "y": 47,
+        "label": "Sledge right behind",
+        "stepId": "step3"
+      },
+      {
+        "id": "m4",
+        "kind": "utility",
+        "slotKey": "emp",
+        "x": 66,
+        "y": 38,
+        "label": "EMP before the push",
+        "stepId": "step3",
+        "gadget": "ability"
+      },
+      {
+        "id": "m5",
+        "kind": "plant",
+        "slotKey": null,
+        "x": 72,
+        "y": 28,
+        "label": "Plant behind cover",
+        "stepId": "step4"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "shield",
+        "x": 66,
+        "y": 32,
+        "label": "Shield covers the planter",
+        "stepId": "step4"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "intel",
+        "x": 54,
+        "y": 50,
+        "label": "Twitch watches behind",
+        "stepId": "step5"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "move",
+        "slotKey": "entry",
+        "points": [
+          [
+            50,
+            60
+          ],
+          [
+            56,
+            52
+          ],
+          [
+            60,
+            44
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "entry",
+        "slotKey": "entry",
+        "points": [
+          [
+            60,
+            44
+          ],
+          [
+            64,
+            36
+          ],
+          [
+            68,
+            30
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ],
+    "crossfires": [],
+    "zones": []
+  },
+  {
+    "id": "bb-atk-slow-default",
+    "origin": "suggested",
+    "title": "Beginner basics: slow default, then group up",
+    "mapId": "any",
+    "site": "",
+    "side": "attack",
+    "type": "default",
+    "difficulty": 1,
+    "summary": "Take the map step by step instead of rushing: each player clears one area near the site with a drone first, then the team meets at one entrance and goes in together. Good for learning where defenders hide.",
+    "timing": "Clear your area in the first half of the round, meet up, then go in together with time left to plant.",
+    "notes": "AI-generated beginner starting point. It only uses general Siege basics, not spots on a real map: positions are schematic. Try it in a custom game first and adapt it to your map.",
+    "tags": [
+      "beginner-basics",
+      "fundamentals"
+    ],
+    "slots": [
+      {
+        "key": "left",
+        "operatorId": "sledge",
+        "role": "soft-breacher",
+        "alternatives": [
+          "buck",
+          "ash"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone your area (the left side of the site) before you walk in.",
+          "Use your Tactical Breaching Hammer to open a wall instead of walking through a door everyone watches.",
+          "Meet the team at the chosen entrance when your area is clear.",
+          "You carry the defuser: plant once the site is clear."
+        ],
+        "defuser": true
+      },
+      {
+        "key": "right",
+        "operatorId": "ash",
+        "role": "soft-breacher",
+        "alternatives": [
+          "zofia",
+          "sledge"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone your area (the right side of the site) before you walk in.",
+          "Open the way with your Breaching Rounds if a wall or door is blocked.",
+          "Meet the team at the chosen entrance.",
+          "Go in first when the team is ready."
+        ]
+      },
+      {
+        "key": "emp",
+        "operatorId": "thatcher",
+        "role": "support",
+        "alternatives": [
+          "twitch",
+          "kali"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Stay with Ash and help clear her area.",
+          "Keep your EG MK0-EMP Grenades for the final push into the site.",
+          "Throw one into the site right before the team goes in.",
+          "Watch a door during the plant."
+        ]
+      },
+      {
+        "key": "intel",
+        "operatorId": "iq",
+        "role": "intel",
+        "alternatives": [
+          "twitch",
+          "lion"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drone the site and call where the defenders are.",
+          "Use your Electronics Detector to find defender gadgets through walls.",
+          "Follow Sledge and help clear his area.",
+          "After the plant, watch the way behind the team."
+        ]
+      },
+      {
+        "key": "shield",
+        "operatorId": "montagne",
+        "role": "support",
+        "alternatives": [
+          "blitz",
+          "osa"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Stay near the entrance the team will use and stop defenders who roam out.",
+          "When the team meets, lead in with your Le Roc Shield open.",
+          "Cover the planter.",
+          "Stay near the defuser until the round ends."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Drone and split the outside",
+        "timing": "Preparation phase",
+        "slots": [
+          "left",
+          "right",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Everyone drones. Decide who clears which area near the site: two on the left, two on the right, one at the entrance.",
+        "utility": "Drones",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Clear your area slowly",
+        "timing": "First half of the round",
+        "slots": [
+          "left",
+          "right",
+          "emp",
+          "intel"
+        ],
+        "description": "Drone each new room before walking in. Move in pairs so one can trade the other. Do not go deeper than your area.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Meet at one entrance",
+        "timing": "Middle of the round",
+        "slots": [
+          "left",
+          "right",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Everyone comes back to the same entrance. Count that all five are there before going in.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "Go in together and plant",
+        "timing": "Second half",
+        "slots": [
+          "left",
+          "right",
+          "emp",
+          "shield"
+        ],
+        "description": "EMP first, then go in one right after the other. Sledge plants behind cover; the others watch the doors.",
+        "utility": "EMP grenade first",
+        "notes": ""
+      },
+      {
+        "id": "step5",
+        "title": "Hold the plant",
+        "timing": "Until the end",
+        "slots": [
+          "left",
+          "right",
+          "emp",
+          "intel",
+          "shield"
+        ],
+        "description": "Spread around the defuser, each watching a different way in. Let the defenders come to you.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "position",
+        "slotKey": "left",
+        "x": 22,
+        "y": 46,
+        "label": "Clear the left side",
+        "stepId": "step2"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "right",
+        "x": 78,
+        "y": 46,
+        "label": "Clear the right side",
+        "stepId": "step2"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "shield",
+        "x": 50,
+        "y": 52,
+        "label": "Hold the meeting point",
+        "stepId": "step2"
+      },
+      {
+        "id": "m4",
+        "kind": "plant",
+        "slotKey": null,
+        "x": 50,
+        "y": 26,
+        "label": "Plant behind cover",
+        "stepId": "step4"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "clear",
+        "slotKey": "left",
+        "points": [
+          [
+            40,
+            60
+          ],
+          [
+            26,
+            54
+          ],
+          [
+            22,
+            46
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p2",
+        "kind": "clear",
+        "slotKey": "right",
+        "points": [
+          [
+            60,
+            60
+          ],
+          [
+            74,
+            54
+          ],
+          [
+            78,
+            46
+          ]
+        ],
+        "stepId": "step2"
+      },
+      {
+        "id": "p3",
+        "kind": "move",
+        "slotKey": "left",
+        "points": [
+          [
+            22,
+            46
+          ],
+          [
+            40,
+            50
+          ],
+          [
+            48,
+            46
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p4",
+        "kind": "move",
+        "slotKey": "right",
+        "points": [
+          [
+            78,
+            46
+          ],
+          [
+            60,
+            50
+          ],
+          [
+            52,
+            46
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ],
+    "crossfires": [],
+    "zones": []
+  },
+  {
+    "id": "bb-def-reinforce-hold",
+    "origin": "suggested",
+    "title": "Beginner basics: reinforce, hold, watch the flank",
+    "mapId": "any",
+    "site": "",
+    "side": "defend",
+    "type": "standard",
+    "difficulty": 1,
+    "summary": "Everyone reinforces the walls and hatches around the site, two players hold safe spots inside, two hold just outside, and one watches the way behind the site. Nobody roams far, nobody fights alone.",
+    "timing": "Reinforce in the preparation phase, hold your spot, and go back in together if they plant.",
+    "notes": "AI-generated beginner starting point. It only uses general Siege basics, not spots on a real map: positions are schematic. Try it in a custom game first and adapt it to your map.",
+    "tags": [
+      "beginner-basics",
+      "fundamentals"
+    ],
+    "slots": [
+      {
+        "key": "armor",
+        "operatorId": "rook",
+        "role": "anchor",
+        "alternatives": [
+          "doc",
+          "smoke"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drop your Armor Pack at the very start so everyone grabs armor.",
+          "Reinforce walls around the site.",
+          "Hold a safe spot inside the site where you can see one entrance.",
+          "If they plant, go back in with the closest teammate."
+        ]
+      },
+      {
+        "key": "heal",
+        "operatorId": "doc",
+        "role": "anchor",
+        "alternatives": [
+          "rook",
+          "smoke"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce walls and hatches around the site.",
+          "Hold a second spot inside the site, watching a different entrance than Rook.",
+          "Heal hurt teammates with your Stim Pistol.",
+          "Stay in the site: you are the last one there."
+        ]
+      },
+      {
+        "key": "deny",
+        "operatorId": "mute",
+        "role": "anchor",
+        "alternatives": [
+          "bandit",
+          "kaid"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Put your Signal Disruptors on walls attackers might breach, or in doorways to stop their drones.",
+          "Reinforce the rest of the walls.",
+          "Hold just outside the site, near the wall you protected.",
+          "Fall back into the site when the attackers push."
+        ]
+      },
+      {
+        "key": "nade",
+        "operatorId": "jager",
+        "role": "anchor",
+        "alternatives": [
+          "wamai",
+          "smoke"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System where attackers will throw grenades into the site.",
+          "Reinforce walls with the team.",
+          "Hold just outside the site, on the other side from Mute.",
+          "Help Rook and Doc when the push starts: never fight alone."
+        ]
+      },
+      {
+        "key": "flank",
+        "operatorId": "castle",
+        "role": "support",
+        "alternatives": [
+          "valkyrie",
+          "kapkan"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Put your Armor Panels on doors so attackers must take longer ways around.",
+          "Watch the way behind the site so nobody sneaks up on the team.",
+          "Call where you hear footsteps.",
+          "Join the team in the site for the end of the round."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce and set gadgets",
+        "timing": "Preparation phase",
+        "slots": [
+          "armor",
+          "heal",
+          "deny",
+          "nade",
+          "flank"
+        ],
+        "description": "Reinforce the walls and hatches that lead into the site, place your gadgets, and agree on who holds which spot.",
+        "utility": "Reinforcements, Armor Pack, Signal Disruptor, Active Defense System, Armor Panels",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Hold your spot",
+        "timing": "Most of the round",
+        "slots": [
+          "armor",
+          "heal",
+          "deny",
+          "nade",
+          "flank"
+        ],
+        "description": "Pick a spot where you can see one entrance without being seen from many angles. Do not peek the same way twice in a row.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Stay alive and trade",
+        "timing": "When they push",
+        "slots": [
+          "armor",
+          "heal",
+          "deny",
+          "nade"
+        ],
+        "description": "When an attacker comes in, the closest teammate shoots too. Do not go out alone to look for them.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step4",
+        "title": "If they plant: go together",
+        "timing": "After a plant",
+        "slots": [
+          "armor",
+          "heal",
+          "deny",
+          "nade",
+          "flank"
+        ],
+        "description": "Go back in from two directions at the same time and stop the defuser. One player alone will not make it.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "reinforce",
+        "slotKey": null,
+        "x": 40,
+        "y": 30,
+        "label": "Reinforce site walls",
+        "stepId": "step1"
+      },
+      {
+        "id": "m2",
+        "kind": "utility",
+        "slotKey": "deny",
+        "x": 26,
+        "y": 32,
+        "label": "Mute on the breach wall",
+        "stepId": "step1",
+        "gadget": "ability"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "armor",
+        "x": 34,
+        "y": 26,
+        "label": "Rook inside site",
+        "stepId": "step2"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "heal",
+        "x": 42,
+        "y": 34,
+        "label": "Doc inside site",
+        "stepId": "step2"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "deny",
+        "x": 24,
+        "y": 40,
+        "label": "Mute just outside",
+        "stepId": "step2"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "nade",
+        "x": 52,
+        "y": 40,
+        "label": "Jäger just outside",
+        "stepId": "step2"
+      },
+      {
+        "id": "m7",
+        "kind": "position",
+        "slotKey": "flank",
+        "x": 60,
+        "y": 20,
+        "label": "Castle watches behind",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [
+      {
+        "id": "p1",
+        "kind": "rotate",
+        "slotKey": "deny",
+        "points": [
+          [
+            24,
+            40
+          ],
+          [
+            32,
+            32
+          ]
+        ],
+        "stepId": "step3"
+      },
+      {
+        "id": "p2",
+        "kind": "rotate",
+        "slotKey": "nade",
+        "points": [
+          [
+            52,
+            40
+          ],
+          [
+            44,
+            32
+          ]
+        ],
+        "stepId": "step3"
+      }
+    ],
+    "crossfires": [
+      {
+        "id": "x1",
+        "a": [
+          34,
+          26
+        ],
+        "b": [
+          42,
+          34
+        ],
+        "slotA": "armor",
+        "slotB": "heal",
+        "target": [
+          30,
+          38
+        ],
+        "radius": 4,
+        "label": "Main entrance",
+        "timing": "",
+        "note": "",
+        "stepId": "step3"
+      }
+    ],
+    "zones": []
+  },
+  {
+    "id": "bb-def-site-crossfires",
+    "origin": "suggested",
+    "title": "Beginner basics: everyone on site, crossfires",
+    "mapId": "any",
+    "site": "",
+    "side": "defend",
+    "type": "turtle",
+    "difficulty": 1,
+    "summary": "All five stay in or right next to the site. Players pair up so every entrance is watched by two people from different angles. The attackers have to come to you, and every fight is two against one.",
+    "timing": "Set up in the preparation phase, then wait: patience wins this one.",
+    "notes": "AI-generated beginner starting point. It only uses general Siege basics, not spots on a real map: positions are schematic. Try it in a custom game first and adapt it to your map.",
+    "tags": [
+      "beginner-basics",
+      "fundamentals"
+    ],
+    "slots": [
+      {
+        "key": "a1",
+        "operatorId": "smoke",
+        "role": "anchor",
+        "alternatives": [
+          "mute",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Reinforce walls around the site.",
+          "Pair with Rook: you both watch the main entrance from two different spots.",
+          "Throw your Remote Gas Grenades at the plant spot when attackers try to plant.",
+          "Do not leave the site."
+        ]
+      },
+      {
+        "key": "a2",
+        "operatorId": "rook",
+        "role": "anchor",
+        "alternatives": [
+          "doc",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Drop your Armor Pack at the start.",
+          "Pair with Smoke on the main entrance.",
+          "Stay in your spot; let attackers come into your crossfire.",
+          "Trade Smoke if he is shot."
+        ]
+      },
+      {
+        "key": "b1",
+        "operatorId": "mute",
+        "role": "anchor",
+        "alternatives": [
+          "bandit",
+          "kaid"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Put your Signal Disruptors where attackers will drone or breach.",
+          "Pair with Jäger on the second entrance.",
+          "Stay in your spot and wait.",
+          "Trade Jäger if he is shot."
+        ]
+      },
+      {
+        "key": "b2",
+        "operatorId": "jager",
+        "role": "anchor",
+        "alternatives": [
+          "wamai",
+          "mute"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Place your Active Defense System near your entrance to stop grenades.",
+          "Pair with Mute on the second entrance.",
+          "Stay in your spot and wait.",
+          "Trade Mute if he is shot."
+        ]
+      },
+      {
+        "key": "cams",
+        "operatorId": "valkyrie",
+        "role": "intel",
+        "alternatives": [
+          "maestro",
+          "castle"
+        ],
+        "spawn": "",
+        "instructions": [
+          "Throw your Black Eye cameras around the site so the team sees attackers coming.",
+          "Call where the attackers are and which entrance they push.",
+          "Stay near the back of the site.",
+          "Help the pair that is being pushed."
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "step1",
+        "title": "Prep: reinforce, cameras, pairs",
+        "timing": "Preparation phase",
+        "slots": [
+          "a1",
+          "a2",
+          "b1",
+          "b2",
+          "cams"
+        ],
+        "description": "Reinforce the walls of the site, place cameras and gadgets, and agree on the two pairs and which entrance each pair watches.",
+        "utility": "Reinforcements, Black Eye, Signal Disruptor, Active Defense System",
+        "notes": ""
+      },
+      {
+        "id": "step2",
+        "title": "Wait in your crossfire",
+        "timing": "Most of the round",
+        "slots": [
+          "a1",
+          "a2",
+          "b1",
+          "b2",
+          "cams"
+        ],
+        "description": "Stay still and watch your entrance. Valkyrie calls what the cameras see. Do not go out to look for attackers.",
+        "utility": "",
+        "notes": ""
+      },
+      {
+        "id": "step3",
+        "title": "Trade and help",
+        "timing": "When they push",
+        "slots": [
+          "a1",
+          "a2",
+          "b1",
+          "b2",
+          "cams"
+        ],
+        "description": "When one player of a pair is shot, the other shoots the attacker. The free players help the pair being pushed.",
+        "utility": "",
+        "notes": ""
+      }
+    ],
+    "markers": [
+      {
+        "id": "m1",
+        "kind": "camera",
+        "slotKey": "cams",
+        "x": 50,
+        "y": 46,
+        "label": "Cameras outside",
+        "stepId": "step1"
+      },
+      {
+        "id": "m2",
+        "kind": "position",
+        "slotKey": "a1",
+        "x": 30,
+        "y": 24,
+        "label": "Smoke",
+        "stepId": "step2"
+      },
+      {
+        "id": "m3",
+        "kind": "position",
+        "slotKey": "a2",
+        "x": 40,
+        "y": 22,
+        "label": "Rook",
+        "stepId": "step2"
+      },
+      {
+        "id": "m4",
+        "kind": "position",
+        "slotKey": "b1",
+        "x": 60,
+        "y": 22,
+        "label": "Mute",
+        "stepId": "step2"
+      },
+      {
+        "id": "m5",
+        "kind": "position",
+        "slotKey": "b2",
+        "x": 70,
+        "y": 24,
+        "label": "Jäger",
+        "stepId": "step2"
+      },
+      {
+        "id": "m6",
+        "kind": "position",
+        "slotKey": "cams",
+        "x": 50,
+        "y": 18,
+        "label": "Valkyrie at the back",
+        "stepId": "step2"
+      }
+    ],
+    "paths": [],
+    "crossfires": [
+      {
+        "id": "x1",
+        "a": [
+          30,
+          24
+        ],
+        "b": [
+          40,
+          22
+        ],
+        "slotA": "a1",
+        "slotB": "a2",
+        "target": [
+          34,
+          38
+        ],
+        "radius": 4,
+        "label": "Main entrance",
+        "timing": "",
+        "note": "",
+        "stepId": "step2"
+      },
+      {
+        "id": "x2",
+        "a": [
+          60,
+          22
+        ],
+        "b": [
+          70,
+          24
+        ],
+        "slotA": "b1",
+        "slotB": "b2",
+        "target": [
+          66,
+          38
+        ],
+        "radius": 4,
+        "label": "Second entrance",
+        "timing": "",
+        "note": "",
+        "stepId": "step2"
+      }
+    ],
+    "zones": []
   }
 ]

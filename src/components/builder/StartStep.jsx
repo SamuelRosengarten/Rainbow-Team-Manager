@@ -8,6 +8,8 @@ import { useI18n } from '../../i18n/index.js';
 /** Step 6, or the start of "Draw the plan" in Simple mode: a library plan or a blank board. */
 export default function StartStep({ w, go, ops, simple, pref, ranked, found, excluded, start }) {
   const { t } = useI18n();
+  // Simple mode: plans for this map and general plans (Beginner basics), never another map's.
+  const ready = easiestFirst(ranked.filter((x) => x.kind !== 'other-map')).slice(0, 6);
   return simple ? (
     <div className="start-from start-from--simple">
       {w.draft && (
@@ -30,9 +32,9 @@ export default function StartStep({ w, go, ops, simple, pref, ranked, found, exc
         </li>
       </ul>
       <h3 className="start-from__sub">{t('builder.simple.readyMade')}</h3>
-      <p className="muted small">{ranked.length ? t('builder.simple.readyMadeSub') : t('builder.simple.noPlans')}</p>
+      <p className="muted small">{ready.length ? t('builder.simple.readyMadeSub') : t('builder.simple.noPlans')}</p>
       <ul className="start-plans">
-        {easiestFirst(ranked).slice(0, 6).map((item) => (
+        {ready.map((item) => (
           <li key={item.strategy.id}>
             <button type="button" className="choice start-plan" onClick={() => start(item.strategy, item.rec)}>
               <span className={`diff-badge diff-badge--${item.strategy.difficulty}`}>{DIFFICULTY[item.strategy.difficulty]}</span>

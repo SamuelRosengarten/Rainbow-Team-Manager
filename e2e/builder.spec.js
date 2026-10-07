@@ -67,3 +67,20 @@ test('Advanced builder: all ten steps, stepper, start over', async ({ page }) =>
   await page.locator('.builder__tools > button.btn--ghost').click();
   await expect(title(page)).toHaveText('Map');
 });
+
+test('a map with no plans offers the Beginner basics plans in Simple mode', async ({ page }) => {
+  await enter(page);
+  await go(page, '#/build/calypso-casino');
+  await page.locator('.choice--site').last().click();
+  await page.locator('.choice--defend').click();
+  await page.locator('.simple-suggest > .btn--primary').click();
+  await next(page);
+  await expect(page.locator('.start-plan').first()).toContainText('Beginner basics');
+});
+
+test('phone, new team: the Command Center starts with one next step', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await enter(page);
+  await expect(page.locator('.cmd-nextstep')).toBeVisible();
+  await expect(page.locator('.cmd-more')).not.toHaveAttribute('open', '');
+});
