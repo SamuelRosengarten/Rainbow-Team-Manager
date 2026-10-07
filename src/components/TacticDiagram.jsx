@@ -1,7 +1,7 @@
 import OperatorIcon from './OperatorIcon.jsx';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { layoutDiagram } from '../lib/diagram.js';
-import { floorIdFromSite, floorLabel, floorPlan } from '../lib/floorPlans.js';
+import { floorIdFromSite, floorLabel, floorPlan, planSrc, planSrcSet } from '../lib/floorPlans.js';
 import { defaultFloor } from '../lib/space.js';
 import { usePlans } from '../state/usePlans.js';
 import { useI18n } from '../i18n/index.js';
@@ -37,7 +37,7 @@ export default function TacticDiagram({ tactic, lineup, players, operatorsById, 
       )}
       {plan ? (
         <div className="diagram__plan" style={{ aspectRatio: `${plan.width} / ${plan.height}` }}>
-          <img src={plan.url} alt={t('diagram.floorPlanAlt', { where })} loading="lazy" />
+          <img src={planSrc(plan, 0)} srcSet={planSrcSet(plan)} sizes="(max-width: 720px) 100vw, 480px" alt={t('diagram.floorPlanAlt', { where })} loading="lazy" decoding="async" />
           {where && <span className="diagram__where">{where}</span>}
         </div>
       ) : (

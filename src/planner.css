@@ -1647,3 +1647,9 @@ html.is-fullscreen-editor body {
     inset: -20px -4px;
   }
 }
+
+/* Placeholder while a page's code loads. */
+.page-loading {
+  padding: var(--sp-6) 0;
+  max-width: 720px;
+}

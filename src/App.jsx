@@ -1,14 +1,9 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import CommandView from './components/CommandView.jsx';
 import Icon from './components/Icon.jsx';
 import LanguageToggle from './components/LanguageToggle.jsx';
-import MapsView from './components/MapsView.jsx';
 import Notice from './components/Notice.jsx';
-import OperatorLibraryView from './components/OperatorLibraryView.jsx';
-import PlanView from './components/PlanView.jsx';
-import StrategiesView from './components/StrategiesView.jsx';
-import StrategyBuilder from './components/StrategyBuilder.jsx';
-import TeamView from './components/TeamView.jsx';
+import { PageLoading } from './components/ui.jsx';
 import {
   ConfigMissingScreen,
   ErrorScreen,
@@ -28,6 +23,14 @@ import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, stor
 import { activePlayers, lineupPlayers } from './lib/roster.js';
 import { rollableTactics } from './lib/tactics.js';
 import { useI18n } from './i18n/index.js';
+
+// Pages other than the Command Center load when first opened (smaller first download).
+const MapsView = lazy(() => import('./components/MapsView.jsx'));
+const OperatorLibraryView = lazy(() => import('./components/OperatorLibraryView.jsx'));
+const PlanView = lazy(() => import('./components/PlanView.jsx'));
+const StrategiesView = lazy(() => import('./components/StrategiesView.jsx'));
+const StrategyBuilder = lazy(() => import('./components/StrategyBuilder.jsx'));
+const TeamView = lazy(() => import('./components/TeamView.jsx'));
 
 const VIEWS = [
   { id: 'home', icon: 'crosshair' },
@@ -224,6 +227,7 @@ function TeamApp({ online, onOffline }) {
         )}
 
         <main id="main" className="main" tabIndex={-1}>
+          <Suspense fallback={<PageLoading />}>
           {view === 'home' && <CommandView profile={profile} strategyData={strategyData} navigate={navigate} team={data.team} />}
           {view === 'build' && (
             <StrategyBuilder
@@ -281,6 +285,7 @@ function TeamApp({ online, onOffline }) {
               setPreference={data.setPreference}
             />
           )}
+          </Suspense>
         </main>
         </div>
 

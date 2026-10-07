@@ -113,3 +113,28 @@ describe('operator portraits', async () => {
     expect(missing.map((o) => o.id)).toEqual([]);
   });
 });
+
+describe('floor plan copies', async () => {
+  const { existsSync } = await import('node:fs');
+  const { default: manifest } = await import('./floorPlans.json');
+  const { VARIANT_WIDTHS, floorPlan, planSrc, planSrcSet, variantFile } = await import('../lib/floorPlans.js');
+
+  it('has the smaller copies for every plan (run scripts/make-plan-variants.py)', () => {
+    const missing = [];
+    for (const floors of Object.values(manifest.plans))
+      for (const p of Object.values(floors))
+        for (const w of VARIANT_WIDTHS.filter((x) => x < p.width))
+          if (!existsSync(new URL(`../../public/${variantFile(p.file, w)}`, import.meta.url))) missing.push(variantFile(p.file, w));
+    expect(missing).toEqual([]);
+  });
+
+  it('picks the smallest copy that is wide enough, else the original', () => {
+    const plan = floorPlan('calypso-casino', '1f');
+    expect(plan.sources.map((s) => s.w)).toEqual([1200, 2400, 3840]);
+    expect(planSrc(plan, 800)).toMatch(/1f\.1200\.webp$/);
+    expect(planSrc(plan, 2000)).toMatch(/1f\.2400\.webp$/);
+    expect(planSrc(plan, 9000)).toMatch(/1f\.webp$/);
+    expect(planSrcSet(plan).split(', ')).toHaveLength(3);
+    expect(floorPlan('bank', '1f').sources.map((s) => s.w)).toEqual([1200, 1600]);
+  });
+});

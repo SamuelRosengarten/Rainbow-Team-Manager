@@ -3,6 +3,7 @@ export default {
   // app
   'app.skipToContent': 'Passer au contenu',
   'app.goHome': ', retour à l’accueil',
+  'app.loadingPage': 'Chargement de la page…',
   'app.signedInAs': 'Connecté en tant que',
   'app.main': 'Principale',
   'app.newStrategy': 'Nouvelle stratégie',

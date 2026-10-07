@@ -350,7 +350,7 @@ export default function TacticalBoard({
 
         <rect x="0" y="0" width={space.w} height={space.h} className="tboard__bg" />
         {space.kind !== 'floor' && <rect x="0" y="0" width={space.w} height={space.h} fill={`url(#${uid}-grid)`} />}
-        <MapLayer space={space} strategy={source} mapName={mapName} showRooms={showRooms} quiet={editing} />
+        <MapLayer space={space} strategy={source} mapName={mapName} showRooms={showRooms} quiet={editing} viewW={view?.w ?? null} />
 
         {/* Zones */}
         {strategy.zones.map((z) => {

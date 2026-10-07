@@ -2,6 +2,7 @@
 export default {
   "app.skipToContent": "Skip to content",
   "app.goHome": ", go home",
+  "app.loadingPage": "Loading the page…",
   "app.signedInAs": "Signed in as",
   "app.main": "Main",
   "app.newStrategy": "New strategy",

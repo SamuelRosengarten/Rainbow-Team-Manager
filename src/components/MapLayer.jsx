@@ -1,4 +1,5 @@
-import { floorLabel, siteCallouts } from '../lib/floorPlans.js';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { floorLabel, planSrc, siteCallouts } from '../lib/floorPlans.js';
 import { useI18n } from '../i18n/index.js';
 
 // The bottom layers of the tactical board, in board units (see space.js):
@@ -110,14 +111,42 @@ function NoMap({ size }) {
 }
 
 /**
+ * The plan image at the size it's drawn: the small copy first (fast on a
+ * phone), and a sharper one on top once the board is shown larger, on a
+ * high-density screen or zoomed in. Same box either way, so positions and
+ * calibration don't move.
+ */
+export function PlanImage({ plan, size, zoom = 1 }) {
+  const ref = useRef(null);
+  const [px, setPx] = useState(0);
+  useLayoutEffect(() => {
+    const svg = ref.current?.ownerSVGElement;
+    if (!svg) return undefined;
+    const measure = () => setPx(svg.getBoundingClientRect().width * (window.devicePixelRatio || 1));
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(svg);
+    return () => ro?.disconnect();
+  }, []);
+  const base = planSrc(plan, 0);
+  const sharp = px ? planSrc(plan, px * zoom) : base;
+  return (
+    <g ref={ref}>
+      <image className="ml-plan" href={base} x="0" y="0" width={size.w} height={size.h} preserveAspectRatio="none" />
+      {sharp !== base && <image className="ml-plan" href={sharp} x="0" y="0" width={size.w} height={size.h} preserveAspectRatio="none" />}
+    </g>
+  );
+}
+
+/**
  * @param {{ space: ReturnType<import('../lib/space.js').boardSpace>, strategy, mapName?, compact?, showRooms?, quiet? (editor: it explains approximate positions itself) }} props
  */
-export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true, quiet = false }) {
+export default function MapLayer({ space, strategy, mapName, compact = false, showRooms = true, quiet = false, viewW = null }) {
   const { t } = useI18n();
   if (space.kind === 'floor') {
     return (
       <g className="ml">
-        <image className="ml-plan" href={space.plan.url} x="0" y="0" width={space.w} height={space.h} preserveAspectRatio="none" />
+        <PlanImage plan={space.plan} size={space} zoom={viewW ? space.w / viewW : 1} />
         <CalloutLayer plan={space.plan} size={space} site={strategy.site} mapId={strategy.mapId} showRooms={showRooms} />
         {!space.plan.verified && !compact && (
           <text className="ml-unverified" x={space.w - 1.5} y="3.2">

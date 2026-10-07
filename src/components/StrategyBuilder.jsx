@@ -11,7 +11,7 @@ import TacticalBoard from './TacticalBoard.jsx';
 import { DetailsForm, StepsForm } from './StrategyForms.jsx';
 import { ROLES, ROLE_LABEL } from '../lib/fit.js';
 import { parseSite } from '../lib/diagram.js';
-import { floorIdFromSite, floorPlan } from '../lib/floorPlans.js';
+import { floorIdFromSite, floorPlan, planSrc, planSrcSet } from '../lib/floorPlans.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
@@ -440,7 +440,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
             return (
               <li key={s}>
                 <button type="button" className="choice choice--site" aria-pressed={w.site === s} onClick={() => set((x) => ({ site: s, step: 3, reached: Math.max(x.reached, 3) }))}>
-                  {plan && <img className="choice__plan" src={plan.url} alt="" loading="lazy" />}
+                  {plan && <img className="choice__plan" src={planSrc(plan, 0)} srcSet={planSrcSet(plan)} sizes="(max-width: 720px) 100vw, 320px" alt="" loading="lazy" decoding="async" />}
                   <span className="choice__floor">{floor}</span>
                   <span className="choice__name">{rooms.join(' / ')}</span>
                 </button>

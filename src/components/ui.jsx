@@ -29,6 +29,17 @@ export function Skeleton({ lines = 3 }) {
   );
 }
 
+/** Calm placeholder while a page's code loads (lazy routes). */
+export function PageLoading() {
+  const { t } = useI18n();
+  return (
+    <div className="page-loading" role="status">
+      <span className="visually-hidden">{t('app.loadingPage')}</span>
+      <Skeleton lines={5} />
+    </div>
+  );
+}
+
 /**
  * Loading / error / "needs the database update" wrapper for a data section.
  * Renders children only when status is 'ready'.

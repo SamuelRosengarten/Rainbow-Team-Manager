@@ -1,15 +1,8 @@
-import { useState } from 'react';
-import CoachMode from './CoachMode.jsx';
+import { Suspense, lazy, useState } from 'react';
 import Icon from './Icon.jsx';
-import PlayerMode from './PlayerMode.jsx';
-import QuickTacticsView from './QuickTacticsView.jsx';
 import ReferenceForm from './ReferenceForm.jsx';
-import StrategyCompare from './StrategyCompare.jsx';
-import StrategyDetail from './StrategyDetail.jsx';
-import StrategyEditor from './StrategyEditor.jsx';
-import StrategyLibrary from './StrategyLibrary.jsx';
 import TeamLibrary from './TeamLibrary.jsx';
-import { EmptyState, Skeleton } from './ui.jsx';
+import { EmptyState, PageLoading, Skeleton } from './ui.jsx';
 import { MAPS_BY_ID } from '../lib/maps.js';
 import { createStrategy } from '../lib/strategies.js';
 import { autoAssign } from '../lib/strategyMatch.js';
@@ -17,6 +10,15 @@ import { useRoster } from '../state/roster-context.js';
 import { useSessionState } from '../state/useSessionState.js';
 import { parseStrategiesSub, setupFromTeam } from '../lib/strategySetup.js';
 import { useI18n } from '../i18n/index.js';
+
+// Each strategy screen loads when first opened.
+const CoachMode = lazy(() => import('./CoachMode.jsx'));
+const PlayerMode = lazy(() => import('./PlayerMode.jsx'));
+const QuickTacticsView = lazy(() => import('./QuickTacticsView.jsx'));
+const StrategyCompare = lazy(() => import('./StrategyCompare.jsx'));
+const StrategyDetail = lazy(() => import('./StrategyDetail.jsx'));
+const StrategyEditor = lazy(() => import('./StrategyEditor.jsx'));
+const StrategyLibrary = lazy(() => import('./StrategyLibrary.jsx'));
 
 const TABS = [
   ['', 'library', 'book'],
@@ -161,7 +163,7 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
     <section className="page" aria-label={t('strategiesView.strategies')}>
       {listMode && header}
       {listMode && tabs}
-      {body}
+      <Suspense fallback={<PageLoading />}>{body}</Suspense>
       {referenceFor && (
         <ReferenceForm
           initial={referenceFor === 'new' ? null : referenceFor}
