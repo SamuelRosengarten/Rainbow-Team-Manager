@@ -214,9 +214,6 @@ textarea {
 .empty {
   color: var(--subtle);
 }
-.mono {
-  font-family: var(--font-mono);
-}
 .eyebrow,
 .page__kicker {
   margin: 0;
@@ -327,9 +324,6 @@ textarea {
 .sidenav {
   display: grid;
   gap: 2px;
-}
-.sidenav__label {
-  padding: 0 var(--sp-3) var(--sp-2);
 }
 .sidenav__link {
   position: relative;
@@ -490,9 +484,6 @@ textarea {
 .live--reconnecting .live__dot {
   background: var(--warn);
   animation: pulse 1.4s ease-in-out infinite;
-}
-.live--disconnected .live__dot {
-  background: var(--danger);
 }
 .live--offline .live__dot {
   background: var(--warn);
@@ -655,9 +646,6 @@ textarea {
   font-weight: 400;
   font-size: var(--fs-sm);
 }
-.section-title--warn {
-  color: var(--warn);
-}
 .card__title {
   font-size: var(--fs-md);
   font-weight: 600;
@@ -723,11 +711,6 @@ textarea {
   line-height: 1.6;
   text-align: center;
   font-variant-numeric: tabular-nums;
-}
-.count--warn {
-  margin-left: 6px;
-  background: var(--warn-soft);
-  color: var(--warn);
 }
 
 /* ===========================================================================
@@ -846,11 +829,6 @@ textarea {
   padding: 0 10px;
   font-size: var(--fs-sm);
   gap: 6px;
-}
-.btn--lg {
-  min-height: var(--control-h-lg);
-  padding: 0 20px;
-  font-size: var(--fs-base);
 }
 .btn--icon {
   width: var(--control-h);
@@ -1542,26 +1520,25 @@ fieldset.field > legend {
    =========================================================================== */
 @media (pointer: coarse), (max-width: 720px) {
   .btn,
-  .btn--sm,
-  .input,
-  .select,
-  .input--sm,
-  .segmented__btn,
-  .tabs__btn,
-  .profile-switch,
-  .step-chip,
-  .link-btn,
-  .checkbox,
-  .version-pill,
-  .floor-tab,
-  .pref-btn,
-  .op-row__open,
-  .op-tile,
-  .strat-card__main,
-  .mini-strat__main,
-  .map-card,
-  .choice,
-  details > summary {
+.btn--sm,
+.input,
+.select,
+.input--sm,
+.segmented__btn,
+.tabs__btn,
+.profile-switch,
+.step-chip,
+.link-btn,
+.checkbox,
+.version-pill,
+.floor-tab,
+.pref-btn,
+.op-row__open,
+.op-tile,
+.strat-card__main,
+.map-card,
+.choice,
+details > summary {
     min-height: var(--tap);
   }
   .btn--icon,
