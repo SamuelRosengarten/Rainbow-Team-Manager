@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import CopyButton from './CopyButton.jsx';
-import { CalloutLayer } from './MapLayer.jsx';
+import { CalloutLayer, PlanImage } from './MapLayer.jsx';
 import { Badge } from './ui.jsx';
 import {
   CALLOUT_KINDS,
@@ -215,7 +215,7 @@ export default function FloorPlanPanel({ map }) {
           <div className={`tboard tboard--floor fplan__board${calibrating ? ' fplan__board--calib' : ''}`}>
             <svg ref={svgRef} className="tboard__svg" viewBox={`0 0 ${size.w} ${size.h}`} onClick={addCallout} role="img" aria-label={t('fplan.boardAria', { map: map.name, floor: floorLabel(floorId) })}>
               <rect x="0" y="0" width={size.w} height={size.h} className="tboard__bg" />
-              <image href={plan.url} x="0" y="0" width={size.w} height={size.h} preserveAspectRatio="none" />
+              <PlanImage plan={plan} size={size} />
               <CalloutLayer plan={plan} size={size} mapId={map.id} />
             </svg>
           </div>

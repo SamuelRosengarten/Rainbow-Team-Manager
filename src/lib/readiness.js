@@ -96,7 +96,9 @@ export function nextActions({ team, strategies, lineup, prep }) {
   if (!team.mapId) out.push({ id: 'pickMap', values: {}, to: 'plan' });
   else {
     const here = prep.find((p) => p.mapId === team.mapId);
-    if (here && here.status !== 'ready') out.push({ id: 'mapGaps', values: { mapId: team.mapId }, to: `maps/${team.mapId}` });
+    // No plan at all for the map yet: start from a Beginner basics plan in the builder.
+    if (here && !here.attack && !here.defend) out.push({ id: 'basics', values: { mapId: team.mapId }, to: `build/${team.mapId}` });
+    else if (here && here.status !== 'ready') out.push({ id: 'mapGaps', values: { mapId: team.mapId }, to: `maps/${team.mapId}` });
   }
   const readiness = strategyReadiness(strategies);
   if (readiness.review.length) out.push({ id: 'review', values: { count: readiness.review.length }, to: 'strategies' });

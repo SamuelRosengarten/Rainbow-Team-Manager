@@ -298,8 +298,9 @@ export function recommendStrategy(strategy, { pref = emptyPreferences(), selecte
   out.compatLabel = chosen.size ? msg('rec.compat', { kept: keptCount, total: chosen.size }) : msg('rec.compat.none');
 
   // Strategy match: right map and site, real positions, a team-tested plan.
-  // A site-less plan fits any site a little; a general (any-map) plan less than one written for the map.
-  const siteMatch = !site || strategy.site === site ? 1 : !strategy.site ? (strategy.mapId === 'any' ? 0.3 : 0.5) : 0;
+  // A site-less plan fits any site a little; a general (any-map) plan less than one written for the map:
+  // its site and map match together (0.35 × 0.2 + 0.15 × 0.5) stay under a plan for another site of the map (0.15).
+  const siteMatch = !site || strategy.site === site ? 1 : !strategy.site ? (strategy.mapId === 'any' ? 0.2 : 0.5) : 0;
   const otherMap = Boolean(mapId) && strategy.mapId !== mapId && strategy.mapId !== 'any';
   const mapMatch = !mapId || strategy.mapId === mapId ? 1 : 0.5;
   const content = Math.min(1, (strategy.markers.length + strategy.steps.length * 2) / 16);

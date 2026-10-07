@@ -2,7 +2,9 @@
 export default {
   // app
   'app.skipToContent': 'Passer au contenu',
-  'app.r6TacticalCommandGoHome': 'R6 Tactical Command, retour à l’accueil',
+  'app.goHome': ', retour à l’accueil',
+  'app.loadingPage': 'Chargement de la page…',
+  'app.signedInAs': 'Connecté en tant que',
   'app.main': 'Principale',
   'app.newStrategy': 'Nouvelle stratégie',
   'app.youReOfflineChangesWon': 'Tu es hors ligne. Tes changements n’arriveront à l’équipe qu’au retour de ta connexion.',

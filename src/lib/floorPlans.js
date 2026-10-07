@@ -135,8 +135,28 @@ export function floorPlan(mapId, floorId) {
   if (local) return local;
   const plan = normalizePlan(manifest.plans?.[mapId]?.[floorId]);
   if (!plan) return null;
-  return { ...plan, url: `${base()}${plan.file}` };
+  const url = `${base()}${plan.file}`;
+  // Smaller copies made by scripts/make-plan-variants.py, then the original.
+  const sources = [...VARIANT_WIDTHS.filter((w) => w < plan.width).map((w) => ({ w, url: `${base()}${variantFile(plan.file, w)}` })), { w: plan.width, url }];
+  return { ...plan, url, sources };
 }
+
+/** Widths of the smaller copies of each built-in plan (scripts/make-plan-variants.py). */
+export const VARIANT_WIDTHS = [1200, 2400];
+export const variantFile = (file, w) => file.replace(/(\.\w+)$/, `.${w}$1`);
+
+/**
+ * The image to draw a plan with when it shows `px` device pixels wide: the
+ * smallest copy that is at least that wide, else the original. Local plans
+ * (the team's own image) have only the original.
+ */
+export function planSrc(plan, px) {
+  const sources = plan.sources ?? [{ w: plan.width, url: plan.url }];
+  return (sources.find((s) => s.w >= px) ?? sources[sources.length - 1]).url;
+}
+
+/** srcset for an <img> of the plan ("url 1200w, url 1600w"). */
+export const planSrcSet = (plan) => (plan.sources ?? [{ w: plan.width, url: plan.url }]).map((s) => `${s.url} ${s.w}w`).join(', ');
 
 /** True when the strategy is drawn on a floor plan the team has verified against the game. */
 export function onVerifiedPlan(strategy) {

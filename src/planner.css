@@ -80,6 +80,7 @@
   color: var(--ok);
 }
 .stepper__item--on button {
+  border-bottom-color: var(--accent);
   padding: 7px 14px 7px 7px;
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
@@ -139,10 +140,6 @@
 .beditor__stage {
   grid-area: stage;
   gap: 10px;
-}
-.beditor__inspector {
-  grid-area: side;
-  align-self: start;
 }
 
 /* ---------- Tactical context: who and when ---------- */
@@ -279,6 +276,8 @@
   position: relative;
 }
 .rail-btn {
+  hyphens: auto;
+  overflow-wrap: anywhere;
   width: 100%;
   min-height: 52px;
   gap: 3px;
@@ -753,6 +752,8 @@
 
 /* ---------- Side panel: items in this step / edit the selected item ---------- */
 .beditor__inspector {
+  align-self: start;
+  grid-area: side;
   border: 0;
   border-radius: var(--radius-lg);
   padding: 14px;
@@ -1114,14 +1115,6 @@
 .simple-why > summary,
 .more-details > summary {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 4px 2px;
-  color: var(--text-2);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  cursor: pointer;
 }
 .simple-why > summary::before,
 .more-details > summary::before {
@@ -1144,6 +1137,14 @@
 }
 .simple-why > summary,
 .more-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  padding: 4px 2px;
+  min-height: 36px;
+  gap: 6px;
+  align-items: center;
   list-style: none;
 }
 .simple-why[open] > summary,
@@ -1613,4 +1614,94 @@ html.is-fullscreen-editor body {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* ---------- 44px touch targets everywhere else (phones and touch screens) ---------- */
+@media (pointer: coarse), (max-width: 720px) {
+  .skip-link,
+  .brand,
+  .lang-toggle .segmented__btn,
+  .builder__mode .segmented__btn,
+  .action-row,
+  .synergy__op,
+  .op-chip,
+  .chip-toggle,
+  .op-row__open,
+  .finder summary,
+  details > summary {
+    min-height: var(--tap);
+  }
+  .lang-toggle .segmented__btn {
+    min-width: var(--tap);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  /* The coach progress dots stay small but get a finger-sized hit area. */
+  .coach__tick {
+    position: relative;
+  }
+  .coach__tick::before {
+    content: '';
+    position: absolute;
+    inset: -20px -4px;
+  }
+}
+
+/* Placeholder while a page's code loads. */
+.page-loading {
+  padding: var(--sp-6) 0;
+  max-width: 720px;
+}
+
+/* ---------- Command Center on a phone, new team ---------- */
+.cmd-nextstep {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--accent-line);
+  background: linear-gradient(180deg, var(--accent-soft), transparent 80%), var(--surface);
+}
+.cmd-nextstep .eyebrow {
+  margin: 0;
+}
+.cmd-nextstep__go {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  text-align: left;
+  white-space: normal;
+}
+.cmd-more {
+  grid-column: 1 / -1;
+}
+.cmd-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 4px 2px;
+  color: var(--text-2);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.cmd-more > summary::-webkit-details-marker {
+  display: none;
+}
+.cmd-more > summary::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin: 0 4px 0 2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.cmd-more[open] > summary::before {
+  transform: rotate(45deg);
+}
+.cmd-more[open] > .cmd-grid {
+  margin-top: 8px;
 }

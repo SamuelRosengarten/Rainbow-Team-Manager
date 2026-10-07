@@ -14,7 +14,7 @@ function Chooser({ strategy, assigned, profile, onPick }) {
   const { t } = useI18n();
   return (
     <section className="panel" aria-labelledby="pick-title">
-      <h2 id="pick-title" className="panel__title">{t('playerMode.whoAreYouPlaying')}</h2>
+      <h1 id="pick-title" className="panel__title">{t('playerMode.whoAreYouPlaying')}</h1>
       <p className="muted small">{t('playerMode.youLlSeeOnlyYour')}</p>
       <ul className="who-grid">
         {strategy.slots.map((s) => {

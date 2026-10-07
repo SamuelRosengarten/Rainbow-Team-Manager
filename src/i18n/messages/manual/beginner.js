@@ -61,6 +61,8 @@ export const en = {
   'planner.fullscreen': 'Fullscreen',
   'planner.fullscreen.desc': 'Show only the map and the tools.',
   'planner.exitFullscreen': 'Exit fullscreen',
+  'cmd.nextStep': 'Next thing to do',
+  'cmd.more': '{count, plural, one {# more section (empty for now)} other {# more sections (empty for now)}}',
 };
 
 export const fr = {
@@ -125,4 +127,6 @@ export const fr = {
   'planner.fullscreen': 'Plein écran',
   'planner.fullscreen.desc': 'N’affiche que la carte et les outils.',
   'planner.exitFullscreen': 'Quitter le plein écran',
+  'cmd.nextStep': 'Prochaine chose à faire',
+  'cmd.more': '{count, plural, one {# autre section (vide pour l’instant)} other {# autres sections (vides pour l’instant)}}',
 };

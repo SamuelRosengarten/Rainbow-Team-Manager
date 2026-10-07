@@ -159,3 +159,24 @@ describe('finder: a real assignment, scored in players', () => {
     if (generic > 0) expect(en(results[generic].rankWhy)).toMatch(/general plans come after plans written for Clubhouse/);
   });
 });
+
+describe('beginner basics', () => {
+  const BASICS = ALL.filter((s) => s.tags.includes('beginner-basics'));
+
+  it('has easy, map-free plans for both sides', () => {
+    expect(BASICS.length).toBeGreaterThanOrEqual(4);
+    expect(BASICS.every((s) => s.difficulty === 1 && s.mapId === 'any' && s.origin === 'suggested')).toBe(true);
+    expect(new Set(BASICS.map((s) => s.side))).toEqual(new Set(['attack', 'defend']));
+  });
+
+  it('a map with no plans gets the general plans (beginner basics among them) before other maps', () => {
+    for (const side of ['attack', 'defend']) {
+      const r = find({ mapId: 'calypso-casino', side });
+      expect(r.exactCount).toBe(0);
+      const generic = r.results.filter((x) => x.kind === 'generic');
+      expect(generic.some((x) => x.strategy.tags.includes('beginner-basics'))).toBe(true);
+      const firstOther = r.results.findIndex((x) => x.kind === 'other-map');
+      expect(firstOther === -1 || firstOther >= generic.length).toBe(true);
+    }
+  });
+});

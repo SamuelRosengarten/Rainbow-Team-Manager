@@ -1,7 +1,9 @@
 // Strings extracted from components/App.jsx (English).
 export default {
   "app.skipToContent": "Skip to content",
-  "app.r6TacticalCommandGoHome": "R6 Tactical Command, go home",
+  "app.goHome": ", go home",
+  "app.loadingPage": "Loading the page…",
+  "app.signedInAs": "Signed in as",
   "app.main": "Main",
   "app.newStrategy": "New strategy",
   "app.youReOfflineChangesWon": "You're offline. Changes won't reach the team until your connection is back.",

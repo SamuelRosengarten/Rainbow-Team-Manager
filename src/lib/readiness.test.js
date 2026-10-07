@@ -89,6 +89,11 @@ describe('nextActions', () => {
     expect(nextActions({ team: { mapId: '' }, strategies: [], lineup: short, prep: [] })[0]).toMatchObject({ id: 'lineup', values: { count: 1 }, to: 'team' });
   });
 
+  it('sends a map with no plan at all to the builder (Beginner basics)', () => {
+    const out = nextActions({ team: { mapId: 'calypso-casino' }, strategies: [], lineup: ready, prep: [mapPreparation('calypso-casino', [])] });
+    expect(out[0]).toMatchObject({ id: 'basics', values: { mapId: 'calypso-casino' }, to: 'build/calypso-casino' });
+  });
+
   it('points at gaps on the planned map and strategies needing review', () => {
     const s = strat({ id: 'x', family: 'x', steps: [] });
     const out = nextActions({ team: { mapId: 'bank' }, strategies: [s], lineup: ready, prep: [mapPreparation('bank', [s])] });

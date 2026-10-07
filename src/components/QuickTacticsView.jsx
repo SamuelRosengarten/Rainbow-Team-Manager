@@ -163,11 +163,11 @@ export default function QuickTacticsView({ profile, tacticsStore }) {
             {list.map((tc) => (
               <li key={tc.id} className={`tactic-card tactic-card--${tc.side}`}>
                 <div className="tactic-card__head">
-                  <h3 className="tactic__name">
+                  <h2 className="tactic__name">
                     {tc.name}
                     {tc.example && <span className="tag tag--example">{t('quick.tag.example')}</span>}
                     {tc.owner && tc.shared && <span className="tag tag--shared">{t('quick.tag.shared')}</span>}
-                  </h3>
+                  </h2>
                   <span className="muted tactic__meta">
                     {[
                       t(tc.side === 'attack' ? 'card.side.attack' : 'card.side.defend'),

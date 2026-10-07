@@ -72,7 +72,7 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
       <header className="coach__bar">
         <div className="coach__title">
           <span className={`side-tag side-tag--${strategy.side}`}>{strategy.side === 'attack' ? t('coachMode.attack') : t('coachMode.defense')}</span>
-          <span className="coach__name">{strategy.title}</span>
+          <h1 className="coach__name">{strategy.title}</h1>
           <span className="muted small">{[mapName, strategy.site].filter(Boolean).join(' · ')}</span>
         </div>
         <button type="button" className="btn btn--ghost btn--sm" onClick={onExit}>
@@ -91,7 +91,7 @@ export default function CoachMode({ strategy, mapName, assigned = {}, onExit }) 
           <TacticalBoard strategy={strategy} mapName={mapName} stepId={step ? step.id : SETUP} labels="auto" />
         </div>
 
-        <section className="coach__brief" aria-live="polite">
+        <section className="coach__brief" aria-live="polite" aria-labelledby="coach-step" tabIndex={0}>
           <p id="coach-step" className="coach__step">
             {step ? (
               <>

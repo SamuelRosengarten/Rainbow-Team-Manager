@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import { Card, EmptyState, Meter } from './ui.jsx';
@@ -9,6 +10,15 @@ import { allMapPreparation, lineupReadiness, nextActions, strategyReadiness, tea
 import { usePlans } from '../state/usePlans.js';
 import { useRoster } from '../state/roster-context.js';
 import { useI18n } from '../i18n/index.js';
+
+const PHONE = '(max-width: 720px)';
+const subscribePhone = (cb) => {
+  const mq = window.matchMedia?.(PHONE);
+  mq?.addEventListener?.('change', cb);
+  return () => mq?.removeEventListener?.('change', cb);
+};
+/** True on a phone-sized screen (follows rotation and resizing). */
+const usePhone = () => useSyncExternalStore(subscribePhone, () => Boolean(window.matchMedia?.(PHONE).matches), () => false);
 
 const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 
@@ -237,6 +247,22 @@ function StrategyReadiness({ strategies, navigate }) {
   );
 }
 
+/** Phone, new team: the one thing to do next, before anything else. */
+function NextStep({ action, navigate }) {
+  const { t } = useI18n();
+  return (
+    <section className="panel cmd-nextstep" aria-labelledby="cmd-nextstep-title">
+      <p id="cmd-nextstep-title" className="eyebrow">
+        {t('cmd.nextStep')}
+      </p>
+      <button type="button" className="btn btn--primary btn--lg cmd-nextstep__go" onClick={() => navigate(action.to)}>
+        <span>{t(`ready.action.${action.id}`, { ...action.values, map: MAPS_BY_ID[action.values.mapId]?.name ?? '' })}</span>
+        <Icon name="arrow" size={18} />
+      </button>
+    </section>
+  );
+}
+
 function NextActions({ actions, navigate }) {
   const { t } = useI18n();
   return (
@@ -275,6 +301,18 @@ export default function CommandView({ profile, strategyData, navigate, team }) {
   const prep = allMapPreparation(all);
   const actions = nextActions({ team, strategies: all, lineup, prep });
   const wip = builderInProgress();
+  // A new team on a phone: one clear next step first; empty sections folded away.
+  const phone = usePhone();
+  const newTeam = teamStrategies(all).length === 0;
+  const simplePhone = phone && newTeam && actions.length > 0;
+  const mapsEmpty = !prep.some((p) => p.status === 'ready' || p.status === 'partial' || p.mapId === team.mapId);
+  const results = (
+    <Card id="results" kicker title={t('cmd.results')}>
+      <EmptyState icon="trophy" title={t('cmd.results.empty')}>
+        {t('cmd.results.body')}
+      </EmptyState>
+    </Card>
+  );
 
   return (
     <section className="page command" aria-labelledby="cmd-title">
@@ -299,18 +337,32 @@ export default function CommandView({ profile, strategyData, navigate, team }) {
         </div>
       </header>
 
-      <div className="cmd-grid">
-        <NextMatch team={team} strategies={all} navigate={navigate} />
-        <TeamReadiness lineup={lineup} navigate={navigate} />
-        <MapPreparation prep={prep} navigate={navigate} current={team.mapId} />
-        <StrategyReadiness strategies={all} navigate={navigate} />
-        <NextActions actions={actions} navigate={navigate} />
-        <Card id="results" kicker title={t('cmd.results')}>
-          <EmptyState icon="trophy" title={t('cmd.results.empty')}>
-            {t('cmd.results.body')}
-          </EmptyState>
-        </Card>
-      </div>
+      {simplePhone ? (
+        <div className="cmd-grid">
+          <NextStep action={actions[0]} navigate={navigate} />
+          <NextMatch team={team} strategies={all} navigate={navigate} />
+          <TeamReadiness lineup={lineup} navigate={navigate} />
+          {actions.length > 1 && <NextActions actions={actions.slice(1)} navigate={navigate} />}
+          {!mapsEmpty && <MapPreparation prep={prep} navigate={navigate} current={team.mapId} />}
+          <details className="cmd-more">
+            <summary>{t('cmd.more', { count: mapsEmpty ? 3 : 2 })}</summary>
+            <div className="cmd-grid">
+              {mapsEmpty && <MapPreparation prep={prep} navigate={navigate} current={team.mapId} />}
+              <StrategyReadiness strategies={all} navigate={navigate} />
+              {results}
+            </div>
+          </details>
+        </div>
+      ) : (
+        <div className="cmd-grid">
+          <NextMatch team={team} strategies={all} navigate={navigate} />
+          <TeamReadiness lineup={lineup} navigate={navigate} />
+          <MapPreparation prep={prep} navigate={navigate} current={team.mapId} />
+          <StrategyReadiness strategies={all} navigate={navigate} />
+          <NextActions actions={actions} navigate={navigate} />
+          {results}
+        </div>
+      )}
     </section>
   );
 }
