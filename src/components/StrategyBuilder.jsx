@@ -15,7 +15,7 @@ import { floorIdFromSite, floorPlan } from '../lib/floorPlans.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
-import { STRATEGY_TYPES, cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
+import { DIFFICULTY, STRATEGY_TYPES, cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy, slotColor } from '../lib/strategies.js';
 import { isUnowned, prefState, prefWho, recommendStrategies, whereFavoritesFit } from '../lib/recommend.js';
 import { fitToComposition } from '../lib/strategyMatch.js';
 import { recommendLineup } from '../lib/lineup.js';
@@ -25,12 +25,13 @@ import { TACTICAL_ROLES, defaultTacticalRole } from '../lib/tactical.js';
 import { boardSpace } from '../lib/space.js';
 import { unplacedSlots } from '../lib/tacticStatus.js';
 import { useHistory } from '../state/useHistory.js';
+import { useBuilderMode } from '../state/useBuilderMode.js';
+import { STEPS, defaultPhases, easiestFirst, nextStep, normalizeStep, prevStep, stepId, stepperItems } from '../lib/builderFlow.js';
+import { GlossaryButton } from './Glossary.jsx';
 import { useRoster } from '../state/roster-context.js';
 import { useSessionState } from '../state/useSessionState.js';
 import { tx, useI18n } from '../i18n/index.js';
 
-// Step ids (names: builder.step.<id>).
-const STEPS = ['map', 'site', 'side', 'operators', 'players', 'startFrom', 'customize', 'tactics', 'steps', 'save'];
 const KEY = 'r6tp.builder';
 // Operator grid order: favorites first, blocked last.
 const PREF_ORDER = { favorite: 0, null: 1, partial: 1, blocked: 2 };
@@ -51,10 +52,12 @@ const fresh = (preset = {}) => {
   };
 };
 
-/** Wizard header: ten numbered steps; reached ones are clickable. */
-function Stepper({ step, reached, hasDraft, go }) {
+/** Wizard header: the mode's steps (ten in Advanced, six in Simple); reached ones are clickable. */
+function Stepper({ mode, step, reached, hasDraft, go }) {
   const { t } = useI18n();
   const listRef = useRef(null);
+  const items = stepperItems(mode, step, reached, hasDraft);
+  const at = items.findIndex((x) => x.current);
   // Keep the current step in view when the list scrolls sideways on a phone.
   useEffect(() => {
     listRef.current?.querySelector('[aria-current="step"]')?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
@@ -62,29 +65,25 @@ function Stepper({ step, reached, hasDraft, go }) {
   return (
     <>
     <p className="stepper__summary" aria-live="polite">
-      {t('builder.stepOf', { n: step, total: STEPS.length, name: t(`builder.step.${STEPS[step - 1]}`) })}
+      {t('builder.stepOf', { n: at + 1, total: items.length, name: t(`builder.step.${items[at]?.id}`) })}
     </p>
     <ol className="stepper" aria-label={t('strategyBuilder.builderSteps')} ref={listRef}>
-      {STEPS.map((stepId, i) => {
-        const n = i + 1;
-        const can = n <= reached && (n <= 6 || hasDraft);
-        return (
-          <li key={stepId} className={`stepper__item${n === step ? ' stepper__item--on' : ''}${n < step ? ' stepper__item--done' : ''}`}>
-            <button
-              type="button"
-              aria-disabled={!can || undefined}
-              title={can ? t(`builder.step.${stepId}`) : t('builder.locked')}
-              onClick={() => can && go(n)}
-              aria-current={n === step ? 'step' : undefined}
-            >
-              <span className="stepper__n">{n < step ? <Icon name="check" size={13} /> : n}</span>
-              <span className="stepper__label">{t(`builder.step.${stepId}`)}</span>
-              {n < step && <span className="visually-hidden"> {t('builder.stepDone')}</span>}
-              {!can && <span className="visually-hidden"> {t('builder.locked')}</span>}
-            </button>
-          </li>
-        );
-      })}
+      {items.map((it, i) => (
+        <li key={it.id} className={`stepper__item${it.current ? ' stepper__item--on' : ''}${it.done ? ' stepper__item--done' : ''}`}>
+          <button
+            type="button"
+            aria-disabled={!it.can || undefined}
+            title={it.can ? t(`builder.step.${it.id}`) : t('builder.locked')}
+            onClick={() => it.can && go(it.target)}
+            aria-current={it.current ? 'step' : undefined}
+          >
+            <span className="stepper__n">{it.done ? <Icon name="check" size={13} /> : i + 1}</span>
+            <span className="stepper__label">{t(`builder.step.${it.id}`)}</span>
+            {it.done && <span className="visually-hidden"> {t('builder.stepDone')}</span>}
+            {!it.can && <span className="visually-hidden"> {t('builder.locked')}</span>}
+          </button>
+        </li>
+      ))}
     </ol>
     </>
   );
@@ -95,7 +94,7 @@ function ChoiceGrid({ children, className = '' }) {
 }
 
 /** Steps 7–10 edit the draft with undo/redo; changes are mirrored to the wizard. */
-function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, saving, error, nav }) {
+function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, saving, error, nav, simple, roster, onPlayer }) {
   const { t } = useI18n();
   const history = useHistory(initial);
   const draft = history.value;
@@ -111,7 +110,7 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
         </section>
       )}
       {step === 8 && (
-        <BoardEditor draft={draft} history={history} mapName={mapName} inBuilder />
+        <BoardEditor draft={draft} history={history} mapName={mapName} inBuilder simple={simple} />
       )}
       {step === 9 && (
         <section className="panel">
@@ -125,10 +124,44 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
           <div className="review__grid">
             <TacticalBoard strategy={draft} mapName={mapName} />
             <div>
-              <p className="review__title">{draft.title || t('strategyBuilder.untitledStrategy')}</p>
+              {simple ? (
+                <label className="field review__name">
+                  <span className="field__label">{t('builder.simple.name')}</span>
+                  <input className="input" value={draft.title} maxLength={120} onChange={(e) => history.set({ title: e.target.value }, { key: 'title' })} />
+                </label>
+              ) : (
+                <p className="review__title">{draft.title || t('strategyBuilder.untitledStrategy')}</p>
+              )}
               <p className="muted small">
                 {mapName || t('strategyBuilder.anyMap')} {draft.site ? `· ${draft.site}` : ''} · {draft.side === 'attack' ? t('strategyBuilder.attack') : t('strategyBuilder.defense')} · {STRATEGY_TYPES[draft.type]}
               </p>
+              {simple ? (
+                <fieldset className="field simple-players">
+                  <legend className="field__label">{t('builder.simple.players')}</legend>
+                  <ul className="assign assign--simple">
+                    {draft.slots
+                      .filter((s) => s.operatorId)
+                      .map((s) => {
+                        const op = OPERATORS_BY_ID[s.operatorId];
+                        const taken = new Set(Object.entries(nav.players).filter(([k, p]) => k !== s.operatorId && p).map(([, p]) => p));
+                        return (
+                          <li key={s.key} className="assign__row">
+                            <OperatorIcon key={op?.id ?? 'none'} operator={op} size="sm" />
+                            <span className="assign__op">{op?.name ?? t('strategyBuilder.any')}</span>
+                            <select className="select" aria-label={t('strategyBuilder.player')} value={nav.players[s.operatorId] ?? ''} onChange={(e) => onPlayer(s.operatorId, e.target.value || null)}>
+                              <option value="">{t('strategyBuilder.unassigned')}</option>
+                              {roster.map((p) => (
+                                <option key={p} value={p} disabled={taken.has(p)}>
+                                  {p}
+                                </option>
+                              ))}
+                            </select>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </fieldset>
+              ) : (
               <ul className="squad squad--compact">
                 {draft.slots.map((s) => {
                   const op = OPERATORS_BY_ID[s.operatorId];
@@ -146,6 +179,7 @@ function DraftSteps({ step, initial, onChange, strategyData, mapName, onSave, sa
                   );
                 })}
               </ul>
+              )}
               <p className="muted small">
                 {t('builder.counts', { steps: draft.steps.length, markers: draft.markers.length, paths: draft.paths.length, zones: draft.zones.length, crossfires: draft.crossfires.length })}
               </p>
@@ -175,6 +209,8 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
   const { t } = useI18n();
   const { players: roster, lineupPlayers, roster: rosterEntries } = useRoster();
   const [w, setW] = useSessionState(KEY, () => fresh());
+  const [mode, setMode] = useBuilderMode();
+  const simple = mode === 'simple';
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [roleFilter, setRoleFilter] = useState('');
@@ -192,7 +228,13 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
 
   const set = (patch) => setW((x) => ({ ...x, ...(typeof patch === 'function' ? patch(x) : patch) }));
   const go = (n) => set((x) => ({ step: n, reached: Math.max(x.reached, n) }));
-  const next = () => go(w.step + 1);
+  const next = () => go(nextStep(mode, w.step));
+  const back = () => go(prevStep(mode, w.step));
+  // Simple mode skips Players, Customize and Steps: land on a step it shows.
+  useEffect(() => {
+    const n = normalizeStep(mode, w.step, Boolean(w.draft));
+    if (n !== w.step) setW((x) => ({ ...x, step: n, reached: Math.max(x.reached, n) }));
+  }, [mode, w.step, w.draft, setW]);
   const ops = w.ops.filter(Boolean);
   const map = MAPS_BY_ID[w.mapId];
   const sites = w.mapId ? allSites(w.mapId) : [];
@@ -220,14 +262,15 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     };
   }, [strategyData.strategies, w.mapId, w.site, w.side, pref, lineupPlayers, rosterEntries, prefs, ownedOnly]);
 
-  const applyCoachLineup = () => {
-    const picked = coach.lineup.slots.filter((s) => s.operatorId).slice(0, 5);
+  const coachPicks = coach?.lineup?.slots?.filter((s) => s.operatorId).slice(0, 5) ?? [];
+  // `stay`: Simple mode fills the five and stays on the step so they can be seen.
+  const applyCoachLineup = (stay = false) => {
+    const picked = coachPicks;
     set((x) => ({
       ops: [...picked.map((s) => s.operatorId), null, null, null, null, null].slice(0, 5),
       players: Object.fromEntries(picked.filter((s) => s.player).map((s) => [s.operatorId, s.player])),
       roles: Object.fromEntries(picked.map((s) => [s.operatorId, s.job])),
-      step: 6,
-      reached: Math.max(x.reached, 6),
+      ...(stay ? {} : { step: 6, reached: Math.max(x.reached, 6) }),
     }));
   };
 
@@ -276,11 +319,14 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         site: w.site,
         owner: profile,
         slots: ops.map((id, i) => ({ key: `s${i + 1}`, operatorId: id, role: OPERATORS_BY_ID[id].roles[0] })),
+        // Simple mode: three plain phases so the board has a When from the start.
+        ...(simple ? { steps: defaultPhases(w.side).map((id, i) => ({ id: `st${i + 1}`, title: t(`builder.phase.${id}`) })) } : {}),
       });
-      draft.title = '';
+      draft.title = simple ? t('builder.simple.title', { map: map?.name ?? '', site: w.site ? parseSite(w.site).rooms.join(' / ') : 'none', side: w.side }) : '';
     }
     draft.slots = draft.slots.map((s) => (s.operatorId && ops.includes(s.operatorId) ? { ...s, tacticalRole: roleOf(s.operatorId) } : s));
-    set((x) => ({ draft, step: 7, reached: Math.max(x.reached, 7) }));
+    const to = simple ? 8 : 7;
+    set((x) => ({ draft, step: to, reached: Math.max(x.reached, to) }));
   };
 
   const save = async (draft) => {
@@ -325,23 +371,33 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         <div>
           <p className="page__kicker">{t('strategyBuilder.strategyBuilder')}</p>
           <h1 id="builder-title" className="page__title">
-            {t(`builder.step.${STEPS[w.step - 1]}`)}
+            {t(`builder.step.${stepId(mode, w.step)}`)}
           </h1>
-          <p className="builder__desc">{t(`builder.desc.${STEPS[w.step - 1]}`)}</p>
+          <p className="builder__desc">{t(`builder.desc.${stepId(mode, w.step)}`)}</p>
           {summary && <p className="page__sub builder__summary">{summary}</p>}
         </div>
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          onClick={() => {
-            if (!w.draft || window.confirm(t('builder.startOverConfirm'))) setW(fresh());
-          }}
-        >
-          <Icon name="refresh" size={16} /> {t('strategyBuilder.startOver')}
-        </button>
+        <div className="builder__tools">
+          <div className="segmented builder__mode" role="group" aria-label={t('builder.mode.label')} title={t('builder.mode.help')}>
+            {['simple', 'advanced'].map((m) => (
+              <button key={m} type="button" className="segmented__btn" aria-pressed={mode === m} onClick={() => setMode(m)}>
+                {t(`builder.mode.${m}`)}
+              </button>
+            ))}
+          </div>
+          <GlossaryButton />
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              if (!w.draft || window.confirm(t('builder.startOverConfirm'))) setW(fresh());
+            }}
+          >
+            <Icon name="refresh" size={16} /> {t('strategyBuilder.startOver')}
+          </button>
+        </div>
       </header>
 
-      <Stepper step={w.step} reached={w.reached} hasDraft={Boolean(w.draft)} go={go} />
+      <Stepper mode={mode} step={w.step} reached={w.reached} hasDraft={Boolean(w.draft)} go={go} />
       {error && w.step < 10 && (
         <p className="notice notice--error" role="alert">
           {tx(error)}
@@ -424,8 +480,22 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
 
       {w.step === 4 && (
         <div className="op-step">
-          <OwnedOnlyNote pref={pref} updateTeam={updateTeam} players={lineupPlayers} />
-          <LineupCoach lineup={coach?.lineup} strategy={coach?.strategy} onUse={applyCoachLineup} />
+          {!simple && <OwnedOnlyNote pref={pref} updateTeam={updateTeam} players={lineupPlayers} />}
+          {!simple && <LineupCoach lineup={coach?.lineup} strategy={coach?.strategy} onUse={() => applyCoachLineup()} />}
+          {simple && (
+            <div className="simple-suggest">
+              <button type="button" className="btn btn--primary" onClick={() => applyCoachLineup(true)} disabled={!coachPicks.length}>
+                <Icon name="star" size={18} /> {t('builder.simple.suggest')}
+              </button>
+              {!coachPicks.length && <p className="muted small">{t('builder.simple.suggestNone')}</p>}
+              {coachPicks.length > 0 && (
+                <details className="simple-why">
+                  <summary>{t('builder.simple.why')}</summary>
+                  <LineupCoach lineup={coach?.lineup} strategy={coach?.strategy} onUse={() => applyCoachLineup(true)} />
+                </details>
+              )}
+            </div>
+          )}
           <div className="picked" aria-label={t('strategyBuilder.yourFiveOperators')}>
             {w.ops.map((id, i) => {
               const op = OPERATORS_BY_ID[id];
@@ -436,10 +506,13 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
                 </button>
               );
             })}
-            <button type="button" className="btn btn--secondary" onClick={roll}>
-              <Icon name="dice" size={18} /> {t('strategyBuilder.rollForTheStarters')}
-            </button>
+            {!simple && (
+              <button type="button" className="btn btn--secondary" onClick={roll}>
+                <Icon name="dice" size={18} /> {t('strategyBuilder.rollForTheStarters')}
+              </button>
+            )}
           </div>
+          {!simple && (
           <div className="op-filter" role="group" aria-label={t('strategyBuilder.filterByRole')}>
             <button type="button" className="step-chip" aria-pressed={!roleFilter} onClick={() => setRoleFilter('')}>
               {t('strategyBuilder.all')}
@@ -450,6 +523,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
               </button>
             ))}
           </div>
+          )}
           <ul className="pick-grid">
             {operatorsForSide(w.side)
               .filter((o) => !roleFilter || o.roles.includes(roleFilter))
@@ -474,7 +548,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
                 );
               })}
           </ul>
-          <SynergyList ops={ops} side={w.side} pref={pref} onAdd={ops.length < 5 ? toggleOp : undefined} />
+          {!simple && <SynergyList ops={ops} side={w.side} pref={pref} onAdd={ops.length < 5 ? toggleOp : undefined} />}
         </div>
       )}
 
@@ -526,7 +600,44 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         </section>
       )}
 
-      {w.step === 6 && (
+      {w.step === 6 && simple && (
+        <div className="start-from start-from--simple">
+          {w.draft && (
+            <p className="notice notice--warn">
+              {t('builder.alreadyStarted', { title: w.draft.title || t('strategyBuilder.aStrategy') })}{' '}
+              <button type="button" className="link-btn" onClick={() => go(8)}>
+                {t('strategyBuilder.continueIt')}
+              </button>{' '}
+              {t('builder.orPick')}
+            </p>
+          )}
+          <h2 className="start-from__title">{t('builder.simple.startTitle')}</h2>
+          <ul className="start-choices">
+            <li>
+              <button type="button" className="choice start-choice" onClick={() => start(null)}>
+                <Icon name="plus" size={26} />
+                <span className="choice__name">{t('builder.simple.empty')}</span>
+                <span className="choice__meta">{t('builder.simple.emptySub')}</span>
+              </button>
+            </li>
+          </ul>
+          <h3 className="start-from__sub">{t('builder.simple.readyMade')}</h3>
+          <p className="muted small">{ranked.length ? t('builder.simple.readyMadeSub') : t('builder.simple.noPlans')}</p>
+          <ul className="start-plans">
+            {easiestFirst(ranked).slice(0, 6).map((item) => (
+              <li key={item.strategy.id}>
+                <button type="button" className="choice start-plan" onClick={() => start(item.strategy, item.rec)}>
+                  <span className={`diff-badge diff-badge--${item.strategy.difficulty}`}>{DIFFICULTY[item.strategy.difficulty]}</span>
+                  <span className="choice__name">{item.strategy.title}</span>
+                  <span className="choice__meta">{[STRATEGY_TYPES[item.strategy.type], item.strategy.site].filter(Boolean).join(' · ')}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {w.step === 6 && !simple && (
         <div className="start-from">
           {w.draft && (
             <p className="notice notice--warn">
@@ -581,12 +692,15 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
           saving={saving}
           error={error}
           nav={w}
+          simple={simple}
+          roster={roster}
+          onPlayer={(id, p) => set((x) => ({ players: { ...x.players, [id]: p } }))}
         />
       )}
 
       {w.step !== 10 && (
         <div className={`strat-actions builder__nav${w.step === 8 ? '' : ' strat-actions--sticky'}`}>
-          <button type="button" className="btn btn--ghost" onClick={() => go(Math.max(1, w.step - 1))} disabled={w.step === 1}>
+          <button type="button" className="btn btn--ghost" onClick={back} disabled={w.step === 1}>
             <Icon name="chevron" size={18} className="icon--flip" /> {t('strategyBuilder.back')}
           </button>
           {w.step !== 6 && (
@@ -597,7 +711,7 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
               aria-disabled={!canNext || undefined}
               aria-describedby={nextBlock ? 'builder-next-hint' : undefined}
             >
-              {t('builder.next', { name: t(`builder.step.${STEPS[w.step]}`) })} <Icon name="arrow" size={18} />
+              {t('builder.next', { name: t(`builder.step.${stepId(mode, nextStep(mode, w.step))}`) })} <Icon name="arrow" size={18} />
             </button>
           )}
           {nextBlock && (

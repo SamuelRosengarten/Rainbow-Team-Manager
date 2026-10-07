@@ -98,14 +98,16 @@ export const ZOOM_MAX = 4;
 /**
  * The board rectangle shown at zoom `z` centred on (cx, cy), kept inside the
  * board. `aspect` (height / width) asks for a taller window than the board's
- * own shape, for phones; it never shows more than the board's height.
+ * own shape, for phones and fullscreen; while that is taller than the board,
+ * the board shows whole and centred.
  */
 export function viewRect(size, { z = 1, cx = size.w / 2, cy = size.h / 2, aspect = null } = {}) {
   const zz = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
   const w = size.w / zz;
-  const h = aspect ? Math.min(size.h, w * aspect) : size.h / zz;
+  const h = aspect ? w * aspect : size.h / zz;
   const x = Math.min(size.w - w, Math.max(0, cx - w / 2));
-  const y = Math.min(size.h - h, Math.max(0, cy - h / 2));
+  // A window taller than the board shows it whole, centred, with space above and below.
+  const y = h > size.h ? (size.h - h) / 2 : Math.min(size.h - h, Math.max(0, cy - h / 2));
   return { x, y, w, h, z: zz, aspect };
 }
 
@@ -124,6 +126,9 @@ export function zoomAt(size, view, factor, at = null) {
   const next = viewRect(size, { z, cx: p[0] - fx * w + w / 2, cy: p[1] - fy * h + h / 2, aspect: cur.aspect });
   return { z: next.z, cx: next.x + next.w / 2, cy: next.y + next.h / 2, aspect: cur.aspect };
 }
+
+/** The smallest zoom at which a window of this shape is filled by the board. */
+export const fillZoom = (size, aspect) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, aspect ? aspect / (size.h / size.w) : 1));
 
 /** Pan by a distance in board units. */
 export function panBy(size, view, dx, dy) {

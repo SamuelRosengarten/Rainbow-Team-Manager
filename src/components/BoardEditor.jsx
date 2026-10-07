@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
+import { HelpTip } from './Glossary.jsx';
 import ObjectInspector from './ObjectInspector.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import TacticalBoard from './TacticalBoard.jsx';
@@ -9,7 +10,9 @@ import { OPERATORS_BY_ID } from '../lib/operators.js';
 import { boardSpace, primaryFloor, projectItem, projectStrategy, unprojectPatch } from '../lib/space.js';
 import { LIMITS, newId, slotColor, toFloorLayout } from '../lib/strategies.js';
 import { BREACH_TYPES, OBJECTS, TOOL_GROUPS, ZONES, describeItem, gadgetsForSide, toolLabel, utilityName } from '../lib/tactical.js';
-import { duplicateItem, panBy, tacticProgress, viewRect, zoomAt } from '../lib/tacticStatus.js';
+import { duplicateItem, fillZoom, panBy, tacticProgress, viewRect, zoomAt } from '../lib/tacticStatus.js';
+import { TOOL_TERM } from '../lib/glossary.js';
+import { useFullscreen } from '../state/useFullscreen.js';
 import { usePlans } from '../state/usePlans.js';
 import { useI18n } from '../i18n/index.js';
 
@@ -40,6 +43,19 @@ const INTENT_OF = Object.fromEntries(INTENTS.flatMap(([intent, groups]) => group
 const SHORTCUT = { select: 'V', units: 'P', move: 'R', intel: 'I', utility: 'U', breach: 'B', areas: 'A', crossfire: 'C', objective: 'O', note: 'N' };
 const BY_KEY = Object.fromEntries(Object.entries(SHORTCUT).map(([id, k]) => [k.toLowerCase(), id]));
 
+// Simple mode: six tools a new team needs, one click each (planner.simpleTool.<desc>).
+const SIMPLE_TOOLS = [
+  { tool: 'position', group: 'units', icon: 'user', key: 'P', desc: 'position' },
+  { tool: 'enemy', group: 'units', icon: 'target', key: 'E', desc: 'enemy' },
+  { tool: 'path:move', group: 'move', icon: 'route', key: 'R', desc: 'route', label: 'routeLabel' },
+  { tool: 'utility', group: 'utility', icon: 'diamond', key: 'U', desc: 'utility' },
+  { tool: 'zone:hold', group: 'areas', icon: 'area', key: 'A', desc: 'area', label: 'areaLabel' },
+  { tool: 'note', group: 'note', icon: 'note', key: 'N', desc: 'note' },
+];
+const SIMPLE_KEY = Object.fromEntries(SIMPLE_TOOLS.map((x) => [x.key.toLowerCase(), x]));
+// Tool groups whose tooltip also explains an R6 word.
+const GROUP_TERM = { crossfire: 'crossfire', breach: 'hardBreach', intel: 'drone' };
+
 // Tools that have their own hint (board.hint.<tool>); others use the generic placing hint.
 const TOOL_HINT = ['select', 'path', 'zone', 'crossfire', 'note'];
 const COLLECTION = { marker: 'markers', zone: 'zones', crossfire: 'crossfires', path: 'paths' };
@@ -63,17 +79,18 @@ function anchorOf(type, item) {
  * changes go through the history (`set`, `checkpoint`, `undo`, `redo`) owned
  * by the parent. `inBuilder` words the guidance for the builder's next step.
  */
-export default function BoardEditor({ draft, history, mapName, inBuilder = false }) {
+export default function BoardEditor({ draft, history, mapName, inBuilder = false, simple = false }) {
   const { t } = useI18n();
   const { set, checkpoint, undo, redo, canUndo, canRedo } = history;
   const svgRef = useRef(null);
+  const rootRef = useRef(null);
   const canvasRef = useRef(null);
   const inspectorRef = useRef(null);
   const [tool, setTool] = useState('position');
   const [group, setGroup] = useState('units');
   const [slotKey, setSlotKey] = useState(draft.slots[0]?.key ?? null);
   const [pickedStepId, setStepId] = useState(draft.steps[0]?.id ?? null);
-  const stepId = liveStepId(draft.steps, pickedStepId);
+  const stepId = liveStepId(draft.steps, pickedStepId) ?? (simple && draft.steps.length ? draft.steps[0].id : null);
   const [selected, setSelected] = useState(null);
   const [path, setPath] = useState([]);
   const [zoneDraft, setZoneDraft] = useState(null);
@@ -88,6 +105,12 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
   const [reviewing, setReviewing] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [barPos, setBarPos] = useState(null);
+  const [moreTools, setMoreTools] = useState(false);
+  const [full, enterFull, exitFull] = useFullscreen(rootRef);
+  // Simple mode shows six tools until "More tools" is pressed.
+  const basic = simple && !moreTools;
+  // Simple mode with phases: no separate "Setup" (always shown) choice; new items go in a phase.
+  const plainPhases = simple && draft.steps.length > 0;
   usePlans();
   // The board works in board units on one floor; the draft stores normalised
   // coordinates. `view` is the projected floor; every write is unprojected.
@@ -392,7 +415,7 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
   // Keyboard: undo/redo, delete, escape, enter, nudge, tool shortcuts, zoom.
   const keyState = useRef({});
   useEffect(() => {
-    keyState.current = { selected, path, remove, doUndo, doRedo, finishPath, updateBoard, space, pickGroup, zoomBy };
+    keyState.current = { selected, path, remove, doUndo, doRedo, finishPath, updateBoard, space, pickGroup, zoomBy, basic, full, enterFull, exitFull, pickTool };
   });
   useEffect(() => {
     const onKey = (e) => {
@@ -409,6 +432,8 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && k.selected) {
         e.preventDefault();
         k.remove(k.selected);
+      } else if (e.key === 'Escape' && k.full && !k.selected && !k.path.length) {
+        k.exitFull();
       } else if (e.key === 'Escape') {
         setPath([]);
         setXf(null);
@@ -421,7 +446,16 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
         const step = e.shiftKey ? 2 : 0.5;
         const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
         k.updateBoard('marker', k.selected.id, (m) => moveItem('marker', m, d[0], d[1], k.space), { key: `nudge-${k.selected.id}` });
-      } else if (!mod && !e.altKey && BY_KEY[e.key.toLowerCase()]) {
+      } else if (!mod && !e.altKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        if (k.full) k.exitFull();
+        else k.enterFull();
+      } else if (!mod && !e.altKey && k.basic && (SIMPLE_KEY[e.key.toLowerCase()] || e.key.toLowerCase() === 'v')) {
+        e.preventDefault();
+        const x = SIMPLE_KEY[e.key.toLowerCase()];
+        if (x) k.pickTool(x.tool, x.group);
+        else k.pickTool('select');
+      } else if (!mod && !e.altKey && !k.basic && BY_KEY[e.key.toLowerCase()]) {
         e.preventDefault();
         k.pickGroup(BY_KEY[e.key.toLowerCase()], true);
       } else if (!mod && (e.key === '+' || e.key === '=')) {
@@ -474,12 +508,15 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
       const c = box.getBoundingClientRect();
       const r = svg.getBoundingClientRect();
       const inside = s.x >= r.left && s.x <= r.right && s.y >= r.top && s.y <= r.bottom;
-      setBarPos(inside ? { left: s.x - c.left, top: s.y - c.top, below: s.y - r.top < 56, width: c.width } : null);
+      // In fullscreen the drawer covers the right side: keep the bar left of it.
+      const drawer = box.closest('.beditor--drawer') ? inspectorRef.current?.getBoundingClientRect() : null;
+      const width = drawer && drawer.left > c.left && drawer.top < s.y ? drawer.left - c.left - 8 : c.width;
+      setBarPos(inside ? { left: s.x - c.left, top: s.y - c.top, below: s.y - r.top < 56, width } : null);
     };
     place();
     window.addEventListener('resize', place);
     return () => window.removeEventListener('resize', place);
-  }, [ax, ay, dragging, vr.x, vr.y, vr.z, floorId]);
+  }, [ax, ay, dragging, vr.x, vr.y, vr.z, floorId, full]);
 
   const changeFloor = (f) => {
     setFloorId(f);
@@ -503,6 +540,41 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
     setView({ z: 1.8, cx, cy, aspect: 0.9 });
   }, [shownFloor]);
 
+  // Fullscreen: let the board fill the screen's shape (taller than the plan
+  // on a phone in portrait); restore the normal view shape on leaving.
+  const savedView = useRef(null);
+  useEffect(() => {
+    if (!full) {
+      if (savedView.current) {
+        const v = savedView.current;
+        savedView.current = null;
+        setView(v);
+      }
+      return undefined;
+    }
+    if (!savedView.current) savedView.current = latestView.current.view;
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const r = svgRef.current?.getBoundingClientRect();
+        if (!r?.width || !r.height) return;
+        const s = latestView.current.space;
+        const ca = r.height / r.width;
+        // Taller than the plan (phone, tablet in portrait): zoom in just
+        // enough to fill the screen; "show the whole map" still shows it all.
+        const aspect = ca > s.h / s.w ? ca : null;
+        setView((v) => ({ ...v, aspect, z: Math.max(v.aspect === aspect ? v.z : 1, fillZoom(s, aspect)) }));
+      });
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('resize', fit);
+    };
+  }, [full, shownFloor]);
+
   // ---------- Words ----------
   const toolHint = tool === 'select' ? t('board.hint.select') : TOOL_HINT.includes(toolKind) ? t(`board.hint.${toolKind}`) : t('board.hint.place', { tool: toolLabel(tool), hint: OBJECTS[tool]?.hint ?? '' });
   const missingNames = progress.unplaced.map((s) => OPERATORS_BY_ID[s.operatorId]?.name ?? s.operatorId);
@@ -519,7 +591,7 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
   const draftPreview = path.length ? { path, pathKind: toolArg, slotKey } : zoneDraft ? { zone: zoneDraft } : xf ? { crossfire: xf } : null;
   const step = draft.steps.find((s) => s.id === stepId);
   const stepIndex = draft.steps.indexOf(step);
-  const phaseLine = step ? `${t('planner.phase.step', { n: stepIndex + 1, title: step.title })}${step.clock ? ` · ${step.clock}` : ''}` : null;
+  const phaseLine = step ? (simple ? step.title : `${t('planner.phase.step', { n: stepIndex + 1, title: step.title })}${step.clock ? ` · ${step.clock}` : ''}`) : null;
   const near = [
     ['markers', progress.items - progress.routes - progress.areas - progress.crossfires],
     ['paths', progress.routes],
@@ -528,7 +600,15 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
   ].find(([k, n]) => n >= LIMITS[k] * 0.8);
 
   return (
-    <div className={`beditor${inBuilder ? ' beditor--builder' : ''}`}>
+    <div
+      ref={rootRef}
+      className={`beditor${inBuilder ? ' beditor--builder' : ''}${simple ? ' beditor--simple' : ''}${full ? ' beditor--full' : ''}${full && selected ? ' beditor--drawer' : ''}`}
+    >
+      {full && (
+        <button type="button" className="btn btn--secondary btn--sm tfs-exit" onClick={exitFull}>
+          <Icon name="shrink" size={16} /> <span className="tfs-exit__label">{t('planner.exitFullscreen')}</span>
+        </button>
+      )}
       <section className="tctx" aria-label={t('planner.context')}>
         <div className="tctx__row" role="group" aria-label={t('boardEditor.operatorForNewObjects')}>
           <span className="tctx__label" aria-hidden="true">
@@ -563,15 +643,17 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
             {t('boardEditor.when')}
           </span>
           <div className="tctx__chips tctx__chips--seq">
-            <button type="button" className="ctx-chip ctx-chip--phase" aria-pressed={stepId === null} onClick={() => setStepId(null)} title={t('planner.phase.setup')}>
-              <span className="ctx-chip__name">{t('boardEditor.setup')}</span>
-            </button>
+            {!plainPhases && (
+              <button type="button" className="ctx-chip ctx-chip--phase" aria-pressed={stepId === null} onClick={() => setStepId(null)} title={t('planner.phase.setup')}>
+                <span className="ctx-chip__name">{t('boardEditor.setup')}</span>
+              </button>
+            )}
             {draft.steps.map((s, i) => (
               <span key={s.id} className="tctx__seq">
-                <Icon name="chevron" size={14} className="tctx__sep" />
+                {(i > 0 || !plainPhases) && <Icon name="chevron" size={14} className="tctx__sep" />}
                 <button type="button" className="ctx-chip ctx-chip--phase" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)} title={s.description || s.title}>
-                  <span className="ctx-chip__n">{i + 1}</span>
-                  {s.clock && <span className="ctx-chip__clock">{s.clock}</span>}
+                  {!simple && <span className="ctx-chip__n">{i + 1}</span>}
+                  {!simple && s.clock && <span className="ctx-chip__clock">{s.clock}</span>}
                   <span className="ctx-chip__name">{s.title}</span>
                 </button>
               </span>
@@ -591,7 +673,24 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
 
       <div className="beditor__rail" role="toolbar" aria-label={t('boardEditor.boardTools')} aria-orientation="vertical">
         <RailButton id="select" icon="cursor" label={t('boardEditor.select')} intent={t('planner.intent.select')} desc={t('planner.tool.select')} shortcut="V" pressed={tool === 'select'} onClick={() => pickTool('select')} />
-        {INTENTS.map(([intent, groups]) => (
+        {basic && (
+          <div className="rail-group" role="group" aria-label={t('boardEditor.boardTools')}>
+            {SIMPLE_TOOLS.map((x) => (
+              <RailButton
+                key={x.tool}
+                id={`simple-${x.desc}`}
+                icon={x.icon}
+                label={x.label ? t(`planner.simpleTool.${x.label}`) : toolLabel(x.tool)}
+                intent={t(`planner.intent.${INTENT_OF[x.group]}`)}
+                desc={t(`planner.simpleTool.${x.desc}`)}
+                shortcut={x.key}
+                pressed={tool === x.tool}
+                onClick={() => pickTool(x.tool, x.group)}
+              />
+            ))}
+          </div>
+        )}
+        {!basic && INTENTS.map(([intent, groups]) => (
           <div key={intent} className="rail-group" role="group" aria-label={t(`planner.intent.${intent}`)}>
             {groups.map((id) => {
               const g = TOOL_GROUPS.find((x) => x.id === id);
@@ -602,7 +701,7 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
                   icon={GROUP_ICON[id]}
                   label={g.label}
                   intent={t(`planner.intent.${INTENT_OF[id]}`)}
-                  desc={t(`planner.tool.${id}`)}
+                  desc={GROUP_TERM[id] ? `${t(`planner.tool.${id}`)} ${t(`glossary.${GROUP_TERM[id]}.text`)}` : t(`planner.tool.${id}`)}
                   shortcut={SHORTCUT[id]}
                   pressed={group === id && tool !== 'select'}
                   onClick={() => pickGroup(id)}
@@ -611,6 +710,21 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
             })}
           </div>
         ))}
+        {simple && (
+          <div className="rail-group" role="group" aria-label={t(moreTools ? 'planner.simple.fewer' : 'planner.simple.more')}>
+            <RailButton
+              id="more"
+              icon={moreTools ? 'minus' : 'more'}
+              label={t(moreTools ? 'planner.simple.fewer' : 'planner.simple.more')}
+              intent={t('builder.mode.simple')}
+              desc={t(moreTools ? 'planner.simple.fewerDesc' : 'planner.simple.moreDesc')}
+              onClick={() => {
+                if (moreTools && !SIMPLE_TOOLS.some((x) => x.tool === tool)) pickTool('position', 'units');
+                setMoreTools((m) => !m);
+              }}
+            />
+          </div>
+        )}
         <div className="rail-group" role="group" aria-label={t('planner.intent.history')}>
           <RailButton id="undo" icon="undo" label={t('boardEditor.undo')} intent={t('planner.intent.history')} desc={t('planner.tool.undo')} shortcut="Ctrl+Z" onClick={doUndo} disabled={!canUndo} />
           <RailButton id="redo" icon="redo" label={t('boardEditor.redo')} intent={t('planner.intent.history')} desc={t('planner.tool.redo')} shortcut="Ctrl+Shift+Z" onClick={doRedo} disabled={!canRedo} />
@@ -618,16 +732,21 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
       </div>
 
       <div className="beditor__stage">
-        {tool !== 'select' && activeGroup && (activeGroup.tools.length > 1 || tool === 'utility' || tool === 'breach' || path.length > 0) && (
+        {tool !== 'select' && activeGroup && (basic ? path.length > 0 : activeGroup.tools.length > 1 || tool === 'utility' || tool === 'breach' || path.length > 0) && (
           <div className="beditor__subtools" role="group" aria-label={t('board.toolsAria', { group: activeGroup.label })}>
-            {activeGroup.tools.length > 1 &&
+            {!basic &&
+              activeGroup.tools.length > 1 &&
               toolsOf(activeGroup).map((x) => (
-                <button key={x} type="button" className="subtool" aria-pressed={tool === x} onClick={() => pickTool(x, activeGroup.id)}>
-                  <ToolSwatch tool={x} />
-                  {toolLabel(x)}
-                </button>
+                <span key={x} className="subtool-wrap">
+                  <button type="button" className="subtool" aria-pressed={tool === x} onClick={() => pickTool(x, activeGroup.id)}>
+                    <ToolSwatch tool={x} />
+                    {toolLabel(x)}
+                  </button>
+                  {TOOL_TERM[x] && <HelpTip term={TOOL_TERM[x]} />}
+                </span>
               ))}
-            {tool === 'utility' && (
+            {!basic && activeGroup.tools.length === 1 && TOOL_TERM[tool] && <HelpTip term={TOOL_TERM[tool]} />}
+            {!basic && tool === 'utility' && (
               <label className="subtool-opt">
                 <span>{t('boardEditor.gadget')}</span>
                 <select className="select input--sm" value={gadget} onChange={(e) => setGadget(e.target.value)}>
@@ -639,7 +758,7 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
                 </select>
               </label>
             )}
-            {tool === 'breach' && (
+            {!basic && tool === 'breach' && (
               <label className="subtool-opt">
                 <span>{t('boardEditor.type')}</span>
                 <select className="select input--sm" value={breachType} onChange={(e) => setBreachType(e.target.value)}>
@@ -752,13 +871,24 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
               <Icon name="plus" size={16} />
             </button>
             <button type="button" className="tzoom__btn" onClick={() => setView((v) => ({ z: 1, aspect: v.aspect }))} disabled={vr.z <= 1} aria-label={t('planner.zoom.fit')} title={t('planner.zoom.fit')}>
-              <Icon name="fullscreen" size={16} />
+              <Icon name="fit" size={16} />
+            </button>
+            <span className="tzoom__sep" aria-hidden="true" />
+            <button
+              type="button"
+              className="tzoom__btn tzoom__btn--full"
+              onClick={full ? exitFull : enterFull}
+              aria-label={full ? t('planner.exitFullscreen') : t('planner.fullscreen')}
+              title={`${full ? t('planner.exitFullscreen') : t('planner.fullscreen.desc')} (F)`}
+              aria-pressed={full}
+            >
+              <Icon name={full ? 'shrink' : 'fullscreen'} size={16} />
             </button>
           </div>
           {barPos && selected && (
             <div
               className={`tbar${barPos.below ? ' tbar--below' : ''}`}
-              style={{ left: Math.min(Math.max(barPos.left, 120), barPos.width - 120), top: barPos.top }}
+              style={{ left: Math.min(Math.max(barPos.left, full && selected ? 90 : 120), barPos.width - (full && selected ? 90 : 120)), top: barPos.top }}
               role="toolbar"
               aria-label={t('planner.action.bar', { name: selName })}
             >
@@ -851,6 +981,7 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
           onSelect={setSelected}
           stepFilter={stepId}
           hidden={hidden}
+          simple={simple}
         />
       </aside>
     </div>
@@ -868,7 +999,7 @@ function RailButton({ id, icon, label, intent, desc, shortcut, pressed, onClick,
         className="rail-btn"
         aria-pressed={pressed === undefined ? undefined : pressed}
         aria-describedby={tipId}
-        aria-keyshortcuts={shortcut.replace('Ctrl', 'Control')}
+        aria-keyshortcuts={shortcut ? shortcut.replace('Ctrl', 'Control') : undefined}
         onClick={onClick}
         disabled={disabled}
       >
@@ -879,10 +1010,10 @@ function RailButton({ id, icon, label, intent, desc, shortcut, pressed, onClick,
         <span className="rail-tip__intent">{intent}</span>
         <span className="rail-tip__head">
           <strong>{label}</strong>
-          <kbd>{shortcut}</kbd>
+          {shortcut && <kbd>{shortcut}</kbd>}
         </span>
         <span className="rail-tip__desc">{desc}</span>
-        <span className="visually-hidden">{t('planner.shortcut', { key: shortcut })}</span>
+        {shortcut && <span className="visually-hidden">{t('planner.shortcut', { key: shortcut })}</span>}
       </span>
     </div>
   );

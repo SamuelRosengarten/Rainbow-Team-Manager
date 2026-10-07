@@ -1089,3 +1089,528 @@
     text-align: left;
   }
 }
+
+/* ===========================================================================
+   Simple mode, glossary and the fullscreen map
+   =========================================================================== */
+.builder__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.builder__mode .segmented__btn {
+  min-height: 36px;
+  font-weight: 600;
+}
+
+/* Operators: one suggestion button, the coach's reasons folded away. */
+.simple-suggest {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.simple-why > summary,
+.more-details > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 2px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.simple-why > summary::before,
+.more-details > summary::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin: 0 4px 0 2px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.simple-why[open] > summary::before,
+.more-details[open] > summary::before {
+  transform: rotate(45deg);
+}
+.simple-why > summary::-webkit-details-marker,
+.more-details > summary::-webkit-details-marker {
+  display: none;
+}
+.simple-why > summary,
+.more-details > summary {
+  list-style: none;
+}
+.simple-why[open] > summary,
+.more-details[open] > summary {
+  margin-bottom: 8px;
+}
+.assign--simple .assign__op {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.simple-why {
+  width: 100%;
+}
+
+/* Draw the plan: two clear ways to start. */
+.start-from--simple {
+  display: grid;
+  gap: 12px;
+}
+.start-from__title {
+  margin: 0;
+  font-size: var(--fs-lg);
+}
+.start-from__sub {
+  margin: 8px 0 0;
+  font-size: var(--fs-md);
+}
+.start-choices,
+.start-plans {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.start-choice {
+  border: 1px dashed var(--accent-line);
+  background: var(--accent-soft);
+}
+.start-choice .icon {
+  color: var(--accent);
+}
+.start-plan {
+  align-items: flex-start;
+  text-align: left;
+}
+.diff-badge {
+  align-self: flex-start;
+  justify-self: start;
+  width: max-content;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.diff-badge--1 {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.diff-badge--2 {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.diff-badge--3 {
+  background: var(--danger-soft);
+  color: #fca5a5;
+}
+
+/* Save: name and optional players. */
+.review__name {
+  margin-bottom: 8px;
+}
+.simple-players {
+  margin: 8px 0;
+  padding: 0;
+  border: 0;
+}
+.assign--simple .assign__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(120px, 180px);
+  align-items: center;
+  gap: 10px;
+}
+
+/* "?" next to an R6 word, and the R6 words list. */
+.help-tip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+.help-tip__btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: help;
+}
+.help-tip__btn::before {
+  /* 44px tap area without changing the look */
+  content: '';
+  position: absolute;
+  inset: -11px;
+}
+.help-tip__pop {
+  position: absolute;
+  z-index: 40;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 260px;
+  padding: 9px 11px;
+  border-radius: var(--radius);
+  background: var(--surface-3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 1px var(--line-input);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  transform: translateX(-50%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.help-tip__pop strong {
+  color: var(--text);
+}
+.help-tip--open .help-tip__pop,
+.help-tip:has(.help-tip__btn:focus-visible) .help-tip__pop {
+  opacity: 1;
+  visibility: visible;
+}
+@media (hover: hover) {
+  .help-tip:hover .help-tip__pop {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+.subtool-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.glossary {
+  position: relative;
+}
+.glossary > summary {
+  list-style: none;
+}
+.glossary > summary::-webkit-details-marker {
+  display: none;
+}
+.glossary__pop {
+  position: absolute;
+  z-index: 40;
+  right: 0;
+  top: calc(100% + 6px);
+  width: min(360px, calc(100vw - 32px));
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface-3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), inset 0 0 0 1px var(--line-input);
+}
+.glossary__pop > p {
+  margin: 0 0 10px;
+}
+.glossary__list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.glossary__list dt {
+  color: var(--text);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+.glossary__list dd {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.tzoom__sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--line-input);
+}
+.tzoom__btn--full {
+  color: var(--accent);
+}
+
+/* ---------- Fullscreen map ---------- */
+html.is-fullscreen-editor,
+html.is-fullscreen-editor body {
+  overflow: hidden;
+}
+.beditor--full {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: block;
+  margin: 0;
+  background: var(--bg);
+  --fs-top: calc(var(--safe-t) + 60px);
+}
+.beditor--full:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+.beditor--full .tfs-exit {
+  position: absolute;
+  z-index: 12;
+  top: calc(var(--safe-t) + 10px);
+  right: calc(env(safe-area-inset-right, 0px) + 10px);
+  min-height: 40px;
+}
+/* Slim Who/When strip across the top. */
+.beditor--full .tctx {
+  position: absolute;
+  z-index: 10;
+  top: calc(var(--safe-t) + 8px);
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+  right: calc(env(safe-area-inset-right, 0px) + 200px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: rgba(16, 19, 23, 0.92);
+  backdrop-filter: blur(8px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.beditor--full .tctx__row {
+  flex: none;
+  gap: 6px;
+}
+.beditor--full .tctx__label {
+  width: auto;
+}
+.beditor--full .tctx__chips {
+  overflow: visible;
+}
+.beditor--full .tctx__now,
+.beditor--full .tguide,
+.beditor--full .tnotice,
+.beditor--full .tstatus {
+  display: none;
+}
+.beditor--full .ctx-chip {
+  min-height: 34px;
+}
+/* The map fills everything below the strip. */
+.beditor--full .beditor__stage {
+  position: absolute;
+  inset: var(--fs-top) 0 var(--safe-b) 0;
+  display: block;
+}
+.beditor--full .tcanvas {
+  position: absolute;
+  inset: 0;
+}
+.beditor--full .tcanvas .tboard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+.beditor--full .tboard__svg {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+.beditor--full .floor-tab {
+  white-space: nowrap;
+}
+.beditor--full .floor-tabs {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--radius);
+  background: rgba(16, 19, 23, 0.92);
+  backdrop-filter: blur(8px);
+  flex-wrap: nowrap;
+}
+.beditor--full .beditor__subtools {
+  position: absolute;
+  z-index: 6;
+  top: 64px;
+  left: 50%;
+  max-width: calc(100% - 200px);
+  transform: translateX(-50%);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  background: rgba(16, 19, 23, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+/* Floating toolbar on the left. */
+.beditor--full .beditor__rail {
+  position: absolute;
+  z-index: 9;
+  top: calc(var(--fs-top) + 8px);
+  left: calc(env(safe-area-inset-left, 0px) + 8px);
+  width: 86px;
+  max-height: calc(100% - var(--fs-top) - var(--safe-b) - 16px);
+  overflow-y: auto;
+  overflow-x: visible;
+  background: rgba(16, 19, 23, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+/* Tooltips can't escape a scrolling toolbar; the labels are enough here. */
+.beditor--full .rail-tip {
+  display: none;
+}
+/* Side panel: a drawer while an item is selected. */
+.beditor--full .beditor__inspector {
+  display: none;
+}
+.beditor--full.beditor--drawer .beditor__inspector {
+  position: absolute;
+  /* the normal layout's align-self: start would shrink it to its content */
+  align-self: stretch;
+  justify-self: stretch;
+  z-index: 11;
+  display: block;
+  top: calc(var(--fs-top) + 8px);
+  right: calc(env(safe-area-inset-right, 0px) + 8px);
+  bottom: calc(var(--safe-b) + 8px);
+  width: min(340px, calc(100% - 120px));
+  max-height: none;
+  overflow-y: auto;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: tbar-in 0.16s ease-out;
+}
+.beditor--full .tzoom {
+  bottom: calc(var(--safe-b) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+}
+.beditor--full.beditor--drawer .tzoom {
+  right: calc(min(340px, 100% - 120px) + 24px);
+}
+
+/* Phones and small tablets in portrait: toolbar along the bottom. */
+@media (max-width: 760px) {
+  .beditor--full {
+    --fs-top: calc(var(--safe-t) + 104px);
+  }
+  /* Two short rows: who, then when (one long row hid the phases). */
+  .beditor--full .tctx {
+    right: 58px;
+    top: calc(var(--safe-t) + 6px);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 4px 6px;
+    overflow: visible;
+  }
+  .beditor--full .tctx__row {
+    min-width: 0;
+  }
+  .beditor--full .tctx__chips {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .beditor--full .tctx__label {
+    display: none;
+  }
+  .beditor--full .tfs-exit {
+    top: calc(var(--safe-t) + 6px);
+    right: 6px;
+    min-width: var(--tap);
+    min-height: var(--tap);
+    padding: 0;
+    justify-content: center;
+  }
+  .beditor--full .tfs-exit__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .beditor--full .beditor__stage {
+    bottom: calc(var(--safe-b) + 72px);
+  }
+  .beditor--full .beditor__rail {
+    top: auto;
+    bottom: calc(var(--safe-b) + 6px);
+    left: 6px;
+    right: 6px;
+    width: auto;
+    max-height: none;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .beditor--full .beditor__subtools {
+    top: 56px;
+    max-width: calc(100% - 16px);
+  }
+  .beditor--full.beditor--drawer .beditor__inspector {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 55%;
+    padding-bottom: calc(var(--safe-b) + 14px);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .beditor--full.beditor--drawer .tzoom {
+    right: 12px;
+  }
+  .beditor--full .floor-tabs {
+    top: 6px;
+  }
+}
+/* Phones in landscape: little height, so keep the side toolbar and a thin strip. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .beditor--full {
+    --fs-top: calc(var(--safe-t) + 50px);
+  }
+  .beditor--full .tctx__label {
+    display: none;
+  }
+  .beditor--full .rail-btn {
+    min-height: var(--tap);
+    padding-block: 4px;
+  }
+  .beditor--full .rail-btn__label {
+    display: none;
+  }
+  .beditor--full .beditor__rail {
+    width: 56px;
+  }
+}
+@media (pointer: coarse) {
+  .beditor--full .tfs-exit,
+  .beditor--full .ctx-chip {
+    min-height: var(--tap);
+  }
+}
+/* With the drawer open (it has the same actions in words), the bar next to
+   the item shows icons only so it fits beside the drawer. */
+.beditor--drawer .tbar__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

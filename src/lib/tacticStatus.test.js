@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeStrategy } from './strategies.js';
-import { duplicateItem, groupItems, panBy, tacticProgress, unplacedSlots, viewRect, zoomAt } from './tacticStatus.js';
+import { duplicateItem, fillZoom, groupItems, panBy, tacticProgress, unplacedSlots, viewRect, zoomAt } from './tacticStatus.js';
 
 const plan = (over = {}) =>
   normalizeStrategy({
@@ -96,7 +96,10 @@ describe('viewport', () => {
 
   it('a taller window for phones keeps its shape when zooming and panning', () => {
     expect(viewRect(size, { z: 2, aspect: 0.9 })).toMatchObject({ w: 50, h: 45 });
-    expect(viewRect(size, { z: 1, aspect: 0.9 })).toMatchObject({ w: 100, h: 60 });
+    // Taller than the board at zoom 1: the whole board, centred.
+    expect(viewRect(size, { z: 1, aspect: 0.9 })).toMatchObject({ x: 0, y: -15, w: 100, h: 90 });
+    expect(fillZoom(size, 0.9)).toBeCloseTo(1.5);
+    expect(viewRect(size, { z: fillZoom(size, 0.9), aspect: 0.9 }).h).toBeCloseTo(60);
     const r = viewRect(size, panBy(size, zoomAt(size, { z: 2, aspect: 0.9 }, 1.5), 5, 5));
     expect(r.h / r.w).toBeCloseTo(0.9);
   });

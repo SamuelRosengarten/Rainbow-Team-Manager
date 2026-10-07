@@ -55,12 +55,23 @@ function Text({ label, value, onChange, max, area, placeholder, autoFocus }) {
   );
 }
 
+/** Simple mode: fields a beginner rarely needs, folded away. */
+function More({ children }) {
+  const { t } = useI18n();
+  return (
+    <details className="more-details">
+      <summary>{t('planner.moreDetails')}</summary>
+      <div className="form form--tight">{children}</div>
+    </details>
+  );
+}
+
 /**
  * Edit the selected board object. With nothing selected, lists what's placed
  * in the chosen step, grouped (players, routes, utility, areas, notes), so
  * items can be picked without the mouse.
  */
-export default function ObjectInspector({ draft, selected, update, remove, onSelect, onDuplicate, stepFilter, hidden = null }) {
+export default function ObjectInspector({ draft, selected, update, remove, onSelect, onDuplicate, stepFilter, hidden = null, simple = false }) {
   const { t } = useI18n();
   const coll = { marker: 'markers', zone: 'zones', crossfire: 'crossfires', path: 'paths' };
   const item = selected ? draft[coll[selected.type]]?.find((x) => x.id === selected.id) : null;
@@ -122,7 +133,77 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
         </button>
       </div>
 
-      {selected.type === 'marker' && (
+      {selected.type === 'marker' && simple && (
+        <div className="form form--tight">
+          <Text label={item.kind === 'note' ? t('inspector.noteText') : t('inspector.label')} value={item.label} max={60} onChange={(v) => set({ label: v }, 'label')} autoFocus={item.kind === 'note'} />
+          <SlotSelect strategy={draft} value={item.slotKey} onChange={(v) => set({ slotKey: v })} />
+          <StepSelect strategy={draft} value={item.stepId} onChange={(v) => set({ stepId: v })} />
+          <More>
+          <label className="field">
+            <span className="field__label">{t('objectInspector.type')}</span>
+            <select
+              className="select input--sm"
+              value={item.kind}
+              onChange={(e) => set({ kind: e.target.value, ...(e.target.value === 'utility' ? { gadget: item.gadget ?? 'ability' } : {}), ...(e.target.value === 'breach' ? { breachType: item.breachType ?? 'hard' } : {}) })}
+            >
+              {Object.entries(OBJECTS).map(([id, o]) => (
+                <option key={id} value={id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {item.kind === 'utility' && (
+            <label className="field">
+              <span className="field__label">{t('objectInspector.utility')}</span>
+              <select className="select input--sm" value={item.gadget ?? 'ability'} onChange={(e) => set({ gadget: e.target.value })}>
+                {gadgetsForSide(draft.side).map(([id, g]) => (
+                  <option key={id} value={id}>
+                    {id === 'ability' ? utilityName('ability', draft.slots.find((s) => s.key === item.slotKey)?.operatorId) : g.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {item.kind === 'breach' && (
+            <label className="field">
+              <span className="field__label">{t('objectInspector.breach')}</span>
+              <select className="select input--sm" value={item.breachType ?? 'hard'} onChange={(e) => set({ breachType: e.target.value })}>
+                {Object.entries(BREACH_TYPES).map(([id, l]) => (
+                  <option key={id} value={id}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {item.kind === 'note' && (
+            <label className="field">
+              <span className="field__label">{t('objectInspector.attachedTo')}</span>
+              <select className="select input--sm" value={item.anchorId ?? ''} onChange={(e) => set({ anchorId: e.target.value || undefined })}>
+                <option value="">{t('objectInspector.nothingAMapLocation')}</option>
+                {draft.markers
+                  .filter((m) => m.id !== item.id && m.kind !== 'note')
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {describeItem(draft, 'marker', m)}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
+          {item.kind !== 'note' && (
+            <>
+              <Text label={t('inspector.purpose')} value={item.purpose} max={120} placeholder={t('objectInspector.eGDenyTheThermite')} onChange={(v) => set({ purpose: v }, 'purpose')} />
+              <Text label={t('inspector.timing')} value={item.timing} max={30} placeholder={t('objectInspector.eG040Or')} onChange={(v) => set({ timing: v }, 'timing')} />
+              <Text label={t('inspector.instructions')} area value={item.note} max={300} placeholder={t('objectInspector.whatThePlayerDoesHere')} onChange={(v) => set({ note: v }, 'note')} />
+            </>
+          )}
+          </More>
+        </div>
+      )}
+
+      {selected.type === 'marker' && !simple && (
         <div className="form form--tight">
           <label className="field">
             <span className="field__label">{t('objectInspector.type')}</span>
@@ -190,7 +271,28 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
         </div>
       )}
 
-      {selected.type === 'zone' && (
+      {selected.type === 'zone' && simple && (
+        <div className="form form--tight">
+          <Text label={t('inspector.label')} value={item.label} max={60} placeholder={t('objectInspector.eGHoldThisHallway')} onChange={(v) => set({ label: v }, 'label')} />
+          <SlotSelect strategy={draft} value={item.slotKey} onChange={(v) => set({ slotKey: v })} label={t('inspector.whoHoldsIt')} />
+          <StepSelect strategy={draft} value={item.stepId} onChange={(v) => set({ stepId: v })} />
+          <More>
+          <label className="field">
+            <span className="field__label">{t('objectInspector.kind')}</span>
+            <select className="select input--sm" value={item.kind} onChange={(e) => set({ kind: e.target.value })}>
+              {Object.entries(ZONES).map(([id, z]) => (
+                <option key={id} value={id}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Text label={t('inspector.notes')} area value={item.note} max={300} onChange={(v) => set({ note: v }, 'note')} />
+          </More>
+        </div>
+      )}
+
+      {selected.type === 'zone' && !simple && (
         <div className="form form--tight">
           <label className="field">
             <span className="field__label">{t('objectInspector.kind')}</span>
@@ -209,7 +311,24 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
         </div>
       )}
 
-      {selected.type === 'crossfire' && (
+      {selected.type === 'crossfire' && simple && (
+        <div className="form form--tight">
+          <Text label={t('inspector.engagementArea')} value={item.label} max={60} placeholder={t('objectInspector.eGMainStairs')} onChange={(v) => set({ label: v }, 'label')} />
+          <SlotSelect strategy={draft} value={item.slotA} onChange={(v) => set({ slotA: v })} label={t('inspector.playerA')} none={t('inspector.unassigned')} />
+          <SlotSelect strategy={draft} value={item.slotB} onChange={(v) => set({ slotB: v })} label={t('inspector.playerB')} none={t('inspector.unassigned')} />
+          <StepSelect strategy={draft} value={item.stepId} onChange={(v) => set({ stepId: v })} />
+          <More>
+            <Text label={t('inspector.timingOptional')} value={item.timing} max={30} placeholder={t('objectInspector.eGAfterPlant')} onChange={(v) => set({ timing: v }, 'timing')} />
+          <label className="field">
+            <span className="field__label">{t('objectInspector.areaSize')}</span>
+            <input type="range" min="1.5" max="15" step="0.5" value={item.radius} onChange={(e) => set({ radius: Number(e.target.value) }, 'radius')} />
+          </label>
+            <Text label={t('inspector.notes')} area value={item.note} max={300} onChange={(v) => set({ note: v }, 'note')} />
+          </More>
+        </div>
+      )}
+
+      {selected.type === 'crossfire' && !simple && (
         <div className="form form--tight">
           <SlotSelect strategy={draft} value={item.slotA} onChange={(v) => set({ slotA: v })} label={t('inspector.playerA')} none={t('inspector.unassigned')} />
           <SlotSelect strategy={draft} value={item.slotB} onChange={(v) => set({ slotB: v })} label={t('inspector.playerB')} none={t('inspector.unassigned')} />
@@ -224,7 +343,30 @@ export default function ObjectInspector({ draft, selected, update, remove, onSel
         </div>
       )}
 
-      {selected.type === 'path' && (
+      {selected.type === 'path' && simple && (
+        <div className="form form--tight">
+          <Text label={t('inspector.label')} value={item.label} max={60} onChange={(v) => set({ label: v }, 'label')} />
+          <SlotSelect strategy={draft} value={item.slotKey} onChange={(v) => set({ slotKey: v })} />
+          <StepSelect strategy={draft} value={item.stepId} onChange={(v) => set({ stepId: v })} />
+          <button type="button" className="btn btn--ghost btn--sm" disabled={item.points.length <= 2} onClick={() => set({ points: item.points.slice(0, -1) })}>
+            {t('objectInspector.removeLastPoint')}
+          </button>
+          <More>
+          <label className="field">
+            <span className="field__label">{t('objectInspector.routeType')}</span>
+            <select className="select input--sm" value={item.kind} onChange={(e) => set({ kind: e.target.value })}>
+              {Object.entries(PATHS).map(([id, p]) => (
+                <option key={id} value={id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          </More>
+        </div>
+      )}
+
+      {selected.type === 'path' && !simple && (
         <div className="form form--tight">
           <label className="field">
             <span className="field__label">{t('objectInspector.routeType')}</span>
