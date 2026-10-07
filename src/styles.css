@@ -1286,8 +1286,14 @@ code {
   font-weight: 600;
 }
 @media (max-width: 480px) {
+  /* Icon only on phones; the word stays for screen readers. */
   .player__toggle-text {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 }
 @media (min-width: 900px) {
@@ -2494,7 +2500,7 @@ button.op-pill {
 }
 .rec-details > summary {
   cursor: pointer;
-  min-height: 40px;
+  min-height: var(--tap);
   display: flex;
   align-items: center;
   color: var(--muted);

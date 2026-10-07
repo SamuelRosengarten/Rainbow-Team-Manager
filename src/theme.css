@@ -28,7 +28,7 @@
   --text: #f3f4f6;
   --text-2: #d1d5db;
   --muted: #9ca3af;
-  --subtle: #667085;
+  --subtle: #808aa2; /* 4.6:1 or better on every surface (WCAG AA small text) */
 
   /* One accent: primary actions, current location, selection, key numbers. */
   --accent: #f5a623;

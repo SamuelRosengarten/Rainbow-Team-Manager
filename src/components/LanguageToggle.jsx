@@ -18,8 +18,9 @@ export default function LanguageToggle({ className = '' }) {
     <span className={`lang-toggle ${className}`}>
       <span className="segmented lang-toggle__group" role="group" aria-label={t('language.label')}>
         {Object.values(LOCALES).map((l) => (
-          <button key={l.id} type="button" lang={l.lang} className="segmented__btn" aria-pressed={locale === l.id} aria-label={l.label} onClick={() => choose(l.id)}>
+          <button key={l.id} type="button" lang={l.lang} className="segmented__btn" aria-pressed={locale === l.id} title={l.label} onClick={() => choose(l.id)}>
             {l.short}
+            <span className="visually-hidden"> {l.label}</span>
           </button>
         ))}
       </span>

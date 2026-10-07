@@ -1614,3 +1614,36 @@ html.is-fullscreen-editor body {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- 44px touch targets everywhere else (phones and touch screens) ---------- */
+@media (pointer: coarse), (max-width: 720px) {
+  .skip-link,
+  .brand,
+  .lang-toggle .segmented__btn,
+  .builder__mode .segmented__btn,
+  .action-row,
+  .synergy__op,
+  .op-chip,
+  .chip-toggle,
+  .op-row__open,
+  .finder summary,
+  details > summary {
+    min-height: var(--tap);
+  }
+  .lang-toggle .segmented__btn {
+    min-width: var(--tap);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+  }
+  /* The coach progress dots stay small but get a finger-sized hit area. */
+  .coach__tick {
+    position: relative;
+  }
+  .coach__tick::before {
+    content: '';
+    position: absolute;
+    inset: -20px -4px;
+  }
+}
