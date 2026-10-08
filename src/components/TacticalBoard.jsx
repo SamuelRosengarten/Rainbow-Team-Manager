@@ -453,6 +453,8 @@ export default function TacticalBoard({
                 {...handlers('marker', m)}
               >
                 <title>{[op?.name, m.label].filter(Boolean).join(': ') || m.kind}</title>
+                {/* A bigger, invisible tap area on touch screens (tactical.css). */}
+                {clickable && <circle r="4.2" className="tb-marker__hit" />}
                 {sel && <circle r="3.8" className="tb-sel-ring" />}
                 {fresh === m.id && <circle r="3.4" className="tb-ripple" stroke={color} />}
                 <g className="tb-glyph">
