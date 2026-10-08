@@ -28,6 +28,7 @@ export const ROUTES = [
   `#/strategies/s/${S1}/edit`,
   `#/strategies/s/${S1}/coach`,
   `#/strategies/s/${S1}/player`,
+  `#/strategies/s/${S1}/player/choose`,
   `#/strategies/compare/${S1}/${S2}`,
   '#/team',
   '#/team/operators',

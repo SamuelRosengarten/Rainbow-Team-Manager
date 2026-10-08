@@ -15,6 +15,7 @@ import { T } from '../i18n/Rich.jsx';
 const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 
 function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
+  // onEdit / onRefresh are left out when this player can't be edited (not yours, not a captain).
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const p = prefs[player.name] ?? { owned: [], favorites: [] };
@@ -37,9 +38,11 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
             <span className="player__toggle-text">{t('team.details')}</span>
             <Icon name="chevron" size={14} />
           </button>
-          <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={onEdit} aria-label={t('team.edit', { player: player.name })} title={t('team.edit', { player: player.name })}>
-            <Icon name="edit" size={16} />
-          </button>
+          {onEdit && (
+            <button type="button" className="btn btn--ghost btn--icon btn--sm" onClick={onEdit} aria-label={t('team.edit', { player: player.name })} title={t('team.edit', { player: player.name })}>
+              <Icon name="edit" size={16} />
+            </button>
+          )}
         </div>
       </div>
       <div className="player__badges">
@@ -93,11 +96,12 @@ function PlayerCard({ player, prefs, isMe, onEdit, onRefresh }) {
 
 function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
   const { t } = useI18n();
-  const { roster, rosterReady } = useRoster();
+  const { roster, rosterReady, canAddPlayers, canEditPlayer } = useRoster();
   const [editing, setEditing] = useState(null); // null | 'new' | player
   const current = roster.filter((p) => p.status !== 'archived');
   const former = roster.filter((p) => p.status === 'archived');
   const starters = roster.filter((p) => p.status === 'starter').length;
+  const editProps = (p) => (canEditPlayer(p.name) ? { onEdit: () => setEditing(p), onRefresh: () => refreshStats(p.name) } : {});
 
   return (
     <>
@@ -105,9 +109,13 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
         <span className="muted">
           <T id="team.starters" values={{ starters, size: LINEUP_SIZE, subs: current.length - starters }} />
         </span>
-        <button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing('new')}>
-          <Icon name="plus" size={16} /> {t('teamView.addPlayer')}
-        </button>
+        {canAddPlayers ? (
+          <button type="button" className="btn btn--primary btn--sm" onClick={() => setEditing('new')}>
+            <Icon name="plus" size={16} /> {t('teamView.addPlayer')}
+          </button>
+        ) : (
+          <span className="muted small">{t('team.captainsAddPlayers')}</span>
+        )}
       </div>
       {starters < LINEUP_SIZE && current.length >= LINEUP_SIZE && (
         <p className="notice notice--warn" role="status">
@@ -118,7 +126,7 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
       {current.length ? (
         <ul className="player-grid">
           {current.map((p) => (
-            <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} onRefresh={() => refreshStats(p.name)} />
+            <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} {...editProps(p)} />
           ))}
         </ul>
       ) : (
@@ -126,9 +134,11 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
           icon="users"
           title={t('teamView.noActivePlayers')}
           action={
-            <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
-              <Icon name="plus" size={18} /> {t('teamView.addPlayer')}
-            </button>
+            canAddPlayers && (
+              <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
+                <Icon name="plus" size={18} /> {t('teamView.addPlayer')}
+              </button>
+            )
           }
         >
           {t('teamView.addYourPlayersSoYou')}
@@ -139,7 +149,7 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
           <summary>{t('team.former', { count: former.length })}</summary>
           <ul className="player-grid">
             {former.map((p) => (
-              <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} onEdit={() => setEditing(p)} onRefresh={() => refreshStats(p.name)} />
+              <PlayerCard key={p.id} player={p} prefs={prefs} isMe={p.name === profile} {...editProps(p)} />
             ))}
           </ul>
         </details>

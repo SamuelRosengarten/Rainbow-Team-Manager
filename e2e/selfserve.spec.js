@@ -114,7 +114,19 @@ test('join with an invite link as an existing roster player, see no captain cont
   await expect(page.getByRole('button', { name: 'Make captain' })).toHaveCount(0);
   await expect(page.locator('.ts-member')).toHaveCount(2);
 
+  // A member edits only their own player and operator pool, and doesn't add players.
+  await page.evaluate(() => (location.hash = '#/team'));
+  await expect(page.getByRole('button', { name: 'Edit Noah' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Edit Cap' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Add player' })).toHaveCount(0);
+  await expect(page.getByText('Captains add roster players.')).toBeVisible();
+  await page.evaluate(() => (location.hash = '#/team/operators'));
+  await page.getByLabel('Whose operators').selectOption('Cap');
+  await expect(page.getByText('You’re viewing Cap’s lists (read only).')).toBeVisible();
+  await expect(page.locator('.op-row__own input').first()).toBeDisabled();
+
   // Leave: back to Get started.
+  await page.evaluate(() => (location.hash = '#/team/settings'));
   await page.getByRole('button', { name: 'Leave team' }).click();
   await expect(page.getByRole('heading', { name: 'Get started' })).toBeVisible();
 });

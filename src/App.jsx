@@ -173,8 +173,13 @@ function TeamApp({ online, member = null, team = null, email = '', onSignOut, on
       bans: data.team.bans ?? [],
       ownedOnly: Boolean(data.team.ownedOnly),
       profile: storedProfile,
+      // Online, players edit their own details and operator pool; captains edit
+      // anyone's and add roster players (the database enforces the same, see
+      // supabase/hardening.sql). Offline, this device can edit everything.
+      canAddPlayers: !online || team?.role === 'captain',
+      canEditPlayer: (name) => !online || team?.role === 'captain' || name === storedProfile,
     }),
-    [data.roster, data.rosterReady, data.prefs, data.team.bans, data.team.ownedOnly, storedProfile],
+    [data.roster, data.rosterReady, data.prefs, data.team.bans, data.team.ownedOnly, storedProfile, online, team?.role],
   );
 
   if (data.status === 'loading') return <LoadingScreen />;

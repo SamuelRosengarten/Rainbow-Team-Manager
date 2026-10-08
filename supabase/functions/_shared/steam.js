@@ -130,6 +130,24 @@ export async function verifySteamAssertion(params, { allowedOrigins, fetch, now 
 export const steamEmail = (steamId) => `steam-${steamId}@users.invalid`;
 
 /**
+ * May a Steam login sign into the existing account with this address? Stops
+ * someone from registering an address first (with a password they know) and
+ * waiting for its Steam owner to sign in: the magic link would confirm their
+ * account and hand them the victim's team.
+ *   - a Steam address (steam-<id>@users.invalid): only an account this
+ *     function made (marked with the Steam ID, or older ones: no password)
+ *   - a member's real email: an account whose owner confirmed that email, or
+ *     one without a password
+ *
+ * @param account  null (no account yet) or { hasPassword, confirmed, steamId }
+ */
+export function accountUsable(account, { steamId, steamAddress }) {
+  if (!account) return true;
+  if (steamAddress) return account.steamId === steamId || !account.hasPassword;
+  return account.confirmed || !account.hasPassword;
+}
+
+/**
  * The whole Steam login, with every database and Steam call passed in so it
  * can be tested without a server:
  *   1. per-IP attempt limit, 2. verify the Steam response, 3. find the
@@ -147,7 +165,8 @@ export const steamEmail = (steamId) => `steam-${steamId}@users.invalid`;
  *   (a Steam ID is on one team at most; the team only matters to the database
  *   policies once the player is signed in)
  * @param deps.userEmail  async (userId) => email | null
- * @param deps.createUser async (email) => void (an existing user with that email is fine)
+ * @param deps.findAccount async (email) => null | { hasPassword, confirmed, steamId } (see accountUsable)
+ * @param deps.createUser async (email, steamId) => void (an existing user with that email is fine)
  * @param deps.magicLink  async (email) => { userId, tokenHash }
  * @param deps.linkMember async (profileId, userId) => void
  * @returns {Promise<{ ok: true, tokenHash: string } | { ok: false, reason: string, status: number }>}
@@ -158,16 +177,16 @@ export async function handleSteamLogin({ params, ip }, deps) {
   if (!v.ok) return v;
   const member = await deps.findMember(v.steamId);
   let email;
-  if (!member) {
-    // Not listed by an admin: their own account (self sign-up), no team yet.
-    email = steamEmail(v.steamId);
-    await deps.createUser(email);
-  } else if (member.userId) {
+  if (member?.userId) {
     email = await deps.userEmail(member.userId);
     if (!email) return fail('server', 500);
   } else {
-    email = member.email || steamEmail(v.steamId);
-    await deps.createUser(email);
+    // Not listed by an admin: their own account (self sign-up), no team yet.
+    // Listed but never signed in: the member's email, or a Steam address.
+    email = member?.email || steamEmail(v.steamId);
+    const account = await deps.findAccount(email);
+    if (!accountUsable(account, { steamId: v.steamId, steamAddress: !member?.email })) return fail('account-conflict', 409);
+    if (!account) await deps.createUser(email, v.steamId);
   }
   const link = await deps.magicLink(email);
   if (!link?.tokenHash || !link.userId) return fail('server', 500);

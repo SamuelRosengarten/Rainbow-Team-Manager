@@ -2,7 +2,8 @@ import { createContext, useContext } from 'react';
 
 /**
  * The team roster, shared with every screen:
- * { roster, players (active names), lineupPlayers (starting five), rosterReady }.
+ * { roster, players (active names), lineupPlayers (starting five), rosterReady,
+ * canAddPlayers, canEditPlayer(name) }.
  */
 export const RosterContext = createContext(null);
 

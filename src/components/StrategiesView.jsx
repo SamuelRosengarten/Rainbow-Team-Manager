@@ -130,15 +130,18 @@ export default function StrategiesView({ profile, sub, navigate, tacticsStore, s
       } else if (mode === 'coach') {
         body = <CoachMode strategy={strategy} mapName={mapName} assigned={assigned} onExit={back} />;
       } else if (mode === 'player') {
+        // Opens straight on the operator assigned to you; "player/choose" (Switch operator) shows the picker.
+        const mine = strategy.slots.find((s) => profile && assigned[s.key] === profile)?.key ?? null;
+        const slotKey = route.slot ?? mine;
         body = (
           <PlayerMode
-            key={route.slot ?? 'pick'}
+            key={slotKey ?? 'pick'}
             strategy={strategy}
             mapName={mapName}
             assigned={assigned}
             profile={profile}
-            slotKey={route.slot}
-            onPick={(k) => navigate(`strategies/s/${strategy.id}/player${k ? `/${k}` : ''}`)}
+            slotKey={slotKey}
+            onPick={(k) => navigate(`strategies/s/${strategy.id}/player/${k ?? 'choose'}`)}
             onBack={back}
           />
         );

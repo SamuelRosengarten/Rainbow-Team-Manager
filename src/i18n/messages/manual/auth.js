@@ -32,6 +32,8 @@ export const en = {
   'auth.error.linkExpired': 'This link has expired. Ask for a new one.',
   'auth.error.steamNotSetUp': 'Steam sign-in isn’t set up yet (see the README).',
   'auth.error.steamFailed': 'Steam sign-in didn’t work. Try again.',
+  'auth.error.steamAccountConflict': 'For your safety, Steam sign-in was blocked: another account already uses this Steam account’s sign-in address. Ask whoever runs the site to check it in Supabase (Authentication → Users).',
+  'auth.error.reservedEmail': 'That address can’t be used. Use your real email.',
   'auth.error.unknown': 'Couldn’t sign in. {detail}',
   'app.account': 'Account and backup',
 };
@@ -69,6 +71,8 @@ export const fr = {
   'auth.error.linkExpired': 'Ce lien a expiré. Demandes-en un nouveau.',
   'auth.error.steamNotSetUp': 'La connexion Steam n’est pas encore configurée (voir le README).',
   'auth.error.steamFailed': 'La connexion Steam n’a pas fonctionné. Réessaie.',
+  'auth.error.steamAccountConflict': 'Pour ta sécurité, la connexion Steam a été bloquée : un autre compte utilise déjà l’adresse de connexion de ce compte Steam. Demande à la personne qui gère le site de vérifier dans Supabase (Authentication → Users).',
+  'auth.error.reservedEmail': 'Cette adresse ne peut pas être utilisée. Utilise ton vrai courriel.',
   'auth.error.unknown': 'Impossible de te connecter. {detail}',
   'app.account': 'Compte et sauvegarde',
 };
