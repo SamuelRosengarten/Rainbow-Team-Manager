@@ -74,6 +74,11 @@ export const en = {
   'profile.blockedBy': 'Blocked by',
   'profile.ability': 'Ability · {name}',
   'profile.watch': '▶ Watch {operator}’s intro video',
+  'profile.yourMark': 'Your mark',
+  'profile.yourMarkHelp': 'Favourites are suggested first. Blocked operators are never suggested for you.',
+  'opLib.markHint': 'Open an operator to favourite or block them. Suggestions put favourites first and never use blocked operators.',
+  'opLib.myFavourite': 'Your favourite',
+  'opLib.myBlocked': 'Blocked by you',
 };
 
 export const fr = {
@@ -151,4 +156,9 @@ export const fr = {
   'profile.blockedBy': 'Bloqué par',
   'profile.ability': 'Capacité · {name}',
   'profile.watch': '▶ Voir la vidéo de présentation ({operator})',
+  'profile.yourMark': 'Ton choix',
+  'profile.yourMarkHelp': 'Les favoris sont proposés en premier. Les opérateurs bloqués ne te sont jamais proposés.',
+  'opLib.markHint': 'Ouvre un opérateur pour le mettre en favori ou le bloquer. Les suggestions placent les favoris en premier et n’utilisent jamais les opérateurs bloqués.',
+  'opLib.myFavourite': 'Ton favori',
+  'opLib.myBlocked': 'Bloqué par toi',
 };

@@ -58,8 +58,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Cigar Room / Pool",
+        "1F Blackjack / Poker",
+        "1F Bar / Betting",
+        "B CCTV / Vault"
+      ],
+      "defend": [
+        "2F Cigar Room / Pool",
+        "1F Blackjack / Poker",
+        "1F Bar / Betting",
+        "B CCTV / Vault"
+      ]
     },
     "notes": ""
   },
@@ -147,8 +157,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Meeting Room / Consul Office",
+        "1F Piano Room / Exposition Room",
+        "1F Tellers / B Servers",
+        "B Cafeteria / Garage"
+      ],
+      "defend": [
+        "2F Meeting Room / Consul Office",
+        "1F Piano Room / Exposition Room",
+        "1F Tellers / B Servers",
+        "B Cafeteria / Garage"
+      ]
     },
     "notes": ""
   },
@@ -161,8 +181,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Bedroom / Commander's Office",
+        "2F Dormitory / Briefing Room",
+        "1F Kitchen / Cafeteria",
+        "1F Hammam / Sitting Room"
+      ],
+      "defend": [
+        "2F Bedroom / Commander's Office",
+        "2F Dormitory / Briefing Room",
+        "1F Kitchen / Cafeteria",
+        "1F Hammam / Sitting Room"
+      ]
     },
     "notes": ""
   },
@@ -201,8 +231,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Server Room / Radar Room",
+        "1F Security Room / Map Room",
+        "1F Coast Guard Meeting Room / Lounge",
+        "B Kayaks / Supply Room"
+      ],
+      "defend": [
+        "2F Server Room / Radar Room",
+        "1F Security Room / Map Room",
+        "1F Coast Guard Meeting Room / Lounge",
+        "B Kayaks / Supply Room"
+      ]
     },
     "notes": ""
   },
@@ -216,8 +256,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Master Office / R6 Room",
+        "1F Bunks / Briefing",
+        "1F Armory / Weapon Maintenance",
+        "B Lab / Lab Support"
+      ],
+      "defend": [
+        "2F Master Office / R6 Room",
+        "1F Bunks / Briefing",
+        "1F Armory / Weapon Maintenance",
+        "B Lab / Lab Support"
+      ]
     },
     "notes": ""
   },
@@ -231,8 +281,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Command / Server",
+        "1F Control / Storage",
+        "1F Kitchen / Cafeteria",
+        "B Tank / Assembly"
+      ],
+      "defend": [
+        "2F Command / Server",
+        "1F Control / Storage",
+        "1F Kitchen / Cafeteria",
+        "B Tank / Assembly"
+      ]
     },
     "notes": ""
   },
@@ -271,8 +331,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Laundry Room / Piano Room",
+        "2F Party Room / Office",
+        "1F Green Bedroom / Red Bedroom",
+        "1F Mechanic Shop / Kitchen"
+      ],
+      "defend": [
+        "2F Laundry Room / Piano Room",
+        "2F Party Room / Office",
+        "1F Green Bedroom / Red Bedroom",
+        "1F Mechanic Shop / Kitchen"
+      ]
     },
     "notes": ""
   },
@@ -285,8 +355,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Tea Room / Karaoke",
+        "2F Work Office / Exhibition",
+        "1F BBQ / Kitchen",
+        "1F Bedroom / Bathroom"
+      ],
+      "defend": [
+        "2F Tea Room / Karaoke",
+        "2F Work Office / Exhibition",
+        "1F BBQ / Kitchen",
+        "1F Bedroom / Bathroom"
+      ]
     },
     "notes": ""
   },
@@ -299,8 +379,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Initiation Room / Office",
+        "2F Bunk / Day Care",
+        "1F Armory / Throne Room",
+        "1F Lab / Storage"
+      ],
+      "defend": [
+        "2F Initiation Room / Office",
+        "2F Bunk / Day Care",
+        "1F Armory / Throne Room",
+        "1F Lab / Storage"
+      ]
     },
     "notes": ""
   },
@@ -314,8 +404,18 @@
       "roof"
     ],
     "sites": {
-      "attack": [],
-      "defend": []
+      "attack": [
+        "2F Aviator Room / Games Room",
+        "2F Trophy Room / Statuary Room",
+        "1F Dining Room / Kitchen",
+        "B Art Storage / Old Office"
+      ],
+      "defend": [
+        "2F Aviator Room / Games Room",
+        "2F Trophy Room / Statuary Room",
+        "1F Dining Room / Kitchen",
+        "B Art Storage / Old Office"
+      ]
     },
     "notes": ""
   }

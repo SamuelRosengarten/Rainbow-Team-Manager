@@ -7,7 +7,7 @@ export default {
   "app.main": "Main",
   "app.newStrategy": "New strategy",
   "app.youReOfflineChangesWon": "You're offline. Changes won't reach the team until your connection is back.",
-  "app.offlineModeChangesStayOn": "Offline mode: changes stay on this device and are lost on reload.",
+  "app.offlineModeChangesStayOn": "Offline mode: changes are saved in this browser only and aren’t shared with your team.",
   "app.signedIn": "Signed in as {name}. Switch profile",
   "app.brandSub": "Team planner",
   "app.switchProfile": "Switch profile",

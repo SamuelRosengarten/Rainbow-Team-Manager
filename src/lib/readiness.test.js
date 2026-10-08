@@ -57,7 +57,7 @@ describe('mapPreparation', () => {
 
   it('reports maps with no plans or no listed sites', () => {
     expect(mapPreparation('bank', [])).toMatchObject({ status: 'none', coverage: 0 });
-    expect(mapPreparation('fortress', [])).toMatchObject({ sites: 0, status: 'no-sites', coverage: null });
+    expect(mapPreparation('custom-map', [])).toMatchObject({ sites: 0, status: 'no-sites', coverage: null });
   });
 });
 

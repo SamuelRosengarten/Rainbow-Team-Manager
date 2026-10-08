@@ -64,7 +64,11 @@ Sites are filled in **only** for maps whose current site names I'm confident abo
 
 **Oregon (added for the strategy library, please check):** 2F Kids' Dorms / Dorms Main Hall, 1F Kitchen / Dining Hall, 1F Meeting Hall / Kitchen, B Laundry Room / Supply Room. Written from memory, not checked against the current map.
 
-**Left empty on purpose (please fill in):** Calypso Casino, Consulate, Fortress, Kanal, Lair, Nighthaven Labs, Outback, Skyscraper, Theme Park, Villa. Villa's sites changed this season (Living Room / Library moved to the basement).
+**Added from sources (October 2026, please check in game):** the other ten maps, so every map can be planned. Each site is `"<floor> Room A / Room B"`, as for the others.
+
+- Consulate, Fortress, Kanal, Lair, Nighthaven Labs, Outback, Skyscraper, Theme Park, Villa: the *Bomb* list on each map's Liquipedia page (`https://liquipedia.net/rainbowsix/<Map>`). Where the page shows several versions (Kanal, Outback, Theme Park), the current, post-rework list was used. Villa uses the Y11S3 layout (Art Storage / Old Office in the basement).
+- **Fortress:** Liquipedia's list still uses the pre-rework room names (Bedroom / Commander's Office, Dormitory / Briefing Room, Kitchen / Cafeteria, Hammam / Sitting Room). The map was reworked in Operation Tenfold Pursuit (Dec 2025); check the sites in game.
+- **Calypso Casino** (Operation System Override, June 2026; no Liquipedia page yet): site names from the GladiatorBoost site guide (Cigar Room / Pool, Blackjack / Poker, Bar / Betting, CCTV / Vault). Ubisoft's map page confirms the Vault is in the basement. The other floors are **inferred** from the Ubisoft blueprints (the billiard table is on 2F, the card tables on 1F): check them in game.
 
 ### Map notes
 

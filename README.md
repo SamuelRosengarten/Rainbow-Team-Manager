@@ -293,7 +293,7 @@ npm run dev       # http://localhost:5173
 
 `.env` is git-ignored. Only `.env.example` is committed.
 
-Without a `.env`, the app shows a "Supabase isn't configured" screen with a **Try it offline** button. Offline mode keeps everything in memory on that one device, which is handy for a quick look.
+Without a `.env`, the app shows a "Supabase isn't configured" screen with a **Try it offline** button. Offline mode keeps everything in that browser's localStorage (it survives a reload but isn't shared with anyone), which is handy for a quick look. If the deployed site shows the offline banner, its Vercel environment variables are missing: see [Deploy on Vercel](#5-deploy-on-vercel).
 
 | Command | What it does |
 | --- | --- |

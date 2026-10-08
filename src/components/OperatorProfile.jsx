@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
+import PrefButtons from './PrefButtons.jsx';
 import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID, operatorProfile, operatorVideoUrl } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
@@ -39,10 +40,11 @@ function List({ title, items }) {
 /**
  * Modal profile card for one operator: portrait, health/speed, ability,
  * loadout, how to play, the team's marks, and a link to the intro video.
+ * With `me` and `setPreference`, the viewer can favourite or block the operator.
  */
-export default function OperatorProfile({ operator, prefs = {}, onClose }) {
+export default function OperatorProfile({ operator, prefs = {}, onClose, me = null, setPreference = null }) {
   const { t } = useI18n();
-  const { players } = useRoster();
+  const { players, canEditPlayer } = useRoster();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -131,6 +133,20 @@ export default function OperatorProfile({ operator, prefs = {}, onClose }) {
           <List title={t('operatorProfile.primary')} items={p.primary} />
           <List title={t('operatorProfile.secondary')} items={p.secondary} />
         </div>
+
+        {me && setPreference && canEditPlayer(me) && (
+          <section className="profile__mine" aria-labelledby="profile-mine-title">
+            <h3 id="profile-mine-title" className="profile__h">{t('profile.yourMark')}</h3>
+            <PrefButtons
+              operator={operator}
+              pref={prefs[me]?.favorites?.includes(operator.id) ? 'favorite' : prefs[me]?.avoid?.includes(operator.id) ? 'avoid' : null}
+              onSet={(kind) => setPreference(me, operator.id, kind)}
+              labels
+              className="profile__prefs"
+            />
+            <p className="muted small">{t('profile.yourMarkHelp')}</p>
+          </section>
+        )}
 
         <dl className="profile__team">
           {team.map(({ label, names }) => (

@@ -9,6 +9,7 @@ import { lookupPlayer } from '../lib/statsProvider.js';
 import { CodedError, errorMsg } from '../lib/errors.js';
 import { msg } from '../i18n/index.js';
 import { mergeTactics, normalizeTactic } from '../lib/tactics.js';
+import { loadOffline, saveOffline } from '../lib/offlineStore.js';
 
 const BUILTINS = builtinList.map((t) => normalizeTactic(t));
 const BUILTIN_IDS = new Set(BUILTINS.map((t) => t.id));
@@ -22,7 +23,8 @@ const idsOf = (profiles) => Object.fromEntries(profiles.map((p) => [p.name, p.id
 /**
  * All shared team data: roster, team state, tactics, map notes and operator prefs.
  * With `online` it loads from Supabase and stays live via realtime; without
- * it, everything is kept in memory (handy for trying the app with no backend).
+ * it, everything is kept in this browser's localStorage (handy for trying the
+ * app with no backend; it survives a reload but isn't shared).
  */
 export function useTeamData({ online, profile }) {
   const [status, setStatus] = useState(online ? 'loading' : 'ready');
@@ -32,14 +34,27 @@ export function useTeamData({ online, profile }) {
   const [writeError, setWriteError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [profiles, setProfiles] = useState(online ? [] : OFFLINE_PROFILES);
+  // Offline, every piece starts from what this browser saved last time.
+  const stored = (key, fallback) => (online ? (typeof fallback === 'function' ? fallback() : fallback) : loadOffline(key, fallback));
+  const [profiles, setProfiles] = useState(() => (online ? [] : loadOffline('profiles', OFFLINE_PROFILES)));
   // profile id -> details; null when the player_details table doesn't exist yet.
-  const [details, setDetails] = useState(online ? null : {});
+  const [details, setDetails] = useState(() => (online ? null : loadOffline('details', {})));
   const idByName = useMemo(() => idsOf(profiles), [profiles]);
-  const [team, setTeam] = useState(EMPTY_TEAM_STATE);
-  const [savedTactics, setSavedTactics] = useState([]);
-  const [noteRows, setNoteRows] = useState([]);
-  const [prefs, setPrefs] = useState(() => emptyPrefs(PLAYERS));
+  const [team, setTeam] = useState(() => stored('team', EMPTY_TEAM_STATE));
+  const [savedTactics, setSavedTactics] = useState(() => stored('tactics', []));
+  const [noteRows, setNoteRows] = useState(() => stored('notes', []));
+  const [prefs, setPrefs] = useState(() => stored('prefs', () => emptyPrefs(PLAYERS)));
+
+  // Offline: keep everything in this browser so a reload doesn't wipe it.
+  useEffect(() => {
+    if (online) return;
+    saveOffline('profiles', profiles);
+    saveOffline('details', details);
+    saveOffline('team', team);
+    saveOffline('tactics', savedTactics);
+    saveOffline('notes', noteRows);
+    saveOffline('prefs', prefs);
+  }, [online, profiles, details, team, savedTactics, noteRows, prefs]);
 
   const teamRef = useRef(team);
   const pendingTeamWrites = useRef(0);

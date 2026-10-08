@@ -162,7 +162,7 @@ export default {
   'screens.canTLoadTheTeam': 'Impossible de charger l’équipe',
   'screens.tryAgain': 'Réessayer',
   'screens.continueOffline': 'Continuer hors ligne',
-  'screens.offlineModeWorksOnThis': 'Le mode hors ligne fonctionne sur cet appareil seulement. Rien n’est enregistré ni partagé.',
+  'screens.offlineModeWorksOnThis': 'Le mode hors ligne fonctionne sur cet appareil seulement. Les changements sont enregistrés dans ce navigateur, pas partagés.',
   'screens.supabaseIsnTConfigured': 'Supabase n’est pas configuré',
   'screens.vercelAddBothVariablesUnder': 'Vercel : ajoute les deux variables sous Project → Settings → Environment Variables, puis redéploie.',
   'screens.tryItOffline': 'Essayer hors ligne',

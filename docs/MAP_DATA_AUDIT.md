@@ -2,22 +2,9 @@
 
 Generated during the builder and map-data audit. Nothing here was added to the data without a source the team can check.
 
-## Maps with no bomb sites listed (`src/data/maps.json`)
+## Bomb sites (`src/data/maps.json`)
 
-The sites were **not added**. The sources to cite (Ubisoft, Liquipedia, the Rainbow Six Fandom wiki, siege.gg) were blocked from the environment this audit ran in, and web-search snippets were inconsistent (see notes). The leads below are unconfirmed: check each one in game or on a reliable page, then add it in the existing format (`"1F Room A / Room B"`, the same list for `attack` and `defend`).
-
-| Map | Floors | Unconfirmed lead (do not copy as is) | Where to confirm |
-|---|---|---|---|
-| Calypso Casino | Basement, 1F, 2F, Roof | Basement: CCTV / Vault · 1F: Bar / Betting, Blackjack / Poker · 2F: Cigar Room / Pool (search snippet; floors per site unclear) | <https://www.ubisoft.com/es-es/game/rainbow-six/siege/game-info/maps/calypso-casino> · <https://gladiatorboost.com/news/rainbow-six-siege-calypso-casino-guide-best-strategies-operators-site-setups/> |
-| Consulate | Basement, 1F, 2F, Roof | Consul Office / Meeting Room, Garage / Cafe, Lobby / Press Room, Tellers / Archives (floors not given) | <https://liquipedia.net/rainbowsix/Consulate> · <https://rainbowsix.fandom.com/wiki/Consulate> |
-| Fortress | 1F, 2F, Roof | No usable result | <https://rainbowsix.fandom.com/wiki/Bomb_(Siege)> |
-| Kanal | Basement, 1F, 2F, Roof | 2F Server / Radar, 1F Security / Maps, 1F Coast Guard Meeting / Lounge, B Supply / Kayaks (snippet contradicts itself: says "two sites", lists four) | <https://rainbowsix.fandom.com/wiki/File:Kanal_Rework_1.jpg> |
-| Lair | Basement, 1F, 2F, Roof | Only two of four found: 2F Master Office / R6 Room, 1F Bunks / Briefing | <https://liquipedia.net/rainbowsix/Lair/siege> · <https://alviran.net/blog/r6-lair-callouts-guide-2026/> |
-| Nighthaven Labs | Basement, 1F, 2F, Roof | 2F Command / Server, 1F Control / Storage, 1F Kitchen / Cafeteria, B Tank / Assembly (attributed to Liquipedia; same snippet also says "one basement site and two on 1F") | <https://liquipedia.net/rainbowsix/Nighthaven_Labs> |
-| Outback | 1F, 2F, Roof | Green / Red Bedroom, Mechanic Shop / Kitchen, Party Room / Office, Piano Room / Laundry (may mix pre- and post-rework names; floors not given) | <https://siege.gg/news/rainbow-six-siege-map-guide-outback> |
-| Skyscraper | 1F, 2F, Roof | Tea / Karaoke, Office / Exhibition, Kitchen / BBQ, Master / Bathroom (floors not given) | <https://alviran.net/blog/r6-skyscraper-callouts-guide-2026/> |
-| Theme Park | 1F, 2F, Roof | Armory / Throne, Bunk / Day Care, Lab / Storage, Initiation / Office (floors not given) | <https://alviran.net/blog/r6-theme-park-callouts-guide-2026/> |
-| Villa | Basement, 1F, 2F, Roof | Y11S3: Aviator / Games (2F), Trophy / Statuary (2F), Kitchen / Dining (1F), Art Storage / Old Office (B) — reported redesign | <https://timesaver.gg/blog/rainbow-six-siege-villa-callouts-y11s3> |
+Every map now lists its four bomb sites. The ten maps that were empty were filled in October 2026 from the sources in [DATA_REVIEW.md → Bomb sites](DATA_REVIEW.md#bomb-sites). Two still need checking in game: **Fortress** (the source predates its Dec 2025 rework) and **Calypso Casino** (floors inferred from the blueprints).
 
 ## Floor plans (`src/data/floorPlans.json`)
 

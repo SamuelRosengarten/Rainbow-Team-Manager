@@ -2,7 +2,6 @@ import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import { checkFit, filterTactics, rerollToFit, rollTactic } from './fit.js';
 import { OPS, OPS_BY_ID, PLAYERS, seededRng, values } from './testUtils.js';
-import maps from '../data/maps.json';
 
 const t = (id, side, mapId, site, requiredRoles = []) => ({ id, name: id, side, mapId, site, description: '', requiredRoles });
 
@@ -39,10 +38,9 @@ describe('filterTactics / rollTactic', () => {
   });
 
   it('works for a map with no sites defined (site is empty)', () => {
-    const noSites = maps.find((m) => m.sites.attack.length === 0);
-    expect(noSites).toBeDefined();
-    const mine = [...TACTICS, t('nosite-map', 'attack', noSites.id, '')];
-    const { tactics, fallback } = filterTactics(mine, { side: 'attack', mapId: noSites.id, site: '' });
+    // Every built-in map lists its sites now; a team-added map may not.
+    const mine = [...TACTICS, t('nosite-map', 'attack', 'custom-map', '')];
+    const { tactics, fallback } = filterTactics(mine, { side: 'attack', mapId: 'custom-map', site: '' });
     expect(fallback).toBe(false);
     expect(tactics.map((x) => x.id)).toEqual(['nosite-map']);
   });
