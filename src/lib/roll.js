@@ -42,7 +42,7 @@ export function weightedPick(ids, weightOf, rng = Math.random) {
 /**
  * The operators a player may receive, before considering teammates' picks.
  * Blocked operators (`prefs.avoid`) are a hard exclusion, like bans: a player
- * never receives an operator they blocked.
+ * never receives an operator they blocked (and buildPools adds teammates' blocks).
  */
 export function playerPool({ operators, side, bans = [], prefs, ownedOnly = false }) {
   const banned = new Set(bans);
@@ -133,9 +133,15 @@ function assignDistinct({ players, pools, prefsByPlayer, taken = new Set(), rng 
   return Object.keys(matched).length === players.length ? matched : null;
 }
 
-function buildPools({ players, operators, side, bans, prefs, ownedOnly }) {
+/**
+ * A block is team-wide: an operator any of `lineup` blocked is excluded for
+ * everyone, like a ban. `lineup` is the whole lineup, even when only some
+ * players (`players`) are being rolled.
+ */
+function buildPools({ players, lineup = players, operators, side, bans, prefs, ownedOnly }) {
+  const excluded = [...bans, ...lineup.flatMap((p) => prefs?.[p]?.avoid ?? [])];
   return Object.fromEntries(
-    players.map((p) => [p, playerPool({ operators, side, bans, prefs: prefs?.[p], ownedOnly })]),
+    players.map((p) => [p, playerPool({ operators, side, bans: excluded, prefs: prefs?.[p], ownedOnly })]),
   );
 }
 
@@ -178,7 +184,7 @@ export function rerollPlayers({
   const targetSet = new Set(targets);
   const keep = players.filter((p) => !targetSet.has(p) && lineup?.[p]);
   const taken = new Set(keep.map((p) => lineup[p]));
-  const pools = buildPools({ players: targets, operators, side, bans, prefs, ownedOnly });
+  const pools = buildPools({ players: targets, lineup: players, operators, side, bans, prefs, ownedOnly });
 
   // Prefer something new for each re-rolled player.
   const freshPools = Object.fromEntries(

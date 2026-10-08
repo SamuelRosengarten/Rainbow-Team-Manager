@@ -37,7 +37,7 @@ function whereMsg(kind, s) {
 }
 
 // Reasons the engine produced at operator level, replaced by assignment-level ones below.
-const REPLACED_REASONS = new Set(['rec.usesFavorites', 'rec.keeps', 'rec.noBlocks', 'rec.personalBlock', 'rec.personalBlock.nobody']);
+const REPLACED_REASONS = new Set(['rec.usesFavorites', 'rec.keeps', 'rec.noBlocks']);
 // Swap and synergy notes are recomputed on the assignment (comp.swap*, comp.pair.*).
 const isSwapReason = (id) => id.startsWith('comp.swap') || id.startsWith('comp.pair.');
 
@@ -55,12 +55,7 @@ function withAssignment(strategy, rec, plan, chosenCount) {
   const swaps = swapNotes(strategy, slots, { skip: new Set(rec.blockedReplaced.map((b) => b.slotKey)) });
   const head = [];
   if (plan.favoriteMax) head.push({ ok: plan.favoritePlayers > 0, msg: msg('finder.reason.favPlayers', { used: plan.favoritePlayers, total: plan.favoriteMax }) });
-  for (const l of slots) {
-    if (l.player && l.blockedBy.length) {
-      head.push({ ok: true, msg: msg('finder.reason.personalBlock', { blockers: l.blockedBy, count: l.blockedBy.length, operator: OPERATORS_BY_ID[l.operatorId].name, player: l.player }) });
-    }
-  }
-  if (!rec.blockedReplaced.length && !rec.blockedMissing.length && !slots.some((l) => l.blockedBy.length)) head.push({ ok: true, msg: msg('rec.noBlocks') });
+  if (!rec.blockedReplaced.length && !rec.blockedMissing.length) head.push({ ok: true, msg: msg('rec.noBlocks') });
   if (chosenCount) head.push({ ok: kept > 0, msg: msg('rec.keeps', { kept, total: chosenCount }) });
 
   return {
@@ -68,7 +63,7 @@ function withAssignment(strategy, rec, plan, chosenCount) {
     brokenKeys,
     status: rec.status === 'ok' && brokenKeys.length ? 'adapted' : rec.status,
     fidelity,
-    lineup: slots.map((l) => ({ slotKey: l.slotKey, operatorId: l.operatorId, original: l.original, kind: l.kind, favorite: l.favorite, selected: l.selected, player: l.player, blockedBy: l.blockedBy })),
+    lineup: slots.map((l) => ({ slotKey: l.slotKey, operatorId: l.operatorId, original: l.original, kind: l.kind, favorite: l.favorite, selected: l.selected, player: l.player })),
     favoritesUsed: favOps,
     favoriteCoverage: coverage,
     favoriteStars: plan.favoriteMax >= MIN_FAVORITES_FOR_STARS ? starsFrom(coverage) : null,

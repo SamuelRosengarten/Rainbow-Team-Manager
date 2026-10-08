@@ -42,8 +42,7 @@ export const en = {
   'lineup.jobNote.flex.open': 'This job fills wherever the team needs.',
 
   'lineup.why.none': 'No usable operator can do this job with the current blocks.',
-  'lineup.why.replacedAll': '{original} is blocked by everyone here, so {operator} takes the job.',
-  'lineup.why.personalBlock': '{blockers, list} {count, plural, other {blocked}} {operator}, so {player} plays it.',
+  'lineup.why.replacedAll': '{original} is blocked, so {operator} takes the job.',
   'lineup.why.ownFavorite': '{operator} is {player}’s favourite.',
   'lineup.why.teamFavorite': '{operator} is a team favourite.',
   'lineup.why.strong.kdwin': '{player} has strong performance on {operator} ({kd} K/D, {win} wins).',
@@ -105,8 +104,7 @@ export const fr = {
   'lineup.jobNote.flex.open': 'Ce rôle comble ce dont l’équipe a besoin.',
 
   'lineup.why.none': 'Aucun opérateur utilisable ne peut tenir ce rôle avec les blocages actuels.',
-  'lineup.why.replacedAll': '{original} est bloqué par tout le monde ici, alors {operator} prend le rôle.',
-  'lineup.why.personalBlock': '{blockers, list} {count, plural, one {a bloqué} other {ont bloqué}} {operator}, alors {player} le joue.',
+  'lineup.why.replacedAll': '{original} est bloqué, alors {operator} prend le rôle.',
   'lineup.why.ownFavorite': '{operator} est le favori de {player}.',
   'lineup.why.teamFavorite': '{operator} est un favori de l’équipe.',
   'lineup.why.strong.kdwin': '{player} performe très bien avec {operator} ({kd} K/D, {win} de victoires).',

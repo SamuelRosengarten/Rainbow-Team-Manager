@@ -10,7 +10,7 @@ import { isUnowned, prefState, prefWho } from '../../lib/recommend.js';
 import { useI18n } from '../../i18n/index.js';
 
 // Operator grid order: favorites first, blocked last.
-const PREF_ORDER = { favorite: 0, null: 1, partial: 1, blocked: 2 };
+const PREF_ORDER = { favorite: 0, null: 1, blocked: 2 };
 
 /** Step 4: pick the operators. Simple mode: one suggestion button; Advanced: the full coach, roll and filters. */
 export default function OperatorsStep({ w, ops, coach, coachPicks, applyCoachLineup, simple, pref, lineupPlayers, updateTeam, toggleOp, roll, roleFilter, setRoleFilter }) {

@@ -15,21 +15,21 @@ const ALL = strategiesJson.map((s) => normalizeStrategy(s));
 const prefsFor = (favorites, avoid) => ({ Samuel: { favorites, avoid } });
 
 describe('preferenceSet', () => {
-  it('collects favorites and blocks per player; a block only removes the operator for everyone when everyone blocked it', () => {
+  it('collects favorites and blocks per player; any one block removes the operator for everyone and beats a favorite', () => {
     const pref = preferenceSet({ A: { favorites: ['thermite', 'ash'] }, B: { avoid: ['ash'] } }, ['A', 'B'], ['buck']);
-    expect([...pref.favorites.keys()]).toEqual(['thermite', 'ash']); // B's block doesn't touch A's favorite
+    expect([...pref.favorites.keys()]).toEqual(['thermite']); // B's block outranks A's favorite
     expect(pref.blocked.get('ash')).toEqual(['B']);
-    expect(pref.blockedForAll.has('ash')).toBe(false);
-    expect(isUsable(pref, 'ash')).toBe(true);
-    expect(prefState(pref, 'ash')).toBe('favorite');
-    expect(en(prefWho(pref, 'ash'))).toBe('Favourite of A; blocked by B');
+    expect(pref.blockedForAll.has('ash')).toBe(true);
+    expect(isUsable(pref, 'ash')).toBe(false);
+    expect(prefState(pref, 'ash')).toBe('blocked');
+    expect(en(prefWho(pref, 'ash'))).toBe('Blocked by B');
     expect(prefState(pref, 'buck')).toBe('blocked'); // team ban
     expect(prefState(pref, 'thermite')).toBe('favorite');
     const all = preferenceSet({ A: { avoid: ['iq'] }, B: { avoid: ['iq'] } }, ['A', 'B']);
     expect(isUsable(all, 'iq')).toBe(false);
     const some = preferenceSet({ A: { avoid: ['iq'] }, B: {} }, ['A', 'B']);
-    expect(prefState(some, 'iq')).toBe('partial');
-    expect(en(prefWho(some, 'iq'))).toBe('Blocked by A only');
+    expect(isUsable(some, 'iq')).toBe(false);
+    expect(prefState(some, 'iq')).toBe('blocked');
   });
 });
 
@@ -41,19 +41,18 @@ describe('recommendStrategy: blocked operators are a hard exclusion', () => {
     expect(rec.status).toBe('adapted');
     expect(rec.lineup.map((l) => l.operatorId)).not.toContain('ace');
     expect(rec.blockedReplaced[0]).toMatchObject({ blocked: 'ace', by: ['Samuel'] });
-    expect(rec.reasons.some((r) => /Ace is blocked by everyone in the lineup \(Samuel\): adapted with/.test(en(r.msg)))).toBe(true);
+    expect(rec.reasons.some((r) => /Ace is blocked \(Samuel\): adapted with/.test(en(r.msg)))).toBe(true);
     expect(rec.reasons.some((r) => /Requires blocked operator/.test(en(r.msg)))).toBe(false);
   });
 
-  it("a player's own block doesn't remove the operator for teammates, and the reason says whose", () => {
+  it("one player's block removes the operator for the whole lineup, even a teammate's favorite, and says whose", () => {
     const s = strat([{ key: 'a', operatorId: 'mute' }]);
     const prefs = { Anthony: { favorites: ['mute'] }, Mathis: { avoid: ['mute'] } };
     const pref = preferenceSet(prefs, ['Anthony', 'Mathis']);
     const rec = recommendStrategy({ ...s, side: 'defend' }, { pref });
-    expect(rec.lineup[0]).toMatchObject({ operatorId: 'mute', favorite: true, blockedBy: ['Mathis'] });
-    expect(rec.status).toBe('ok');
-    expect(rec.reasons.map((r) => en(r.msg))).toContain('Mathis blocked Mute, so Anthony would play it');
-    expect(rec.reasons.some((r) => /Requires blocked operator/.test(en(r.msg)))).toBe(false);
+    expect(rec.lineup[0].operatorId).not.toBe('mute');
+    expect(rec.blockedReplaced[0]).toMatchObject({ blocked: 'mute', by: ['Mathis'] });
+    expect(rec.reasons.some((r) => /Mute is blocked \(Mathis\)/.test(en(r.msg)))).toBe(true);
   });
 
   it('says "banned", not "blocked by a player", for a team ban', () => {
