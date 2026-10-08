@@ -1,0 +1,9 @@
+# Supabase CLI settings, used by `npx supabase functions deploy steam-auth`.
+# project_id is only a local name; the real project is picked with --project-ref.
+project_id = "rainbow-team-manager"
+
+[functions.steam-auth]
+# Players aren't signed in yet when they call it (same as --no-verify-jwt).
+verify_jwt = false
+# The function is plain JavaScript, not the default index.ts.
+entrypoint = "./functions/steam-auth/index.js"
