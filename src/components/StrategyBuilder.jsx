@@ -184,11 +184,19 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     try {
       const clean = cleanDraft(draft);
       await strategyData.saveStrategy({ ...clean, owner: profile });
-      await Promise.all(
+      // Player assignments are saved separately: a failure must not be lost silently.
+      const results = await Promise.allSettled(
         clean.slots
           .filter((s) => w.players[s.operatorId])
-          .map((s) => strategyData.setAssignment(clean.id, s.key, w.players[s.operatorId]).catch(() => null)),
+          .map((s) => strategyData.setAssignment(clean.id, s.key, w.players[s.operatorId])),
       );
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length) {
+        // The strategy is saved; saving again retries the assignments.
+        setError(t('builder.assignNotSaved', { count: failed.length, detail: failed[0].reason?.message ?? '' }));
+        setSaving(false);
+        return;
+      }
       setW(fresh());
       navigate(`strategies/s/${clean.id}`);
     } catch (e) {
