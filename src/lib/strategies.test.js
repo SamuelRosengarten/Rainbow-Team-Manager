@@ -1,6 +1,7 @@
 import { en } from './testUtils.js';
 import { describe, it, expect } from 'vitest';
 import {
+  relocatePatch,
   adaptStrategy,
   attribution,
   canEditStrategy,
@@ -122,5 +123,43 @@ describe('gadget renaming', () => {
     expect(renameOperatorInText('Mira: use your Black Mirror on the wall.', 'mira', 'maestro')).toBe(
       'Maestro: use your Evil Eye on the wall.',
     );
+  });
+});
+
+describe('floors follow the site', () => {
+  const base = {
+    id: 'f1', title: 'Border plan', side: 'attack', mapId: 'border', site: '2F Armory Lockers / Archives', schemaVersion: 3, layout: 'floor',
+    slots: [{ key: 's1', operatorId: 'ash', role: 'soft-breacher' }],
+    markers: [
+      { id: 'm1', kind: 'position', x: 0.4, y: 0.4, slotKey: 's1' },
+      { id: 'm2', kind: 'position', x: 0.5, y: 0.5, slotKey: 's1', floorId: 'roof' },
+    ],
+  };
+
+  it("takes the site's floor", () => {
+    expect(normalizeStrategy(base).floorId).toBe('2f');
+    expect(normalizeStrategy({ ...base, site: '1F Bathroom / Tellers' }).floorId).toBe('1f');
+  });
+
+  it('repairs a stale floor left by an old site change, keeping its items on the floor they were drawn on', () => {
+    const s = normalizeStrategy({ ...base, site: '1F Bathroom / Tellers', floorId: '2f' });
+    expect(s.floorId).toBe('1f');
+    expect(s.markers.find((m) => m.id === 'm1').floorId).toBe('2f');
+    expect(s.markers.find((m) => m.id === 'm2').floorId).toBe('roof');
+    expect(normalizeStrategy(s)).toEqual(s); // stable
+  });
+
+  it('relocatePatch moves the floor with the site and pins items to the old main floor', () => {
+    const s = normalizeStrategy(base);
+    const p = relocatePatch(s, { site: '1F Bathroom / Tellers' });
+    expect(p).toMatchObject({ site: '1F Bathroom / Tellers', floorId: '1f', mapId: 'border' });
+    expect(p.markers.map((m) => m.floorId)).toEqual(['2f', 'roof']);
+    const moved = normalizeStrategy({ ...s, ...p });
+    expect(moved.floorId).toBe('1f');
+    expect(moved.markers.map((m) => m.floorId)).toEqual(['2f', 'roof']);
+    // Same floor: nothing to pin.
+    expect(relocatePatch(s, { site: '2F Armory Lockers / Archives' }).markers).toBeUndefined();
+    // Another map: the floor resets, items aren't pinned to the old map's floor.
+    expect(relocatePatch(s, { mapId: 'bank', site: '' })).toMatchObject({ mapId: 'bank', site: '', floorId: null });
   });
 });

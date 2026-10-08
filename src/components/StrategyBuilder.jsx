@@ -13,6 +13,7 @@ import { MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
 import { cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy } from '../lib/strategies.js';
+import { floorIdFromSite } from '../lib/floorPlans.js';
 import { prefState, recommendStrategies } from '../lib/recommend.js';
 import { fitToComposition } from '../lib/strategyMatch.js';
 import { recommendLineup } from '../lib/lineup.js';
@@ -154,6 +155,8 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         title: base.origin === 'team' ? t('strategy.copyTitle', { title: base.title }) : base.title,
         mapId: w.mapId || copy.mapId,
         site: w.site || copy.site,
+        // The board opens on our site's floor, not the library plan's.
+        floorId: floorIdFromSite(w.site || copy.site) || null,
         slots: [...copy.slots, ...extras.map((id) => ({ key: newId('s'), operatorId: id, role: OPERATORS_BY_ID[id].roles[0] }))].slice(0, 6),
       });
     } else {

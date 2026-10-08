@@ -198,7 +198,10 @@ export default function TacticalBoard({
   fresh = null,
 }) {
   usePlans();
-  const [ownFloor, setOwnFloor] = useState(null);
+  // The floor picked with the tabs, for this map only: another map starts on its own floor.
+  const [picked, setPicked] = useState(null);
+  const ownFloor = picked?.mapId === source.mapId ? picked.floorId : null;
+  const setOwnFloor = (f) => setPicked({ mapId: source.mapId, floorId: f });
   const { t } = useI18n();
   const floorId = floorProp ?? ownFloor ?? source.floorId;
   const space = boardSpace(source, floorId);

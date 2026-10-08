@@ -4,7 +4,7 @@ import SynergyList from './SynergyList.jsx';
 import { ROLES, ROLE_LABEL } from '../lib/fit.js';
 import { MAPS, sitesFor } from '../lib/maps.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
-import { DIFFICULTY, LIMITS, newId, slotColor } from '../lib/strategies.js';
+import { DIFFICULTY, LIMITS, newId, relocatePatch, slotColor } from '../lib/strategies.js';
 import { STRATEGY_TYPES_BY_SIDE, TACTICAL_ROLES, normalizeClock, normalizeType } from '../lib/tactical.js';
 import { keySlots } from '../lib/composition.js';
 import { t as translate, useI18n } from '../i18n/index.js';
@@ -39,7 +39,7 @@ export function DetailsForm({ draft, set, compact = false }) {
         <div className="field-row">
           <label className="field">
             <span className="field__label">{t('strategyForms.map')}</span>
-            <select className="select" value={draft.mapId} onChange={(e) => set({ mapId: e.target.value, site: '' })}>
+            <select className="select" value={draft.mapId} onChange={(e) => set(relocatePatch(draft, { mapId: e.target.value, site: '' }))}>
               <option value="any">{t('strategyForms.anyMap')}</option>
               {MAPS.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -50,7 +50,7 @@ export function DetailsForm({ draft, set, compact = false }) {
           </label>
           <label className="field">
             <span className="field__label">{t('strategyForms.site')}</span>
-            <select className="select" value={draft.site} onChange={(e) => set({ site: e.target.value, floor: '' })} disabled={!sites.length}>
+            <select className="select" value={draft.site} onChange={(e) => set(relocatePatch(draft, { site: e.target.value }))} disabled={!sites.length}>
               <option value="">{t('strategyForms.anySite')}</option>
               {sites.map((s) => (
                 <option key={s} value={s}>
@@ -66,8 +66,8 @@ export function DetailsForm({ draft, set, compact = false }) {
               value={draft.side}
               onChange={(e) =>
                 set({
+                  ...relocatePatch(draft, { site: '' }),
                   side: e.target.value,
-                  site: '',
                   type: normalizeType(draft.type, e.target.value),
                   slots: draft.slots.map((s) => (OPERATORS_BY_ID[s.operatorId]?.side === e.target.value ? s : { ...s, operatorId: null, alternatives: [] })),
                 })
