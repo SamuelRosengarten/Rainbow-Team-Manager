@@ -26,6 +26,7 @@ import {
 import { recommendStrategy } from '../lib/recommend.js';
 import { autoAssign, matchStrategy, substitutionsFor } from '../lib/strategyMatch.js';
 import { usePreferences } from '../state/usePreferences.js';
+import { usePhone } from '../state/usePhone.js';
 import { TACTICAL_ROLES, slotAction } from '../lib/tactical.js';
 import { t as translate, tm, useI18n } from '../i18n/index.js';
 import { T } from '../i18n/Rich.jsx';
@@ -150,6 +151,28 @@ function AdaptPanel({ match, subs, setSubs, strategy }) {
   );
 }
 
+/** Phones: the signed-in player's operator and what they do now, above the board. */
+function MyRole({ view, slot, step, onOpen }) {
+  const { t } = useI18n();
+  const op = OPERATORS_BY_ID[slot.operatorId];
+  const task = step ? slotAction(view, step, slot.key) : slot.instructions[0];
+  return (
+    <section className="my-role" style={{ '--slot': slotColor(view, slot.key) }} aria-labelledby="my-role-title">
+      <OperatorIcon key={op?.id ?? 'none'} operator={op} size="md" />
+      <div className="my-role__body">
+        <p className="eyebrow" id="my-role-title">{t('mobile.yourRole')}</p>
+        <p className="my-role__op">
+          {opName(slot.operatorId)} <span className="role-tag">{TACTICAL_ROLES[slot.tacticalRole]}</span>
+        </p>
+        {task && <p className="my-role__task">{task}</p>}
+      </div>
+      <button type="button" className="btn btn--secondary btn--sm" onClick={onOpen}>
+        <Icon name="eye" size={16} /> {t('mobile.openYourView')}
+      </button>
+    </section>
+  );
+}
+
 /** Step chips plus previous / next. */
 export function StepScrubber({ steps, stepId, setStepId, allLabel }) {
   const { t } = useI18n();
@@ -211,6 +234,9 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
   const adapted = Object.keys(subs).length > 0;
   const versions = isTeam ? familyOf(strategyData.strategies, strategy) : [];
   const base = `strategies/s/${strategy.id}`;
+  // On a phone the board and your part come first; the rest folds below it.
+  const phone = usePhone();
+  const mySlot = view.slots.find((s) => profile && assigned[s.key] === profile);
 
   const guard = async (fn) => {
     setError('');
@@ -248,6 +274,59 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
     });
 
   const toggleFavorite = () => guard(() => strategyData.saveStrategy({ ...strategy, favorite: !strategy.favorite }));
+
+  const origin = (
+    <>
+      {strategy.origin !== 'suggested' && <p className="strat-detail__attr">{attribution(strategy)}</p>}
+      {strategy.origin === 'reference' && strategy.sourceUrl && (
+        <a className="source-box" href={strategy.sourceUrl} target="_blank" rel="noopener noreferrer">
+          <span>
+            <span className="source-box__label">{t('detail.source', { name: strategy.sourceName || t('strategyDetail.online') })}</span>
+            <span className="source-box__title">{t('detail.original', { title: strategy.sourceTitle || strategy.sourceUrl })}</span>
+          </span>
+          <Icon name="external" />
+          <span className="visually-hidden"> {t('strategyDetail.opensInANewTab')}</span>
+        </a>
+      )}
+      {strategy.origin === 'suggested' && (
+        <p className="notice notice--warn" role="note">
+          <span>
+            <strong>{t('strategyDetail.suggestedStartingPoint')}</strong> {ORIGINS.suggested.note}
+          </span>
+        </p>
+      )}
+    </>
+  );
+  const about = (
+    <>
+      {match.scored && !isTeam && picks.some((p) => p.operatorId) && <AdaptPanel match={match} subs={subs} setSubs={setSubs} strategy={strategy} />}
+      {warnings.length > 0 && (
+        <ul className="warn-list">
+          {warnings.map((w, i) => (
+            <li key={i}>
+              <Icon name="alert" size={15} /> {tm(w)}
+            </li>
+          ))}
+        </ul>
+      )}
+      {view.summary && <p className="strat-detail__summary">{view.summary}</p>}
+    </>
+  );
+  const stepItems = view.steps.map((s, i) => (
+    <li key={s.id}>
+      <button type="button" className="step-list__item" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)}>
+        <span className="step-list__n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+        <span className="step-list__body">
+          <span className="step-list__top">
+            <strong className="step-list__title">{s.title}</strong>
+            {s.clock && <span className="clock-tag">{s.clock}</span>}
+          </span>
+          {s.timing && <span className="step-list__timing">{s.timing}</span>}
+          {s.description && <span className="step-list__desc">{s.description}</span>}
+        </span>
+      </button>
+    </li>
+  ));
 
   return (
     <article className="sview" aria-labelledby="strat-title">
@@ -321,24 +400,7 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
           )}
         </div>
 
-        {strategy.origin !== 'suggested' && <p className="strat-detail__attr">{attribution(strategy)}</p>}
-        {strategy.origin === 'reference' && strategy.sourceUrl && (
-          <a className="source-box" href={strategy.sourceUrl} target="_blank" rel="noopener noreferrer">
-            <span>
-              <span className="source-box__label">{t('detail.source', { name: strategy.sourceName || t('strategyDetail.online') })}</span>
-              <span className="source-box__title">{t('detail.original', { title: strategy.sourceTitle || strategy.sourceUrl })}</span>
-            </span>
-            <Icon name="external" />
-            <span className="visually-hidden"> {t('strategyDetail.opensInANewTab')}</span>
-          </a>
-        )}
-        {strategy.origin === 'suggested' && (
-          <p className="notice notice--warn" role="note">
-            <span>
-              <strong>{t('strategyDetail.suggestedStartingPoint')}</strong> {ORIGINS.suggested.note}
-            </span>
-          </p>
-        )}
+        {!phone && origin}
         {versions.length > 1 && (
           <nav className="versions" aria-label={t('strategyDetail.versions')}>
             {versions.map((v) => (
@@ -352,17 +414,8 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
 
       <Notice onDismiss={() => setError('')}>{error}</Notice>
       <BlockedPanel rec={rec} subs={subs} setSubs={setSubs} />
-      {match.scored && !isTeam && picks.some((p) => p.operatorId) && <AdaptPanel match={match} subs={subs} setSubs={setSubs} strategy={strategy} />}
-      {warnings.length > 0 && (
-        <ul className="warn-list">
-          {warnings.map((w, i) => (
-            <li key={i}>
-              <Icon name="alert" size={15} /> {tm(w)}
-            </li>
-          ))}
-        </ul>
-      )}
-      {view.summary && <p className="strat-detail__summary">{view.summary}</p>}
+      {!phone && about}
+      {phone && mySlot && <MyRole view={view} slot={mySlot} step={step} onOpen={() => navigate(`${base}/player/${mySlot.key}`)} />}
 
       <div className="sview__grid">
         <section className="sview__board" aria-label={t('strategyDetail.tacticalBoard')}>
@@ -511,28 +564,28 @@ export default function StrategyDetail({ strategy, picks, profile, strategyData,
         </aside>
       </div>
 
-      {view.steps.length > 0 && (
-        <section className="panel card--kicker" aria-labelledby="steps-title">
-          <h2 id="steps-title" className="panel__title steps-title">{t('strategyDetail.steps')}</h2>
-          <ol className="step-list">
-            {view.steps.map((s, i) => (
-              <li key={s.id}>
-                <button type="button" className="step-list__item" aria-pressed={stepId === s.id} onClick={() => setStepId(s.id)}>
-                  <span className="step-list__n" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="step-list__body">
-                    <span className="step-list__top">
-                      <strong className="step-list__title">{s.title}</strong>
-                      {s.clock && <span className="clock-tag">{s.clock}</span>}
-                    </span>
-                    {s.timing && <span className="step-list__timing">{s.timing}</span>}
-                    {s.description && <span className="step-list__desc">{s.description}</span>}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-        </section>
+      {phone && (
+        <details className="panel sview__fold">
+          <summary className="sview__fold-title">{t('mobile.aboutStrategy')}</summary>
+          <div className="sview__fold-body">
+            {origin}
+            {about}
+          </div>
+        </details>
       )}
+
+      {view.steps.length > 0 &&
+        (phone ? (
+          <details className="panel card--kicker sview__fold">
+            <summary className="sview__fold-title">{t('mobile.allSteps', { count: view.steps.length })}</summary>
+            <ol className="step-list">{stepItems}</ol>
+          </details>
+        ) : (
+          <section className="panel card--kicker" aria-labelledby="steps-title">
+            <h2 id="steps-title" className="panel__title steps-title">{t('strategyDetail.steps')}</h2>
+            <ol className="step-list">{stepItems}</ol>
+          </section>
+        ))}
 
       {view.notes && (
         <section className="panel card--kicker coach-notes" aria-labelledby="snotes-title">

@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from 'react';
 import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import { Card, EmptyState, Meter } from './ui.jsx';
@@ -9,16 +8,9 @@ import { AVAILABILITY, LINEUP_SIZE } from '../lib/roster.js';
 import { allMapPreparation, lineupReadiness, nextActions, strategyReadiness, teamStrategies } from '../lib/readiness.js';
 import { usePlans } from '../state/usePlans.js';
 import { useRoster } from '../state/roster-context.js';
+import { usePhone } from '../state/usePhone.js';
 import { useI18n } from '../i18n/index.js';
 
-const PHONE = '(max-width: 720px)';
-const subscribePhone = (cb) => {
-  const mq = window.matchMedia?.(PHONE);
-  mq?.addEventListener?.('change', cb);
-  return () => mq?.removeEventListener?.('change', cb);
-};
-/** True on a phone-sized screen (follows rotation and resizing). */
-const usePhone = () => useSyncExternalStore(subscribePhone, () => Boolean(window.matchMedia?.(PHONE).matches), () => false);
 
 const AVAIL_TONE = { available: 'ok', limited: 'warn', unavailable: 'danger' };
 

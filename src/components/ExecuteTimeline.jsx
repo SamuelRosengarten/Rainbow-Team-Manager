@@ -3,11 +3,13 @@ import { executeTimeline, timelineLanes } from '../lib/tactical.js';
 import { useI18n } from '../i18n/index.js';
 
 const LABEL_PX = 96; // .timeline__pt width plus a little air
+const LIST_BELOW_PX = 520; // narrower (phones): a wrapping list of clocks, titles in full
 
 /**
  * The round clock as a track: each step with a clock sits where it happens
  * (counting down, left to right). Click a step to show it on the board.
- * Labels that would overlap (close clocks, narrow screens) drop to a second row.
+ * Labels that would overlap (close clocks) drop to a second row; on a narrow
+ * screen the steps become a wrapping list instead, so no title is cut short.
  */
 export default function ExecuteTimeline({ strategy, stepId, onSelect }) {
   const { t } = useI18n();
@@ -24,6 +26,25 @@ export default function ExecuteTimeline({ strategy, stepId, onSelect }) {
   }, [shown]);
 
   if (!shown) return null;
+  if (width && width < LIST_BELOW_PX) {
+    return (
+      <div ref={ref} className="timeline timeline--list" role="group" aria-label={t('executeTimeline.executeTimeline')}>
+        {points.map(({ step, index }) => (
+          <button
+            key={step.id}
+            type="button"
+            className="timeline__chip"
+            aria-pressed={stepId === step.id}
+            onClick={() => onSelect?.(stepId === step.id ? null : step.id)}
+            title={t('timeline.step', { n: index + 1, title: step.title })}
+          >
+            <span className="timeline__clock">{step.clock}</span>
+            <span className="timeline__chip-title">{step.title}</span>
+          </button>
+        ))}
+      </div>
+    );
+  }
   const hi = Math.max(...points.map((p) => p.seconds));
   const lo = Math.min(...points.map((p) => p.seconds));
   const span = Math.max(1, hi - lo);

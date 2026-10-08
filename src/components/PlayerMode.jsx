@@ -26,7 +26,10 @@ export function Chooser({ strategy, assigned, profile, onPick }) {
                 <OperatorIcon key={op?.id ?? 'none'} operator={op} size="xl" />
                 <span className="who-card__op">{opName(s.operatorId)}</span>
                 <span className="role-tag">{TACTICAL_ROLES[s.tacticalRole]}</span>
-                <span className="who-card__player">{assigned[s.key] ?? t('playerMode.unassigned')}{me ? t('playerMode.you') : ''}</span>
+                <span className="who-card__player">
+                  {assigned[s.key] ?? t('playerMode.unassigned')}
+                  {me && <span className="who-card__you"> {t('playerMode.you')}</span>}
+                </span>
               </button>
             </li>
           );
