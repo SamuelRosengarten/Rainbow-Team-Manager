@@ -60,6 +60,9 @@ create table if not exists public.tactics (
 
 -- Added later: optional link to a map image for a tactic.
 alter table public.tactics add column if not exists image_url text not null default '';
+-- Image links must be https (the app checks too). NOT VALID: older rows aren't rechecked.
+alter table public.tactics drop constraint if exists tactics_image_url_https;
+alter table public.tactics add constraint tactics_image_url_https check (image_url = '' or image_url ~ '^https://') not valid;
 
 -- ---------------------------------------------------------------------------
 -- Map notes. owner_profile_id NULL = team notes. One row per owner + map.

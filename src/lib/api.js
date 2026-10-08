@@ -2,6 +2,7 @@
 // functions; the roll/fit logic never touches the network.
 import { createClient } from '@supabase/supabase-js';
 import { CodedError } from './errors.js';
+import { httpsOnly } from './tactics.js';
 
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -246,7 +247,8 @@ function tacticFromRow(row, nameById) {
     site: row.site || '',
     description: row.description || '',
     requiredRoles: row.required_roles || [],
-    imageUrl: row.image_url || '',
+    // Rows can be written by anyone with the anon key: only an https link is shown.
+    imageUrl: httpsOnly(row.image_url),
     shared: row.shared,
     example: row.example,
     deleted: row.deleted,

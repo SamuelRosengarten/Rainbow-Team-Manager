@@ -14,6 +14,12 @@ export function newTacticId() {
 /**
  * Validate and normalise one tactic. Throws an Error with a readable message.
  */
+/** An https link, or '' (anything else, e.g. javascript: or http:, is dropped). */
+export const httpsOnly = (url) => {
+  const u = String(url ?? '').trim();
+  return /^https:\/\/\S+$/i.test(u) ? u.slice(0, 1000) : '';
+};
+
 export function normalizeTactic(raw, { owner = null } = {}) {
   if (!raw || typeof raw !== 'object') throw new CodedError('tactic.notObject');
   const name = String(raw.name ?? '').trim();

@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import builtins from '../data/tactics.json';
 import maps from '../data/maps.json';
 import {
+  httpsOnly,
   exportTactics,
   mergeTactics,
   normalizeTactic,
@@ -108,5 +109,15 @@ describe('tactic image links', () => {
   it('rejects non-https links', () => {
     expect(() => normalizeTactic({ ...base, imageUrl: 'javascript:alert(1)' })).toThrow(/https/);
     expect(normalizeTactic(base).imageUrl).toBe('');
+  });
+});
+
+describe('httpsOnly (links read from the database)', () => {
+  it('keeps https links and drops everything else', () => {
+    expect(httpsOnly(' https://example.com/map.png ')).toBe('https://example.com/map.png');
+    expect(httpsOnly('javascript:alert(1)')).toBe('');
+    expect(httpsOnly('http://example.com/map.png')).toBe('');
+    expect(httpsOnly('data:image/png;base64,AAAA')).toBe('');
+    expect(httpsOnly(null)).toBe('');
   });
 });
