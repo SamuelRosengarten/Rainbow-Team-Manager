@@ -8,17 +8,35 @@ import { msg } from '../i18n/index.js';
 let steamSwap = null;
 const swapSteamOnce = (params) => (steamSwap ??= api.signInWithSteam(params));
 
+const here = () => `${location.origin}${location.pathname}`;
+const CHECK_EVERY_MS = 30_000;
+
+/** The signed-in user's player name and team (claim first: it links an admin-added login on first sign-in). */
+async function lookUpMembership() {
+  const name = await api.claimMembership();
+  const team = name ? await api.fetchMyTeam() : null;
+  api.setTeam(team);
+  return { name, team };
+}
+
+const sameMembership = (a, b) => a.name === b.name && JSON.stringify(a.team) === JSON.stringify(b.team);
+
 /**
- * Who is signed in (Supabase Auth) and whether they're on the team.
+ * Who is signed in (Supabase Auth) and whether they're in a team.
  *
  * status:
  *   'loading'   session not known yet, or a Steam sign-in is finishing
  *   'signedOut' show the login screen
  *   'recovery'  came back from a password-reset email: choose a new password
  *   'checking'  signed in, looking up team membership
- *   'notMember' signed in, but not on team_members
+ *   'notMember' signed in, but not in a team yet: create or join one (Get started)
  *   'error'     the membership lookup failed (retry)
- *   'ready'     a team member: `member` is their roster name, `team` their team ({ id, name })
+ *   'ready'     in a team: `member` is their roster name, `team` their team
+ *               ({ id, name, role, player, and inviteCode / inviteEnabled for captains })
+ *
+ * While in a team, membership is checked again every 30 s and when the tab
+ * comes back into view, so a removed member (or a deleted team) lands back on
+ * Get started, and a rename or new role shows up.
  *
  * @param opts.steamReturn takeSteamReturn() result for this page load (website), or null
  * @param opts.enabled     false without Supabase settings (offline): nobody signs in, status is 'ready'
@@ -57,19 +75,36 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
   useEffect(() => {
     if (!userId) return undefined;
     let cancelled = false;
-    (async () => {
-      // Claim first: it links this login to its team_members row on first sign-in.
-      const name = await api.claimMembership();
-      const team = name ? await api.fetchMyTeam() : null;
-      api.setTeam(team);
-      return { name, team };
-    })()
+    lookUpMembership()
       .then(({ name, team }) => !cancelled && setMembership({ userId, name, team, error: null }))
       .catch((e) => !cancelled && setMembership({ userId, name: undefined, team: null, error: errorMsg(e) }));
     return () => {
       cancelled = true;
     };
   }, [userId, retryKey]);
+
+  /** Look membership up again without a loading screen (after joining, a captain action, or the periodic check). */
+  const refresh = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const next = await lookUpMembership();
+      setMembership((cur) => (cur.userId === userId && !cur.error && sameMembership(cur, next) ? cur : { userId, ...next, error: null }));
+    } catch {
+      // offline for a moment: the next check tries again
+    }
+  }, [userId]);
+
+  const inTeam = Boolean(userId && membership.userId === userId && membership.name);
+  useEffect(() => {
+    if (!inTeam) return undefined;
+    const timer = setInterval(refresh, CHECK_EVERY_MS);
+    const onVisible = () => document.visibilityState === 'visible' && refresh();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [inTeam, refresh]);
 
   let status;
   if (!enabled) status = 'ready';
@@ -97,7 +132,15 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
     }
   }, []);
 
-  const sendReset = useCallback((email) => api.sendPasswordReset(email, `${location.origin}${location.pathname}`), []);
+  const sendReset = useCallback((email) => api.sendPasswordReset(email, here()), []);
+
+  /** Create an account; Supabase emails a confirmation link back to this page. */
+  const signUp = useCallback((email, password) => {
+    setError(null);
+    return api.signUp(email, password, here());
+  }, []);
+
+  const resendConfirmation = useCallback((email) => api.resendConfirmation(email, here()), []);
 
   const setPassword = useCallback(async (password) => {
     await api.updatePassword(password);
@@ -122,7 +165,10 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
     error: status === 'error' ? membership.error : error,
     setError,
     retry: () => setRetryKey((k) => k + 1),
+    refresh,
     signIn,
+    signUp,
+    resendConfirmation,
     signInSteam,
     sendReset,
     setPassword,

@@ -10,7 +10,7 @@ import {
   ErrorScreen,
   LoadingScreen,
   LoginScreen,
-  NotMemberScreen,
+  GetStartedScreen,
   ProfilePicker,
   SetPasswordScreen,
 } from './components/Screens.jsx';
@@ -25,6 +25,7 @@ import { isConfigured } from './lib/api.js';
 import { MAPS_BY_ID, allSites } from './lib/maps.js';
 import { loadProfile, storeProfile } from './lib/config.js';
 import { takeSteamReturn } from './lib/steamLogin.js';
+import { inviteCodeFromHash, rememberInvite, rememberedInvite, takeAuthLinkError } from './lib/invite.js';
 import { activePlayers, lineupPlayers } from './lib/roster.js';
 import { rollableTactics } from './lib/tactics.js';
 import { memberLabel } from './lib/teamScope.js';
@@ -40,6 +41,10 @@ const TeamView = lazy(() => import('./components/TeamView.jsx'));
 
 // Back from Steam? Read (and clear) its answer once, when the app loads.
 const STEAM_RETURN = isConfigured ? takeSteamReturn() : null;
+// Back from an email link that failed (e.g. an expired confirmation link)?
+const LINK_ERROR = isConfigured ? takeAuthLinkError() : null;
+// Opened an invite link (#/join/CODE)? Keep the code through sign-in / sign-up.
+if (isConfigured && inviteCodeFromHash(globalThis.location?.hash)) rememberInvite(inviteCodeFromHash(globalThis.location.hash));
 
 const VIEWS = [
   { id: 'home', icon: 'crosshair' },
@@ -78,6 +83,25 @@ function Brand({ onClick, hint, sub }) {
   );
 }
 
+/** #/join/CODE while already in a team (or offline): one team per login. */
+function JoinNotice({ team, navigate }) {
+  const { t } = useI18n();
+  rememberInvite(null);
+  return (
+    <section className="page" aria-labelledby="join-title">
+      <h1 id="join-title" className="page__title">{t('start.join.title')}</h1>
+      <p className="notice">{team ? t('start.alreadyInTeam', { team: team.name }) : t('start.joinNeedsSignIn')}</p>
+      {team && (
+        <div className="actions">
+          <button type="button" className="btn btn--secondary" onClick={() => navigate('team/settings')}>
+            {t('teamSettings.title')}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function LiveStatus({ live }) {
   const { t } = useI18n();
   return (
@@ -101,11 +125,22 @@ function SignedIn({ onOffline }) {
   const { t } = useI18n();
   const auth = useAuth({ steamReturn: STEAM_RETURN });
   if (auth.status === 'loading' || auth.status === 'checking') return <LoadingScreen label={t('auth.checking')} />;
-  if (auth.status === 'signedOut') return <LoginScreen auth={auth} />;
+  if (auth.status === 'signedOut') return <LoginScreen auth={auth} linkError={LINK_ERROR} joining={Boolean(rememberedInvite())} />;
   if (auth.status === 'recovery') return <SetPasswordScreen auth={auth} />;
-  if (auth.status === 'notMember') return <NotMemberScreen auth={auth} />;
+  if (auth.status === 'notMember') return <GetStartedScreen auth={auth} inviteCode={rememberedInvite()} />;
   if (auth.status === 'error') return <ErrorScreen message={auth.error} onRetry={auth.retry} onOffline={onOffline} />;
-  return <TeamApp key={`${auth.team?.id}/${auth.member}`} online member={auth.member} team={auth.team} email={auth.email} onSignOut={auth.signOut} onOffline={onOffline} />;
+  return (
+    <TeamApp
+      key={`${auth.team?.id}/${auth.member}`}
+      online
+      member={auth.member}
+      team={auth.team}
+      email={auth.email}
+      onSignOut={auth.signOut}
+      onTeamChanged={auth.refresh}
+      onOffline={onOffline}
+    />
+  );
 }
 
 /**
@@ -113,7 +148,7 @@ function SignedIn({ onOffline }) {
  * profile, fixed) and `team` their team; offline, the profile is picked on
  * this device.
  */
-function TeamApp({ online, member = null, team = null, email = '', onSignOut, onOffline }) {
+function TeamApp({ online, member = null, team = null, email = '', onSignOut, onTeamChanged, onOffline }) {
   const { t } = useI18n();
   const [pickedProfile, setStoredProfile] = useState(() => loadProfile(null));
   const storedProfile = member ?? pickedProfile;
@@ -303,8 +338,11 @@ function TeamApp({ online, member = null, team = null, email = '', onSignOut, on
               refreshStats={data.refreshStats}
               setOwned={data.setOwned}
               setPreference={data.setPreference}
+              team={team}
+              onTeamChanged={onTeamChanged}
             />
           )}
+          {view === 'join' && <JoinNotice team={team} navigate={navigate} />}
           </Suspense>
         </main>
         </div>

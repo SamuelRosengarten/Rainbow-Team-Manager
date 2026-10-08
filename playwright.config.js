@@ -3,6 +3,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
+export const ONLINE_PORT = 4174;
 
 export default defineConfig({
   testDir: 'e2e',
@@ -19,10 +20,21 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
     viewport: { width: 1440, height: 900 },
   },
-  webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}/`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}/`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    // An online build pointed at a fake Supabase (e2e/mockSupabase.js), for
+    // the self-serve tests (selfserve.spec.js).
+    {
+      command: `npx vite build --outDir dist-e2e-online && npx vite preview --outDir dist-e2e-online --port ${ONLINE_PORT} --strictPort`,
+      url: `http://localhost:${ONLINE_PORT}/`,
+      env: { VITE_SUPABASE_URL: 'https://e2e.supabase.co', VITE_SUPABASE_ANON_KEY: 'e2e-anon-key' },
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+  ],
 });

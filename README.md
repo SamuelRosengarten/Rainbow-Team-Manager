@@ -40,6 +40,15 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 ## Upgrading an existing setup
 
+**To self-serve accounts and teams.** Players create their own account (email + password or Steam), then create a team or join one with an invite link. Existing teams, members and data keep working; the earliest member of each team becomes its **captain**. Do these **in this order**:
+
+1. **Run [`supabase/selfserve.sql`](supabase/selfserve.sql)** in Supabase → SQL Editor. It only adds things (captain/member roles, invite codes, the create / join / captain functions); nobody's access changes, and sign-ups stay off.
+2. **Set up email sending** (custom SMTP, see [Emails](#emails-confirmation-and-password-reset)): with sign-ups on, Supabase's built-in sender runs out after a few emails an hour.
+3. **Deploy the new website** (merge to `main`; Vercel redeploys).
+4. **Run [`supabase/schema.sql`](supabase/schema.sql) last.**
+5. **Then turn sign-ups on**: Authentication → Sign In / Providers → **Allow new users to sign up**, with **Confirm email** on (step 3.1).
+6. Check who's captain (Team → Settings). To change it by hand, see [Running several teams](#running-several-teams).
+
 **From one team to several teams.** One website and one database can now hold several teams; each member only sees their own team. Your current data becomes the first team ("Team 1"). Do these **in this order**:
 
 1. Optional: to give the first team another name, change `first_team_name` near the top of [`supabase/teams.sql`](supabase/teams.sql) before running it (or rename it later in **Table Editor → teams**).
@@ -78,8 +87,9 @@ The new tactical features (zones, crossfires, round clocks, per-operator step ac
 
 Only your team gets in, and the database itself enforces it:
 
-- **Logins.** Each player signs in with **email + password** or **Sign in through Steam**. There's no 2FA in the app; Steam Guard happens on Steam's own site. Public sign-up is off: an admin creates each login.
-- **An allowlist.** `public.team_members` lists who may use the app, which **team** they're in, and which roster player each login is ("Samuel" really is Samuel). One login = one team. Admins edit it from the Supabase dashboard; the website can't read or change it.
+- **Accounts.** Anyone can create an account: **email + password** (they must confirm their email first) or **Sign in through Steam** (the first Steam sign-in creates the account). There's no 2FA in the app; Steam Guard happens on Steam's own site.
+- **An account alone sees nothing.** It has to be in a team: it creates one (and becomes its captain) or joins one with the team's **invite code**. `public.team_members` records who's in which team, as which roster player ("Samuel" really is Samuel) and with which role. One login = one team.
+- **Teams are managed through checked functions only.** Creating, joining, invites, roles, removing members and deleting the team all go through database functions that check who's asking (captains for the team's settings). The website can't write `teams` or `team_members` directly, and members never see the invite code. Limits: 3 new teams per person per day, 20 members per team, 10 invite-code tries per person per 10 minutes (codes can't be guessed).
 - **Teams are isolated by the database.** Every row has a `team_id`, and every table's Row Level Security policy compares it with the signed-in member's team (`public.current_team_id()`). A member can't read, add, change or delete another team's rows, even by calling the API directly; the app never even sends `team_id` (the database fills it in). Rows can't move between teams, and can't point at another team's players. This is tested on a real Postgres in CI (`supabase/db/isolation.test.js`).
 - **The anon key** still ships inside the website (as in every Supabase frontend), but on its own it can't read or write anything.
 - **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and only signs in Steam accounts on `team_members`.
@@ -87,6 +97,8 @@ Only your team gets in, and the database itself enforces it:
 - **Sessions** are normal Supabase sessions, kept in the browser and refreshed automatically. **Log out** is in the account menu (click your name).
 - **Headers.** The site is served with security headers (`vercel.json`), see [Security headers](#security-headers).
 - **Backups.** Members can download their team's data as one JSON file (see [Backups](#backups)). Turn on Supabase's own backups too.
+- **Removed members** lose access at their next request; the app notices within 30 seconds (or when the tab comes back) and shows Get started.
+- **No captcha yet.** Supabase Auth's own rate limits apply. If bots start creating accounts, add Cloudflare Turnstile: Authentication → **Bot and Abuse Protection** → enable CAPTCHA protection (Turnstile), with a free Cloudflare key; the app then needs the Turnstile widget on the sign-up form.
 - **Realtime.** Live updates are filtered to your team. When a row is *deleted*, Realtime can't filter by team, so other teams' apps get a "something was deleted" signal carrying only that row's key (an id, never its content) and simply reload their own data.
 
 Still a small team's planning board: don't store anything private in it.
@@ -114,23 +126,45 @@ Then grab your keys from **Project Settings → API**: the **Project URL** and t
 
 In the Supabase dashboard:
 
-1. **Authentication → Sign In / Providers → Email**: enabled. Leave **Confirm email** on.
-2. **Authentication → Sign In / Providers**: turn **Allow new users to sign up** **off**. Only admins create logins; nobody can make their own account.
+1. **Authentication → Sign In / Providers → Email**: enabled, with **Confirm email** **on** (people click a link in an email before they can sign in).
+2. **Authentication → Sign In / Providers**: **Allow new users to sign up** **on** (self-serve). Upgrading? Turn this on last, see [Upgrading](#upgrading-an-existing-setup). Turn it off any time to stop new accounts; existing ones keep working.
 3. **Authentication → URL Configuration**:
    - **Site URL**: your website, e.g. `https://your-team.vercel.app`.
-   - **Redirect URLs**: add `https://your-team.vercel.app/` and, for local development, `http://localhost:5173/`. Password-reset emails come back to these.
+   - **Redirect URLs**: add `https://your-team.vercel.app/` and, for local development, `http://localhost:5173/`. Confirmation and password-reset emails come back to these.
 4. Don't turn on MFA: the app doesn't ask for a second factor.
+5. Set up email sending (next section).
 
-### 3.2 Create each player's login
+**Rate limits.** Supabase Auth limits sign-ups, sign-ins and emails per hour (**Authentication → Rate Limits**). The defaults are fine for a few teams; raise "emails per hour" once custom SMTP is set up.
 
-**Authentication → Users → Add user**:
+#### Emails (confirmation and password reset)
 
-- **Create new user**: their email and a starting password, with **Auto Confirm User** ticked. Tell them the password; they can change it with **Forgot password?** on the login screen.
-- or **Send invitation**: they get an email and choose their own password.
+Supabase's built-in email sender is for testing: it sends **only a few emails per hour**, so confirmation and password-reset emails stop arriving after a handful of sign-ups. Use your own sender. With [Resend](https://resend.com) (free tier, 3,000 emails a month):
 
-A player who only uses Steam doesn't need a login here: it's created on their first Steam sign-in.
+1. Create a Resend account and **add your domain** (Domains → Add domain), then add the DNS records it shows at your domain provider and wait until it says *Verified*. (No domain? Resend's test sender only delivers to your own address, so you'll need one.)
+2. In Resend, **API Keys → Create API key** (permission: *Sending access*). Copy it.
+3. In Supabase, **Authentication → Emails → SMTP Settings → Enable custom SMTP**:
+   - **Sender email**: e.g. `no-reply@your-domain.com` (on the verified domain); **Sender name**: e.g. `R6 Tactical Command`;
+   - **Host** `smtp.resend.com`, **Port** `465`, **Username** `resend`, **Password**: the API key.
+4. Save, then **Authentication → Rate Limits**: raise *Rate limit for sending emails* (e.g. 100 per hour).
+5. Test: create an account on the site with your own email; the confirmation email should arrive within a minute.
 
-### 3.3 Fill `team_members`
+The email texts are in **Authentication → Emails → Templates** (they can be translated there).
+
+### 3.2 How players get in
+
+Nothing to do per player any more:
+
+1. **They create an account** on the login screen (**Create an account**: email + password, then the link in the confirmation email) or with **Sign in through Steam**.
+2. **They land on Get started**:
+   - **Create a team**: team name + their player name. They become its **captain**.
+   - **Join a team**: the **invite code** or link their captain sent (`https://your-team.vercel.app/#/join/ABCDE-FGH23`). After **Check the code** they pick "I'm new on this team" (a new roster player) or one of the team's roster players who don't have a login yet (e.g. a starter player the team already had).
+3. **Captains** manage the team in **Team → Settings**: copy the invite link or code, make a **new code** (the old one stops working), turn invites off and on, rename the team, make someone captain or member, remove a member, delete the team (type its name to confirm). Everyone can **leave** the team there. A team always keeps a captain: the last captain must make someone else captain before leaving or stepping down.
+
+Opening an invite link while signed out leads to the login screen and then straight to the join form, with the code filled in.
+
+### 3.3 Adding members by hand (optional)
+
+Admins can still create logins (**Authentication → Users → Add user**: email + password with **Auto Confirm User**, or **Send invitation**) and put them in a team from the SQL editor. That's how the first teams were set up, and it's handy for fixing things.
 
 Each login needs a row in `team_members`: the player's team, their roster player, and the email and/or Steam ID they sign in with. The easiest way is the `add_member` helper, in the **SQL Editor** (it also adds the player to the team's roster if they aren't there yet):
 
@@ -173,7 +207,17 @@ Re-deploy the function after pulling changes to `supabase/functions/`.
 
 One website and one database can hold several teams. Each login belongs to one team and only ever sees that team's players, strategies, tactics, notes, operator pools and team state. The built-in strategies and tactics are shared by everyone; when a team edits or hides one, that's only for that team.
 
-Everything below happens in the Supabase dashboard (**SQL Editor**). The website can't create teams or add members.
+**Players do most of this themselves** ([How players get in](#32-how-players-get-in)): they create teams, captains invite and manage members. Everything below is for admins, in the Supabase dashboard (**SQL Editor**), e.g. to set teams up by hand or fix something.
+
+**Change a team's captain:**
+
+```sql
+update public.team_members m set role = 'captain'
+from public.profiles p, public.teams t
+where p.id = m.profile_id and t.id = m.team_id and t.name = 'Team 1' and p.name = 'Samuel';
+```
+
+(Use `role = 'member'` to make someone a member again.) **Turn a team's invites off**: `update public.teams set invite_enabled = false where name = 'Team 1';`. Teams made by hand get an invite code automatically; captains see it in Team → Settings.
 
 **Create a team**
 
@@ -347,6 +391,7 @@ The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, syn
 - tactic filtering by map, side and site, generic fallback, and maps with no sites
 - the fit check (one player per required role) and the minimal fit-aware re-roll
 - data integrity for `operators.json`, `maps.json` and `tactics.json`
+- self-serve, on a real Postgres: creating a team (one per login, name rules, 3 per day), joining (new or existing roster player, wrong / disabled / replaced codes, the 10-tries limit, 20 members), captain-only actions, members never see the invite code, removal takes effect at once, last-captain rules, deleting a team (exact name, nothing else touched), the upgrade (earliest member becomes captain, every row kept); invite links and form rules; end to end with a mocked Supabase: sign up → confirm → create a team → invite link, join as an existing roster player, member view, leave
 - several teams: `team_id`, defaults, indexes and the "rows never move" trigger on every team table, own-team-only policies, `teams.sql` kept identical to `schema.sql`, team-scoped team state and Realtime channels
 - logins: the Steam sign-in checks (valid answer, bad signature, wrong endpoint, wrong account format, foreign return address, old or reused nonce, unknown Steam ID, attempt limit), the website's Steam state check, and that no database policy or grant gives the anon key anything
 - the strategy document (v2 normalisation, legacy types, versions), round clocks and the execute timeline, coach briefings and player views, comparison stats, board geometry, fitting a strategy to five operators, and synergies
@@ -600,6 +645,7 @@ overlay/         the overlay's Electron app: main.js, preload.cjs, settings.js, 
 supabase/schema.sql         the database (tables, team-members-only rules)
 supabase/members.sql        logins only: the additive first step of an upgrade
 supabase/teams.sql          several teams: the additive first step of an upgrade
+supabase/selfserve.sql      self-serve accounts and teams: the additive first step of an upgrade
 supabase/db/                team isolation tests on a real Postgres (+ fixtures)
 supabase/functions/         steam-auth Edge Function + _shared/steam.js (tested)
 vercel.json                 security headers
@@ -673,7 +719,13 @@ The step only changes when you press a key. If another app already uses one of t
 | "Can't reach the database… project may be paused" | Check your connection. Free Supabase projects pause after inactivity; open the dashboard and click **Restore project**. |
 | "The database tables are missing" | Run `supabase/schema.sql`. |
 | "Wrong email or password" | Check the email; use **Forgot password?**. An admin can also set a new password under **Authentication → Users**. |
-| "Not on this team" | The login works but has no `team_members` row with that email or Steam ID (step 3.3). |
+| The confirmation email never arrives | Check spam. Supabase's built-in sender stops after a few emails an hour: set up custom SMTP ([Emails](#emails-confirmation-and-password-reset)). With SMTP set up, check **Authentication → Rate Limits** and your provider's logs. The player can use **Resend the confirmation email** on the login screen. |
+| "That invite code doesn't work" | The code is mistyped, the captain made a new code (old ones stop working), or invites are turned off (Team → Settings). Ask the captain for the current link. |
+| "Too many tries" when joining | 10 code tries per 10 minutes, so codes can't be guessed. Wait 10 minutes. |
+| "You're already in a team" | One login = one team. Leave the current team first (Team → Settings → Leave team), then join. |
+| "Your team needs a captain" | The last captain can't leave or step down while others are in the team: make someone else captain first. |
+| "New accounts are turned off" | Sign-ups are off: Authentication → Sign In / Providers → Allow new users to sign up. |
+| Get started shows instead of the team | That login isn't in a team (any more): it was removed, left, or the team was deleted. Join again with an invite code, or create a team. |
 | "I can't see my team's data" (empty lists after signing in) | Check the member's `team_members.team_id`: it must be their team's id (**Table Editor → teams**). After moving someone, they need to reload the page. |
 | "That name is already taken" when adding a player | Names are unique **per team**: that team already has a player with this name. Another team can use it. |
 | The team's state (side, map, bans) doesn't save after the teams upgrade | `schema.sql` ran before the new website was live (see [Upgrading](#upgrading-an-existing-setup)). Deploy the new website. |

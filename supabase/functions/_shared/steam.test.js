@@ -180,10 +180,22 @@ describe('Steam login: team membership and accounts', () => {
     }
   });
 
-  it('rejects an unknown Steam ID with 403 and creates nothing', async () => {
-    const d = deps({ findMember: async () => null });
-    expect(await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).toEqual({ ok: false, reason: 'not-member', status: 403 });
-    expect(d.calls.created).toEqual([]);
+  it('an unknown Steam ID gets its own account: created once, reused after', async () => {
+    const users = new Map();
+    const d = deps({
+      findMember: async () => null,
+      createUser: async (email) => {
+        d.calls.created.push(email);
+        if (!users.has(email)) users.set(email, `u-${users.size + 1}`); // an existing email is reused, like Supabase
+      },
+      magicLink: async (email) => ({ userId: users.get(email), tokenHash: `hash-${users.get(email)}` }),
+    });
+    const first = await handleSteamLogin({ params: assertion(), ip: 'x' }, d);
+    const second = await handleSteamLogin({ params: assertion({ 'openid.response_nonce': '2026-10-08T11:59:30Zother' }), ip: 'x' }, d);
+    expect(first).toEqual({ ok: true, tokenHash: 'hash-u-1' });
+    expect(second).toEqual({ ok: true, tokenHash: 'hash-u-1' }); // same account
+    expect([...users.keys()]).toEqual([steamEmail(STEAM_ID)]);
+    expect(d.calls.linked).toEqual([]); // not on any team: they create or join one on the website
   });
 
   it('limits attempts per IP before doing anything else', async () => {

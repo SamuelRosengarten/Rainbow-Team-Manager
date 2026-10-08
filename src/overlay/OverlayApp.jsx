@@ -95,7 +95,7 @@ export default function OverlayApp() {
     body = (
       <div className="ov-setup__body">
         <p className="notice notice--error" role="alert">
-          {auth.status === 'notMember' ? t('auth.notMember.body', { who: auth.email || t('auth.notMember.steamAccount') }) : tm(auth.error)}
+          {auth.status === 'notMember' ? t('overlay.noTeam') : tm(auth.error)}
         </p>
         <div className="ov-setup__nav">
           {auth.status === 'error' && (

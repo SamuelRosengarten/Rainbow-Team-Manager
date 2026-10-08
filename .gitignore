@@ -12,3 +12,4 @@ npm-debug.log*
 playwright-report/
 test-results/
 overlay/release/
+dist-e2e-online/

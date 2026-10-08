@@ -7,6 +7,7 @@ describe('parseHash', () => {
     expect(parseHash('#/team/operators')).toEqual({ view: 'team', sub: 'operators' });
     expect(parseHash('#/build/bank/0/attack')).toEqual({ view: 'build', sub: 'bank/0/attack' });
     expect(parseHash('#/maps')).toEqual({ view: 'maps', sub: '' });
+    expect(parseHash('#/join/ABCDE-FGH23')).toEqual({ view: 'join', sub: 'ABCDE-FGH23' });
   });
 
   it('keeps old Tactics links working', () => {

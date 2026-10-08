@@ -9,62 +9,23 @@
 //
 // Needs DATABASE_URL (a Postgres 15+ superuser connection, e.g.
 // postgresql://postgres:postgres@localhost:5432/postgres). Skipped without it.
-import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { DATABASE_URL, as, count, dropDatabases, failure, newDatabase as makeDatabase, sqlFile } from './helpers.js';
 
-const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) console.warn('supabase/db: skipping the database isolation tests (set DATABASE_URL to a Postgres superuser URL to run them, see README "Running tests").');
 
-const file = (p) => fs.readFileSync(new URL(p, import.meta.url), 'utf8');
-const STUB = file('./fixtures/supabase-stub.sql');
-const BEFORE_TEAMS = file('./fixtures/schema-before-teams.sql');
-const TEAMS = file('../teams.sql');
-const SCHEMA = file('../schema.sql');
+const BEFORE_TEAMS = sqlFile('./fixtures/schema-before-teams.sql');
+const TEAMS = sqlFile('../teams.sql');
+const SCHEMA = sqlFile('../schema.sql');
 
 const TEAM_TABLES = ['profiles', 'player_details', 'owned_operators', 'preferred_operators', 'tactics', 'map_notes', 'team_state', 'strategies', 'strategy_assignments'];
 const ALL_TABLES = [...TEAM_TABLES, 'team_members'];
 
 const databases = [];
-async function newDatabase(admin) {
-  const name = `r6_test_${randomUUID().replaceAll('-', '').slice(0, 12)}`;
-  await admin.query(`create database ${name}`);
-  databases.push(name);
-  const url = new URL(DATABASE_URL);
-  url.pathname = `/${name}`;
-  const client = new pg.Client({ connectionString: url.toString() });
-  await client.connect();
-  // Notices ("… does not exist, skipping") are expected on a first run.
-  client.on('notice', () => {});
-  await client.query(STUB);
-  return client;
-}
-
-const count = async (db, table, where = 'true', params = []) => Number((await db.query(`select count(*) from public.${table} where ${where}`, params)).rows[0].count);
+const newDatabase = (admin) => makeDatabase(admin, databases);
 const counts = async (db) => Object.fromEntries(await Promise.all(ALL_TABLES.map(async (t) => [t, await count(db, t)])));
-
-/** Run `fn` inside a transaction as a signed-in user (claims) or as anon (claims = null); always rolled back. */
-async function as(db, claims, fn) {
-  await db.query('begin');
-  try {
-    await db.query(`set local role ${claims ? 'authenticated' : 'anon'}`);
-    await db.query(`select set_config('request.jwt.claims', $1, true)`, [claims ? JSON.stringify({ role: 'authenticated', ...claims }) : '']);
-    return await fn();
-  } finally {
-    await db.query('rollback');
-  }
-}
-
-/** The error code a statement fails with as that user, or null when it succeeds. */
-async function failure(db, claims, sql, params = []) {
-  try {
-    await as(db, claims, () => db.query(sql, params));
-    return null;
-  } catch (e) {
-    return e.code ?? e.message;
-  }
-}
 
 /** Rows a statement affects as that user. */
 const affected = (db, claims, sql, params = []) => as(db, claims, async () => (await db.query(sql, params)).rowCount);
@@ -137,7 +98,7 @@ describe.skipIf(!DATABASE_URL)('database: several teams, isolated', () => {
   afterAll(async () => {
     await db?.end();
     await fresh?.end();
-    for (const name of databases) await admin.query(`drop database if exists ${name} with (force)`);
+    await dropDatabases(admin, databases);
     await admin?.end();
   });
 
@@ -222,7 +183,8 @@ describe.skipIf(!DATABASE_URL)('database: several teams, isolated', () => {
     });
 
     it('knows its team and player', async () => {
-      expect(await as(db, lucas, async () => (await db.query('select public.my_team() as t')).rows[0].t)).toEqual({ id: teamB, name: 'Team B' });
+      const mine = await as(db, lucas, async () => (await db.query('select public.my_team() as t')).rows[0].t);
+      expect(mine).toEqual({ id: teamB, name: 'Team B', role: 'member', player: 'Lucas' }); // a member: no invite code
       expect(await as(db, lucas, async () => (await db.query('select public.claim_membership() as n')).rows[0].n)).toBe('Lucas');
     });
   });
