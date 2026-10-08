@@ -27,6 +27,7 @@ import { loadProfile, storeProfile } from './lib/config.js';
 import { takeSteamReturn } from './lib/steamLogin.js';
 import { activePlayers, lineupPlayers } from './lib/roster.js';
 import { rollableTactics } from './lib/tactics.js';
+import { memberLabel } from './lib/teamScope.js';
 import { useI18n } from './i18n/index.js';
 
 // Pages other than the Command Center load when first opened (smaller first download).
@@ -104,14 +105,15 @@ function SignedIn({ onOffline }) {
   if (auth.status === 'recovery') return <SetPasswordScreen auth={auth} />;
   if (auth.status === 'notMember') return <NotMemberScreen auth={auth} />;
   if (auth.status === 'error') return <ErrorScreen message={auth.error} onRetry={auth.retry} onOffline={onOffline} />;
-  return <TeamApp key={auth.member} online member={auth.member} email={auth.email} onSignOut={auth.signOut} onOffline={onOffline} />;
+  return <TeamApp key={`${auth.team?.id}/${auth.member}`} online member={auth.member} team={auth.team} email={auth.email} onSignOut={auth.signOut} onOffline={onOffline} />;
 }
 
 /**
  * The app. Online, `member` is the signed-in team member's roster name (their
- * profile, fixed); offline, the profile is picked on this device.
+ * profile, fixed) and `team` their team; offline, the profile is picked on
+ * this device.
  */
-function TeamApp({ online, member = null, email = '', onSignOut, onOffline }) {
+function TeamApp({ online, member = null, team = null, email = '', onSignOut, onOffline }) {
   const { t } = useI18n();
   const [pickedProfile, setStoredProfile] = useState(() => loadProfile(null));
   const storedProfile = member ?? pickedProfile;
@@ -145,7 +147,7 @@ function TeamApp({ online, member = null, email = '', onSignOut, onOffline }) {
 
   const profile = member ?? (data.roster.some((p) => p.name === storedProfile) ? storedProfile : null);
   if (member && picking) {
-    return <AccountScreen name={member} email={email} onSignOut={onSignOut} onCancel={() => setPicking(false)} />;
+    return <AccountScreen name={memberLabel(member, team)} email={email} onSignOut={onSignOut} onCancel={() => setPicking(false)} />;
   }
   if (!profile || picking) {
     return (
@@ -204,7 +206,7 @@ function TeamApp({ online, member = null, email = '', onSignOut, onOffline }) {
               <span className="whoami__text">
                 <span className="whoami__name">
                   <span className="visually-hidden">{t('app.signedInAs')} </span>
-                  {profile}
+                  {memberLabel(profile, team)}
                 </span>
                 <span className="whoami__hint">{member ? t('app.account') : t('app.switchProfile')}</span>
               </span>
@@ -222,7 +224,7 @@ function TeamApp({ online, member = null, email = '', onSignOut, onOffline }) {
             </button>
             <LanguageToggle />
             <LiveStatus live={live} />
-            <button type="button" className="profile-switch" onClick={() => setPicking(true)} aria-label={t('app.signedIn', { name: profile })}>
+            <button type="button" className="profile-switch" onClick={() => setPicking(true)} aria-label={t('app.signedIn', { name: memberLabel(profile, team) })}>
               <span className="avatar avatar--md avatar--accent" aria-hidden="true">{profile[0]}</span>
             </button>
           </div>

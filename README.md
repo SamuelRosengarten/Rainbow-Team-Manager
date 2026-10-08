@@ -25,7 +25,7 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 1. [Upgrading an existing setup](#upgrading-an-existing-setup) (do this if your team already uses the app)
 2. [Security model (read first)](#security-model-read-first)
-3. [Setup: Supabase](#1-create-the-supabase-project) and [logins](#3-logins-and-team-members)
+3. [Setup: Supabase](#1-create-the-supabase-project), [logins](#3-logins-and-team-members) and [several teams](#running-several-teams)
 4. [Setup: local development](#4-run-locally)
 5. [Setup: Vercel](#5-deploy-on-vercel) (with [security headers](#security-headers))
 6. [Backups](#backups)
@@ -40,13 +40,22 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 ## Upgrading an existing setup
 
+**From one team to several teams.** One website and one database can now hold several teams; each member only sees their own team. Your current data becomes the first team ("Team 1"). Do these **in this order**:
+
+1. Optional: to give the first team another name, change `first_team_name` near the top of [`supabase/teams.sql`](supabase/teams.sql) before running it (or rename it later in **Table Editor → teams**).
+2. **Run [`supabase/teams.sql`](supabase/teams.sql)** in Supabase → SQL Editor. It adds the `teams` table and a `team_id` on every table, moves all existing rows (players, strategies, tactics, notes, team state, logins) into the first team, and makes names and ids unique per team. **Nobody's access changes yet**: the current website keeps working.
+3. **Deploy the new website** (merge to `main`; Vercel redeploys). It shows your team's name next to your name.
+4. **Run [`supabase/schema.sql`](supabase/schema.sql) last.** This is the step that changes access: from now on each member sees and changes only their own team's rows. (It also removes the old one-row `team_state.id`.)
+
+Run `schema.sql` before the new website is live and the old website can't save the team's state any more (it still looks for the old row). Nothing is lost; deploying the new website fixes it. Then add more teams: [Running several teams](#running-several-teams).
+
 **From the team passcode to logins (email + password and Steam).** The website and the database now only let in signed-in team members. Do these **in this order** (the old site keeps working until step 5):
 
 1. **Run [`supabase/members.sql`](supabase/members.sql)** in Supabase → SQL Editor. It only *adds* the `team_members` list, the membership check and the Steam sign-in tables; nobody's access changes yet.
 2. **Deploy the Steam sign-in function** and set up Supabase Auth: [Logins and team members](#3-logins-and-team-members), steps 3.1 and 3.4.
 3. **Create everyone's login and fill `team_members`**: steps 3.2 and 3.3.
 4. **Deploy the new app** (merge to `main`; Vercel redeploys). Everyone signs in once.
-5. **Run [`supabase/schema.sql`](supabase/schema.sql) last.** This is the step that locks the database: from now on the anon key alone can't read or write anything, every table needs a signed-in team member.
+5. **Run [`supabase/teams.sql`](supabase/teams.sql)**, then **[`supabase/schema.sql`](supabase/schema.sql) last.** This is the step that locks the database: from now on the anon key alone can't read or write anything, and each signed-in member reaches only their own team (everyone you added in step 3 is in the first team).
 6. Optional: remove the old passcode by uncommenting the three lines at the end of `schema.sql` (marked **OPT-IN**) and running them.
 
 **Don't run `schema.sql` first.** The old website has no login, so the moment the new rules are in place it can't load or save anything, and nobody can get back in until steps 2–4 are done.
@@ -65,6 +74,23 @@ The new tactical features (zones, crossfires, round clocks, per-operator step ac
 
 **From a setup older than the roster and strategy library**: follow **From the team passcode to logins** above. The final `schema.sql` run also adds `player_details`, `strategies` and `strategy_assignments` and turns on Realtime for them; your data stays.
 
+## Security model (read first)
+
+Only your team gets in, and the database itself enforces it:
+
+- **Logins.** Each player signs in with **email + password** or **Sign in through Steam**. There's no 2FA in the app; Steam Guard happens on Steam's own site. Public sign-up is off: an admin creates each login.
+- **An allowlist.** `public.team_members` lists who may use the app, which **team** they're in, and which roster player each login is ("Samuel" really is Samuel). One login = one team. Admins edit it from the Supabase dashboard; the website can't read or change it.
+- **Teams are isolated by the database.** Every row has a `team_id`, and every table's Row Level Security policy compares it with the signed-in member's team (`public.current_team_id()`). A member can't read, add, change or delete another team's rows, even by calling the API directly; the app never even sends `team_id` (the database fills it in). Rows can't move between teams, and can't point at another team's players. This is tested on a real Postgres in CI (`supabase/db/isolation.test.js`).
+- **The anon key** still ships inside the website (as in every Supabase frontend), but on its own it can't read or write anything.
+- **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and only signs in Steam accounts on `team_members`.
+- **The service role key** exists only inside that Edge Function (Supabase provides it there). Never put it in this project, in `.env`, in Vercel or anywhere in the website; a test fails the build if it shows up in the bundle.
+- **Sessions** are normal Supabase sessions, kept in the browser and refreshed automatically. **Log out** is in the account menu (click your name).
+- **Headers.** The site is served with security headers (`vercel.json`), see [Security headers](#security-headers).
+- **Backups.** Members can download their team's data as one JSON file (see [Backups](#backups)). Turn on Supabase's own backups too.
+- **Realtime.** Live updates are filtered to your team. When a row is *deleted*, Realtime can't filter by team, so other teams' apps get a "something was deleted" signal carrying only that row's key (an id, never its content) and simply reload their own data.
+
+Still a small team's planning board: don't store anything private in it.
+
 ---
 
 ## 1. Create the Supabase project
@@ -78,7 +104,7 @@ The new tactical features (zones, crossfires, round clocks, per-operator step ac
 1. In the Supabase dashboard, open **SQL Editor → New query**.
 2. Paste the whole contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
 
-This creates the tables (`profiles`, `team_members`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `player_details`, `strategies`, `strategy_assignments`, and the Steam sign-in's private `steam_nonces` and `steam_auth_attempts`), seeds the five profiles, enables Row Level Security with **team-members-only** policies, takes every permission away from the anon key, and turns on Realtime. The script is safe to run again.
+This creates the tables (`teams`, `profiles`, `team_members`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `player_details`, `strategies`, `strategy_assignments`, and the Steam sign-in's private `steam_nonces` and `steam_auth_attempts`), creates the first team ("Team 1") with the five starter players, enables Row Level Security with **own-team-only** policies, takes every permission away from the anon key, and turns on Realtime. The script is safe to run again.
 
 Then grab your keys from **Project Settings → API**: the **Project URL** and the **anon public** key. Don't use the `service_role` key anywhere in the website.
 
@@ -106,26 +132,24 @@ A player who only uses Steam doesn't need a login here: it's created on their fi
 
 ### 3.3 Fill `team_members`
 
-**Table Editor → team_members → Insert row**, one row per player:
-
-| Column | Value |
-| --- | --- |
-| `profile_id` | the player's row in `profiles` (pick it from the list) |
-| `email` | the same email as their login, **lowercase** (or empty for Steam only) |
-| `steam_id` | their **SteamID64**, 17 digits (or empty for email only) |
-
-Leave `user_id` empty: it's filled on their first sign-in. A member with both an email and a Steam ID signs into the **same** account either way.
-
-Or in the SQL editor:
+Each login needs a row in `team_members`: the player's team, their roster player, and the email and/or Steam ID they sign in with. The easiest way is the `add_member` helper, in the **SQL Editor** (it also adds the player to the team's roster if they aren't there yet):
 
 ```sql
-insert into public.team_members (profile_id, email, steam_id)
-select id, 'samuel@example.com', '76561198000000001' from public.profiles where name = 'Samuel';
+select public.add_member('Team 1', 'Samuel', 'samuel@example.com', null);           -- email + password
+select public.add_member('Team 1', 'Anthony', null, '76561198000000001');           -- Steam only
+select public.add_member('Team 1', 'Xavier', 'xavier@example.com', '76561198000000002'); -- both
 ```
+
+- The team name must match a row in `teams` (a new setup has "Team 1"; see [Running several teams](#running-several-teams) for more).
+- The email must be **the same** as the player's login (step 3.2); it's stored lowercase.
+- The Steam ID is their **SteamID64** (17 digits).
+- A member with both an email and a Steam ID signs into the **same** account either way. An email or Steam ID can be on only one team.
+
+Or by hand: **Table Editor → team_members → Insert row** with `team_id` (the team), `profile_id` (a player of that team), `email` (lowercase) and/or `steam_id`. Leave `user_id` empty: it's filled on their first sign-in.
 
 **Finding a SteamID64:** in Steam, open your profile. If the address is `steamcommunity.com/profiles/7656119…`, that number is it. With a custom address (`steamcommunity.com/id/name`), open the Steam client → your name (top right) → **Account details**: the "Steam ID" shown there is the SteamID64.
 
-To remove someone, delete their `team_members` row (and their user under **Authentication → Users**). They're out at their next request.
+To remove someone, delete their `team_members` row (and their user under **Authentication → Users**). They're out at their next request. To move someone to another team, see [Running several teams](#running-several-teams).
 
 ### 3.4 Steam sign-in (Edge Function)
 
@@ -144,6 +168,54 @@ npx supabase secrets set --project-ref your-project-ref \
 - No Steam Web API key is needed. (If you add one later, e.g. for avatars, store it with `supabase secrets set`, never in the website.)
 
 Re-deploy the function after pulling changes to `supabase/functions/`.
+
+## Running several teams
+
+One website and one database can hold several teams. Each login belongs to one team and only ever sees that team's players, strategies, tactics, notes, operator pools and team state. The built-in strategies and tactics are shared by everyone; when a team edits or hides one, that's only for that team.
+
+Everything below happens in the Supabase dashboard (**SQL Editor**). The website can't create teams or add members.
+
+**Create a team**
+
+```sql
+select public.create_team('Team Alpha');
+```
+
+Or **Table Editor → teams → Insert row** with a name (1–40 characters, unique). The team gets its own team state automatically, and starts with no players.
+
+**Add members** (logins first, step 3.2), then:
+
+```sql
+select public.add_member('Team Alpha', 'Lucas', 'lucas@example.com', null);
+select public.add_member('Team Alpha', 'Noah', null, '76561198000000003');
+```
+
+This adds each player to the team's roster and lets their login in. Player names only need to be unique within a team ("Samuel" can exist in two teams).
+
+**Add roster players without a login** (e.g. a sub who never signs in): members can add players from the website (**Team → Add player**), or:
+
+```sql
+insert into public.profiles (team_id, name) select id, 'Ethan' from public.teams where name = 'Team Alpha';
+```
+
+**Move a member to another team.** Their old team keeps everything the player did (pools, notes, assignments stay with the old roster player). Give them a player in the new team and point their login there:
+
+```sql
+-- 1. a roster player for them in the new team
+insert into public.profiles (team_id, name) select id, 'Lucas' from public.teams where name = 'Team Beta'
+on conflict (team_id, name) do nothing;
+-- 2. their login now belongs to Team Beta
+update public.team_members m
+set team_id = t.id, profile_id = p.id
+from public.teams t join public.profiles p on p.team_id = t.id and p.name = 'Lucas'
+where t.name = 'Team Beta' and m.email = 'lucas@example.com';
+```
+
+They see Team Beta at their next sign-in (or page reload).
+
+**Remove a member:** delete their `team_members` row (their roster player and history stay with the team). **Rename a team:** edit its name in **Table Editor → teams**.
+
+**Delete a team:** `delete from public.teams where name = 'Team Alpha';` deletes **everything of that team**: its players, strategies, tactics, notes, operator pools, team state and its members' access (their logins stay under **Authentication → Users** but can't see anything). It can't be undone: back up first (a member of that team can use **Back up team data**).
 
 ## 4. Run locally
 
@@ -225,21 +297,25 @@ The content security policy starts in **report-only** mode: nothing is blocked, 
 
 ## Backups
 
-Signed-in members can download **all team data** as one JSON file: click your name (account menu) → **Back up team data**. It holds every row of `profiles`, `player_details`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `strategies` and `strategy_assignments`. It doesn't include logins or `team_members`.
+Signed-in members can download **their team's data** as one JSON file: click your name (account menu) → **Back up team data**. It holds the team (`"team": { "id", "name" }`) and every row of that team in `profiles`, `player_details`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `strategies` and `strategy_assignments`. It never contains another team's data, logins or `team_members`.
 
 Also turn on Supabase's own backups (**Database → Backups**; daily backups come with paid plans, and you can download a dump with `npx supabase db dump` any time).
 
-**Restoring a table from the JSON file**, in the SQL editor. Restore `profiles` first, then the others. For each table, paste that table's array from the file (`"strategies": [ … ]`, only the `[ … ]` part):
+**Restoring a table from the JSON file**, in the SQL editor. Restore `profiles` first, then the others. For each table, paste that table's array from the file (`"strategies": [ … ]`, only the `[ … ]` part) and put the **team's name** in the last line. The rows go into that team, whatever team they came from:
 
 ```sql
 insert into public.strategies
-select * from jsonb_populate_recordset(null::public.strategies, $json$
-  [ ...paste the "strategies" array here... ]
-$json$::jsonb)
+select * from jsonb_populate_recordset(null::public.strategies, (
+  select jsonb_agg(row || jsonb_build_object('team_id', t.id))
+  from jsonb_array_elements($json$
+    [ ...paste the "strategies" array here... ]
+  $json$::jsonb) as row, public.teams t
+  where t.name = 'Team 1'
+))
 on conflict do nothing;
 ```
 
-Replace `strategies` (three times) with each table name. `on conflict do nothing` keeps rows that are still there and puts back the missing ones. To replace a table completely, empty it first with `delete from public.<table>;`.
+Replace `strategies` (twice) with each table name. `on conflict do nothing` keeps rows that are still there and puts back the missing ones. To replace a table completely, empty it first with `delete from public.<table> where team_id = (select id from public.teams where name = 'Team 1');`. (Backups made before teams have no `team_id` in their rows; this works for them too.)
 
 ---
 
@@ -247,7 +323,17 @@ Replace `strategies` (three times) with each table name. `on conflict do nothing
 
 ```bash
 npm test
+npm run test:db   # team isolation on a real Postgres (needs DATABASE_URL)
 ```
+
+`npm run test:db` creates throwaway databases on the Postgres you point it at and runs `supabase/schema.sql` on a stand-in for Supabase's `auth` schema. It signs in as members of two teams and checks that neither can read, add, change, delete or move the other's rows, that outsiders and the anon key get nothing, and that upgrading a database full of data (built from the schema before teams) keeps every row. Point it at a **local or CI Postgres 15+ superuser**, never your Supabase project:
+
+```bash
+docker run --rm -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres npm run test:db
+```
+
+Without `DATABASE_URL` it's skipped (with a message); CI always runs it.
 
 The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, synergy, board geometry, rolling, fit). It has no React and no Supabase. The tests cover:
 
@@ -261,6 +347,7 @@ The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, syn
 - tactic filtering by map, side and site, generic fallback, and maps with no sites
 - the fit check (one player per required role) and the minimal fit-aware re-roll
 - data integrity for `operators.json`, `maps.json` and `tactics.json`
+- several teams: `team_id`, defaults, indexes and the "rows never move" trigger on every team table, own-team-only policies, `teams.sql` kept identical to `schema.sql`, team-scoped team state and Realtime channels
 - logins: the Steam sign-in checks (valid answer, bad signature, wrong endpoint, wrong account format, foreign return address, old or reused nonce, unknown Steam ID, attempt limit), the website's Steam state check, and that no database policy or grant gives the anon key anything
 - the strategy document (v2 normalisation, legacy types, versions), round clocks and the execute timeline, coach briefings and player views, comparison stats, board geometry, fitting a strategy to five operators, and synergies
 - every operator has a portrait file, and synergy pairs use real same-side operators
@@ -512,6 +599,8 @@ src/
 overlay/         the overlay's Electron app: main.js, preload.cjs, settings.js, vite.config.js
 supabase/schema.sql         the database (tables, team-members-only rules)
 supabase/members.sql        logins only: the additive first step of an upgrade
+supabase/teams.sql          several teams: the additive first step of an upgrade
+supabase/db/                team isolation tests on a real Postgres (+ fixtures)
 supabase/functions/         steam-auth Edge Function + _shared/steam.js (tested)
 vercel.json                 security headers
 docs/DATA_REVIEW.md   data to verify by hand
@@ -585,6 +674,9 @@ The step only changes when you press a key. If another app already uses one of t
 | "The database tables are missing" | Run `supabase/schema.sql`. |
 | "Wrong email or password" | Check the email; use **Forgot password?**. An admin can also set a new password under **Authentication → Users**. |
 | "Not on this team" | The login works but has no `team_members` row with that email or Steam ID (step 3.3). |
+| "I can't see my team's data" (empty lists after signing in) | Check the member's `team_members.team_id`: it must be their team's id (**Table Editor → teams**). After moving someone, they need to reload the page. |
+| "That name is already taken" when adding a player | Names are unique **per team**: that team already has a player with this name. Another team can use it. |
+| The team's state (side, map, bans) doesn't save after the teams upgrade | `schema.sql` ran before the new website was live (see [Upgrading](#upgrading-an-existing-setup)). Deploy the new website. |
 | "This Steam account isn't on the team" | Put the player's SteamID64 in `team_members.steam_id` (step 3.3). |
 | "Steam sign-in isn't set up yet" / "Steam sign-in didn't work" | Deploy the `steam-auth` function and set `ALLOWED_RETURN_ORIGINS` to include the site's exact address (step 3.4). Check the function's logs in **Edge Functions → steam-auth → Logs**. |
 | Password-reset link says it expired or fails | Open the link in the same browser you asked from, within an hour, and check the site is in **Redirect URLs** (step 3.1). |

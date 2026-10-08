@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { CodedError } from './errors.js';
 import { httpsOnly } from './tactics.js';
+import { backupDocument, channelName, cleanTeam, realtimeBindings, teamStateKey } from './teamScope.js';
 
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -142,6 +143,27 @@ export async function claimMembership() {
   return (await run(db().rpc('claim_membership'))) ?? null;
 }
 
+// The signed-in member's team ({ id, name }), set after sign-in (useAuth).
+// The database already limits every query to it; the app uses it to name and
+// filter Realtime channels and to update the team's own team_state row.
+let team = null;
+
+export function setTeam(next) {
+  team = cleanTeam(next);
+}
+
+export const currentTeam = () => team;
+
+/** The signed-in member's team, or null (a database without teams yet). */
+export async function fetchMyTeam() {
+  try {
+    return cleanTeam(await run(db().rpc('my_team')));
+  } catch (e) {
+    if (isMissingSchema(e)) return null;
+    throw e;
+  }
+}
+
 const STEAM_ERRORS = { 'not-member': 'auth.error.notMember', 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp' };
 
 /**
@@ -173,12 +195,13 @@ export async function signInWithSteam(params) {
 }
 
 // ---------------------------------------------------------------------------
-// Backup: every team table, as stored (for "Back up team data").
+// Backup: every table of the member's team, as stored (for "Back up team
+// data"). The database returns only the member's own team's rows.
 // ---------------------------------------------------------------------------
 
 export const BACKUP_TABLES = ['profiles', 'player_details', 'owned_operators', 'preferred_operators', 'tactics', 'map_notes', 'team_state', 'strategies', 'strategy_assignments'];
 
-/** @returns {Promise<{ app, version, exportedAt, tables: Record<string, object[]> }>} */
+/** @returns {Promise<{ app, version, exportedAt, team: { id, name } | null, tables: Record<string, object[]> }>} */
 export async function exportTeamData() {
   const tables = {};
   for (const name of BACKUP_TABLES) {
@@ -189,7 +212,7 @@ export async function exportTeamData() {
       tables[name] = [];
     }
   }
-  return { app: 'r6-tactical-command', version: 1, exportedAt: new Date().toISOString(), tables };
+  return backupDocument(team, tables);
 }
 
 // ---------------------------------------------------------------------------
@@ -290,14 +313,15 @@ export function teamStateToRow(state, updatedBy) {
   };
 }
 
+/** The team's state: its own row (one per team). */
 export async function fetchTeamState() {
-  const rows = await run(db().from('team_state').select('*').eq('id', 1).limit(1));
+  const rows = await run(db().from('team_state').select('*').eq(...teamStateKey(team)).limit(1));
   if (!rows?.length) throw new ApiError('error.db.teamStateMissing');
   return teamStateFromRow(rows[0]);
 }
 
 export async function saveTeamState(state, updatedBy) {
-  await run(db().from('team_state').update(teamStateToRow(state, updatedBy)).eq('id', 1));
+  await run(db().from('team_state').update(teamStateToRow(state, updatedBy)).eq(...teamStateKey(team)));
 }
 
 /**
@@ -306,13 +330,13 @@ export async function saveTeamState(state, updatedBy) {
  * Returns an unsubscribe function.
  */
 export function subscribe(table, onChange, onStatus = () => {}) {
-  const channel = db()
-    .channel(`rt-${table}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table }, onChange)
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') onStatus('live');
-      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') onStatus('reconnecting');
-    });
+  // One channel per team and table; inserts and updates filtered to the team
+  // (the database's policies already hide other teams' rows).
+  const channel = realtimeBindings(table, team).reduce((ch, binding) => ch.on('postgres_changes', binding, onChange), db().channel(channelName(table, team)));
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') onStatus('live');
+    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') onStatus('reconnecting');
+  });
   return () => {
     db().removeChannel(channel);
   };

@@ -141,7 +141,9 @@ export const steamEmail = (steamId) => `steam-${steamId}@users.invalid`;
  * @param input.ip      caller's IP (for the attempt limit)
  * @param deps.tooManyAttempts async (ip) => boolean (also records this attempt)
  * @param deps.verify   options for verifySteamAssertion
- * @param deps.findMember async (steamId) => { profileId, userId, email } | null
+ * @param deps.findMember async (steamId) => { profileId, userId, email, teamId } | null
+ *   (a Steam ID is on one team at most; the team only matters to the database
+ *   policies once the player is signed in)
  * @param deps.userEmail  async (userId) => email | null
  * @param deps.createUser async (email) => void (an existing user with that email is fine)
  * @param deps.magicLink  async (email) => { userId, tokenHash }

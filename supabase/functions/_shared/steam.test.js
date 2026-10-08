@@ -142,7 +142,7 @@ describe('Steam login: team membership and accounts', () => {
       calls,
       tooManyAttempts: async () => false,
       verify: opts(),
-      findMember: async (id) => (id === STEAM_ID ? { profileId: 'p1', userId: null, email: null } : null),
+      findMember: async (id) => (id === STEAM_ID ? { profileId: 'p1', userId: null, email: null, teamId: 'team-a' } : null),
       userEmail: async () => 'samuel@example.com',
       createUser: async (email) => calls.created.push(email),
       magicLink: async (email) => ({ userId: email === 'samuel@example.com' ? 'u-existing' : 'u-new', tokenHash: 'hash-1' }),
@@ -170,6 +170,14 @@ describe('Steam login: team membership and accounts', () => {
     expect((await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).ok).toBe(true);
     expect(d.calls.created).toEqual([]);
     expect(d.calls.linked).toEqual([]);
+  });
+
+  it('signs in a member of any team the same way (the team doesn’t change the sign-in)', async () => {
+    for (const teamId of ['team-a', 'team-b']) {
+      const d = deps({ findMember: async () => ({ profileId: `p-${teamId}`, userId: null, email: null, teamId }) });
+      expect(await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).toEqual({ ok: true, tokenHash: 'hash-1' });
+      expect(d.calls.linked).toEqual([[`p-${teamId}`, 'u-new']]);
+    }
   });
 
   it('rejects an unknown Steam ID with 403 and creates nothing', async () => {
