@@ -2,6 +2,7 @@
 // functions; the roll/fit logic never touches the network.
 import { createClient } from '@supabase/supabase-js';
 import { CodedError } from './errors.js';
+import { httpsOnly } from './tactics.js';
 
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -13,7 +14,10 @@ function db() {
   if (!isConfigured) throw new ApiError('error.notConfigured');
   if (!client) {
     client = createClient(URL, ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
+      // A signed-in team member's session is kept in this browser (localStorage)
+      // and refreshed automatically. PKCE: the password-reset link comes back
+      // as ?code=… (not in the #hash, which the app uses for its pages).
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' },
       realtime: { params: { eventsPerSecond: 10 } },
     });
   }
@@ -86,7 +90,110 @@ async function run(promise) {
 }
 
 // ---------------------------------------------------------------------------
-// Profiles & passcode
+// Signing in (Supabase Auth). Only team members get past the database rules
+// (public.is_team_member(), see supabase/schema.sql).
+// ---------------------------------------------------------------------------
+
+/** Auth failures -> message ids the login screen shows. */
+function authError(error) {
+  const code = error?.code ?? '';
+  const raw = `${error?.message ?? ''}`.toLowerCase();
+  if (error instanceof TypeError || raw.includes('failed to fetch') || raw.includes('network')) return new ApiError('error.db.unreachable', error);
+  if (code === 'invalid_credentials' || raw.includes('invalid login credentials')) return new ApiError('auth.error.wrongPassword', error);
+  if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || error?.status === 429) return new ApiError('auth.error.tooManyAttempts', error);
+  if (code === 'same_password') return new ApiError('auth.error.samePassword', error);
+  if (code === 'weak_password' || raw.includes('password should be')) return new ApiError('auth.error.weakPassword', error);
+  if (code === 'otp_expired' || raw.includes('expired')) return new ApiError('auth.error.linkExpired', error);
+  return new ApiError('auth.error.unknown', error, { detail: error?.message ?? '' });
+}
+
+async function auth(promise) {
+  let result;
+  try {
+    result = await promise;
+  } catch (e) {
+    throw authError(e);
+  }
+  if (result?.error) throw authError(result.error);
+  return result?.data;
+}
+
+/** cb(event, session) on every sign-in, sign-out, refresh and password-recovery link. Returns unsubscribe. */
+export function onAuthChange(cb) {
+  const { data } = db().auth.onAuthStateChange((event, session) => cb(event, session));
+  return () => data.subscription.unsubscribe();
+}
+
+export const signInWithPassword = (email, password) => auth(db().auth.signInWithPassword({ email: email.trim().toLowerCase(), password }));
+
+/** Email a password-reset link that comes back to `redirectTo`. */
+export const sendPasswordReset = (email, redirectTo) => auth(db().auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo }));
+
+export const updatePassword = (password) => auth(db().auth.updateUser({ password }));
+
+/** Sign out on this device (this session's refresh token is revoked on the server). */
+export const signOut = () => auth(db().auth.signOut({ scope: 'local' }));
+
+/**
+ * The signed-in user's roster name, or null when the account isn't on the
+ * team. Links the account to its team_members row (by email) on first login.
+ */
+export async function claimMembership() {
+  return (await run(db().rpc('claim_membership'))) ?? null;
+}
+
+const STEAM_ERRORS = { 'not-member': 'auth.error.notMember', 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp' };
+
+/**
+ * Finish "Sign in through Steam": the steam-auth Edge Function checks the
+ * response with Steam and team_members, and returns a one-time token that
+ * becomes a normal session here.
+ */
+export async function signInWithSteam(params) {
+  let tokenHash;
+  try {
+    const { data, error } = await db().functions.invoke('steam-auth', { body: { params } });
+    if (error) {
+      let reason = '';
+      try {
+        reason = (await error.context?.json?.())?.error ?? '';
+      } catch {
+        // no JSON body
+      }
+      if (!error.context) throw new ApiError('error.db.unreachable', error);
+      throw new ApiError(STEAM_ERRORS[reason] ?? 'auth.error.steamFailed', error);
+    }
+    tokenHash = data?.token_hash;
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    throw new ApiError('error.db.unreachable', e);
+  }
+  if (!tokenHash) throw new ApiError('auth.error.steamFailed');
+  return auth(db().auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' }));
+}
+
+// ---------------------------------------------------------------------------
+// Backup: every team table, as stored (for "Back up team data").
+// ---------------------------------------------------------------------------
+
+export const BACKUP_TABLES = ['profiles', 'player_details', 'owned_operators', 'preferred_operators', 'tactics', 'map_notes', 'team_state', 'strategies', 'strategy_assignments'];
+
+/** @returns {Promise<{ app, version, exportedAt, tables: Record<string, object[]> }>} */
+export async function exportTeamData() {
+  const tables = {};
+  for (const name of BACKUP_TABLES) {
+    try {
+      tables[name] = await run(db().from(name).select('*'));
+    } catch (e) {
+      if (!isMissingSchema(e)) throw e; // an older database without that table
+      tables[name] = [];
+    }
+  }
+  return { app: 'r6-tactical-command', version: 1, exportedAt: new Date().toISOString(), tables };
+}
+
+// ---------------------------------------------------------------------------
+// Profiles
 // ---------------------------------------------------------------------------
 
 /** @returns {Promise<Array<{id: string, name: string, createdAt: string}>>} oldest first */
@@ -99,28 +206,6 @@ export async function addProfile(name) {
   const rows = await run(db().from('profiles').insert({ name }).select('id, name, created_at'));
   const r = rows[0];
   return { id: r.id, name: r.name, createdAt: r.created_at };
-}
-
-/**
- * Is a passcode set, and how do we check it?
- * Newer databases check it on the server (the hash is hidden). Databases that
- * haven't run the latest schema still expose the hash, so we compare locally.
- * @returns {Promise<{ set: boolean, mode: 'server' | 'local', hash?: string }>}
- */
-export async function passcodeStatus() {
-  try {
-    const set = await run(db().rpc('team_passcode_is_set'));
-    return { set: Boolean(set), mode: 'server' };
-  } catch (e) {
-    if (!isMissingSchema(e)) throw e;
-  }
-  const rows = await run(db().from('team_settings').select('passcode_hash').eq('id', 1).limit(1));
-  const hash = rows?.[0]?.passcode_hash ?? null;
-  return { set: Boolean(hash), mode: 'local', hash };
-}
-
-export async function checkPasscodeOnServer(attempt) {
-  return Boolean(await run(db().rpc('check_team_passcode', { attempt: attempt.trim() })));
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +331,8 @@ function tacticFromRow(row, nameById) {
     site: row.site || '',
     description: row.description || '',
     requiredRoles: row.required_roles || [],
-    imageUrl: row.image_url || '',
+    // Rows can be written by any client of the database, not only this app: only an https link is shown.
+    imageUrl: httpsOnly(row.image_url),
     shared: row.shared,
     example: row.example,
     deleted: row.deleted,

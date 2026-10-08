@@ -1454,9 +1454,30 @@ fieldset.field > legend {
   gap: 6px;
   padding-left: 20px;
 }
-.passcode-form {
+.auth-form {
   display: grid;
   gap: var(--sp-3);
+}
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--subtle);
+  font-size: var(--fs-sm, 0.875rem);
+}
+.auth-or::before,
+.auth-or::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--line-strong);
+}
+.btn--steam {
+  background: #171a21;
+  border-color: #2a475e;
+  color: #ffffff;
+}
+.btn--steam:hover:not(:disabled) {
+  background: #1b2838;
 }
 .profile-grid {
   display: grid;

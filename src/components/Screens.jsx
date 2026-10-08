@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { checkPasscodeOnServer, passcodeStatus } from '../lib/api.js';
-import { checkPasscode } from '../lib/passcode.js';
+import { useState } from 'react';
+import { exportTeamData } from '../lib/api.js';
 import { errorMsg } from '../lib/errors.js';
+import { steamLoginHref } from '../lib/steamLogin.js';
 import LanguageToggle from './LanguageToggle.jsx';
-import { tx, useI18n } from '../i18n/index.js';
+import LoginForm from './LoginForm.jsx';
+import { tm, tx, useI18n } from '../i18n/index.js';
 import { T } from '../i18n/Rich.jsx';
 
 function Shell({ title, children, labelledBy = 'screen-title' }) {
@@ -81,87 +82,138 @@ export function ConfigMissingScreen({ onOffline }) {
   );
 }
 
-export function PasscodeScreen({ onPass }) {
+/** Signed out: email + password, or Steam. */
+export function LoginScreen({ auth }) {
   const { t } = useI18n();
-  const [state, setState] = useState({ phase: 'loading', gate: null, error: null });
-  const [value, setValue] = useState('');
-  const [wrong, setWrong] = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [attempt, setAttempt] = useState(0);
+  return (
+    <Shell title={t('auth.title')}>
+      <LoginForm auth={auth} onSteam={() => location.assign(steamLoginHref())} />
+    </Shell>
+  );
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    passcodeStatus()
-      .then((gate) => !cancelled && setState({ phase: gate.set ? 'ready' : 'unset', gate, error: null }))
-      .catch((e) => !cancelled && setState({ phase: 'error', gate: null, error: errorMsg(e) }));
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
+/** Back from a password-reset email: choose a new password. */
+export function SetPasswordScreen({ auth }) {
+  const { t } = useI18n();
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
 
   async function submit(e) {
     e.preventDefault();
-    setChecking(true);
+    setBusy(true);
+    setError(null);
     try {
-      const { gate } = state;
-      const ok = gate.mode === 'server' ? await checkPasscodeOnServer(value) : await checkPasscode(value, gate.hash);
-      if (ok) onPass();
-      else setWrong(true);
+      await auth.setPassword(password);
     } catch (err) {
-      setState((s) => ({ ...s, phase: 'error', error: errorMsg(err) }));
-    } finally {
-      setChecking(false);
+      setError(errorMsg(err));
+      setBusy(false);
     }
   }
 
-  if (state.phase === 'loading') return <LoadingScreen label={t('screens.connecting')} />;
-  if (state.phase === 'error') {
-    return (
-      <ErrorScreen
-        message={state.error}
-        onRetry={() => {
-          setState({ phase: 'loading', gate: null, error: null });
-          setAttempt((a) => a + 1);
-        }}
-      />
-    );
+  return (
+    <Shell title={t('auth.newPassword.title')}>
+      <form className="auth-form" onSubmit={submit}>
+        <label className="field">
+          <span className="field__label">{t('auth.newPassword.label')}</span>
+          <input
+            className="input input--lg"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-describedby="new-password-hint"
+            required
+          />
+          <span id="new-password-hint" className="muted small">{t('auth.newPassword.hint')}</span>
+        </label>
+        {error && (
+          <p className="notice notice--error" role="alert">
+            {tm(error)}
+          </p>
+        )}
+        <button type="submit" className="btn btn--primary btn--block" disabled={busy || password.length < 8}>
+          {t('auth.newPassword.save')}
+        </button>
+      </form>
+    </Shell>
+  );
+}
+
+/** Signed in, but the account isn't on team_members. */
+export function NotMemberScreen({ auth }) {
+  const { t } = useI18n();
+  return (
+    <Shell title={t('auth.notMember.title')}>
+      <p>{t('auth.notMember.body', { who: auth.email || t('auth.notMember.steamAccount') })}</p>
+      <div className="actions">
+        <button type="button" className="btn btn--primary" onClick={auth.signOut}>
+          {t('auth.signOut')}
+        </button>
+      </div>
+    </Shell>
+  );
+}
+
+/** Download every team table as one JSON file. */
+function BackupButton() {
+  const { t } = useI18n();
+  const [state, setState] = useState({ busy: false, done: false, error: null });
+
+  async function backup() {
+    setState({ busy: true, done: false, error: null });
+    try {
+      const data = await exportTeamData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `r6-team-backup-${data.exportedAt.slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setState({ busy: false, done: true, error: null });
+    } catch (e) {
+      setState({ busy: false, done: false, error: errorMsg(e) });
+    }
   }
 
   return (
-    <Shell title={t('screens.teamPasscode')}>
-      {state.phase === 'unset' ? (
-        <p className="notice notice--warn" role="alert">
-          {t('screens.noTeamPasscodeHasBeen')}
+    <div className="auth-form">
+      <button type="button" className="btn btn--secondary btn--block" onClick={backup} disabled={state.busy}>
+        {state.busy ? t('auth.account.backingUp') : t('auth.account.backup')}
+      </button>
+      <p className="muted small">{t('auth.account.backupHint')}</p>
+      {state.done && (
+        <p className="notice" role="status">
+          {t('auth.account.backupDone')}
         </p>
-      ) : (
-        <form onSubmit={submit} className="passcode-form">
-          <label className="field">
-            <span className="field__label">{t('screens.passcode')}</span>
-            <input
-              className="input input--lg"
-              type="password"
-              autoComplete="current-password"
-              autoFocus
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setWrong(false);
-              }}
-              aria-invalid={wrong}
-              aria-describedby={wrong ? 'passcode-error' : undefined}
-              required
-            />
-          </label>
-          {wrong && (
-            <p id="passcode-error" className="notice notice--error" role="alert">
-              {t('screens.wrongPasscodeAskATeammate')}
-            </p>
-          )}
-          <button type="submit" className="btn btn--primary btn--block" disabled={checking || !value}>
-            {checking ? t('screens.checking') : t('screens.enter')}
-          </button>
-        </form>
       )}
+      {state.error && (
+        <p className="notice notice--error" role="alert">
+          {tm(state.error)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** The signed-in member: back up the team's data, log out. */
+export function AccountScreen({ name, email, onSignOut, onCancel }) {
+  const { t } = useI18n();
+  return (
+    <Shell title={t('auth.account.title')}>
+      <p>{t('auth.account.signedInAs', { name })}</p>
+      {email && !email.endsWith('@users.invalid') && <p className="muted small">{email}</p>}
+      <BackupButton />
+      <div className="actions">
+        <button type="button" className="btn btn--primary" onClick={onSignOut}>
+          {t('auth.signOut')}
+        </button>
+        <button type="button" className="btn btn--ghost" onClick={onCancel}>
+          {t('screens.cancel')}
+        </button>
+      </div>
     </Shell>
   );
 }

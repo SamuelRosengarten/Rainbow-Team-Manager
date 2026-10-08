@@ -1,68 +1,36 @@
 import { useState } from 'react';
 import { Chooser } from '../components/PlayerMode.jsx';
-import { checkPasscode } from '../lib/passcode.js';
-import { errorMsg } from '../lib/errors.js';
-import { checkPasscodeOnServer, passcodeStatus } from './readApi.js';
+import LoginForm from '../components/LoginForm.jsx';
+import { steamLogin } from './bridge.js';
 import { mapsWithStrategies, strategiesFor } from './playerView.js';
-import { tm, useI18n } from '../i18n/index.js';
+import { msg, useI18n } from '../i18n/index.js';
 
-/** Team passcode, checked the same way as the web app (check_team_passcode() on the server). */
-export function PasscodeStep({ onPass }) {
+/**
+ * Signed out: email + password, or Steam (the overlay opens Steam in the
+ * browser and waits for it on a one-shot local server, see overlay/loopback.js).
+ */
+export function SignInStep({ auth }) {
   const { t } = useI18n();
-  const [value, setValue] = useState('');
-  const [wrong, setWrong] = useState(false);
-  const [error, setError] = useState(null);
-  const [checking, setChecking] = useState(false);
+  const [waiting, setWaiting] = useState(false);
 
-  async function submit(e) {
-    e.preventDefault();
-    setChecking(true);
-    setError(null);
+  async function steam() {
+    auth.setError(null);
+    setWaiting(true);
     try {
-      const gate = await passcodeStatus();
-      const ok = !gate.set || (gate.mode === 'server' ? await checkPasscodeOnServer(value) : await checkPasscode(value, gate.hash));
-      if (ok) onPass();
-      else setWrong(true);
-    } catch (err) {
-      setError(errorMsg(err));
+      const params = await steamLogin();
+      await auth.signInSteam(params);
+    } catch (e) {
+      if (e?.message !== 'cancelled') auth.setError(e?.id ? msg(e.id, e.values) : msg('auth.error.steamFailed'));
     } finally {
-      setChecking(false);
+      setWaiting(false);
     }
   }
 
   return (
-    <form className="ov-setup__body" onSubmit={submit}>
-      <h1 className="ov-setup__title">{t('overlay.passcode.title')}</h1>
-      <label className="field">
-        <span className="field__label">{t('screens.passcode')}</span>
-        <input
-          className="input input--lg"
-          type="password"
-          autoComplete="current-password"
-          autoFocus
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            setWrong(false);
-          }}
-          aria-invalid={wrong}
-          required
-        />
-      </label>
-      {wrong && (
-        <p className="notice notice--error" role="alert">
-          {t('screens.wrongPasscodeAskATeammate')}
-        </p>
-      )}
-      {error && (
-        <p className="notice notice--error" role="alert">
-          {tm(error)}
-        </p>
-      )}
-      <button type="submit" className="btn btn--primary btn--block" disabled={checking || !value}>
-        {t('overlay.passcode.unlock')}
-      </button>
-    </form>
+    <div className="ov-setup__body">
+      <h1 className="ov-setup__title">{t('auth.title')}</h1>
+      <LoginForm auth={auth} onSteam={steam} allowReset={false} steamWaiting={waiting} />
+    </div>
   );
 }
 

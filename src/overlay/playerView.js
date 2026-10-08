@@ -31,12 +31,13 @@ export const nextStep = (index, count) => clampStep(index + 1, count);
 export const prevStep = (index, count) => clampStep(index - 1, count);
 
 /** Apply a hotkey delta (+1 / -1) from the main process. */
-export const moveStep = (index, delta, count) => (delta > 0 ? nextStep(index, count) : delta < 0 ? prevStep(index, count) : clampStep(index, count));
+export function moveStep(index, delta, count) {
+  // Clamp first: the strategy may have lost steps since the index was stored.
+  const at = clampStep(index, count);
+  return delta > 0 ? nextStep(at, count) : delta < 0 ? prevStep(at, count) : at;
+}
 
 // ---------- The player's slice ----------
-
-/** The step id shown at `index`, or null when the strategy has no steps (whole round). */
-export const stepIdAt = (strategy, index) => strategy.steps[clampStep(index, stepCount(strategy))]?.id ?? null;
 
 /**
  * Items that belong on the overlay at this step: setup items (no step) and

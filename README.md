@@ -25,19 +25,31 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 1. [Upgrading an existing setup](#upgrading-an-existing-setup) (do this if your team already uses the app)
 2. [Security model (read first)](#security-model-read-first)
-3. [Setup: Supabase](#1-create-the-supabase-project)
+3. [Setup: Supabase](#1-create-the-supabase-project) and [logins](#3-logins-and-team-members)
 4. [Setup: local development](#4-run-locally)
-5. [Setup: Vercel](#5-deploy-on-vercel)
-6. [Running tests](#running-tests)
-7. [Adding operators, portraits and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
-8. [Strategy library](#strategy-library) and [quick tactics](#tactics-quick-tactics)
-9. [How rolling works](#how-rolling-works)
-10. [In-game overlay](#in-game-overlay)
-11. [Troubleshooting](#troubleshooting)
+5. [Setup: Vercel](#5-deploy-on-vercel) (with [security headers](#security-headers))
+6. [Backups](#backups)
+7. [Running tests](#running-tests)
+8. [Adding operators, portraits and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
+9. [Strategy library](#strategy-library) and [quick tactics](#tactics-quick-tactics)
+10. [How rolling works](#how-rolling-works)
+11. [In-game overlay](#in-game-overlay)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Upgrading an existing setup
+
+**From the team passcode to logins (email + password and Steam).** The website and the database now only let in signed-in team members. Do these **in this order** (the old site keeps working until step 5):
+
+1. **Run [`supabase/members.sql`](supabase/members.sql)** in Supabase → SQL Editor. It only *adds* the `team_members` list, the membership check and the Steam sign-in tables; nobody's access changes yet.
+2. **Deploy the Steam sign-in function** and set up Supabase Auth: [Logins and team members](#3-logins-and-team-members), steps 3.1 and 3.4.
+3. **Create everyone's login and fill `team_members`**: steps 3.2 and 3.3.
+4. **Deploy the new app** (merge to `main`; Vercel redeploys). Everyone signs in once.
+5. **Run [`supabase/schema.sql`](supabase/schema.sql) last.** This is the step that locks the database: from now on the anon key alone can't read or write anything, every table needs a signed-in team member.
+6. Optional: remove the old passcode by uncommenting the three lines at the end of `schema.sql` (marked **OPT-IN**) and running them.
+
+**Don't run `schema.sql` first.** The old website has no login, so the moment the new rules are in place it can't load or save anything, and nobody can get back in until steps 2–4 are done.
 
 **From the match-planner version.** Match scheduling, match history, RSVPs and win/loss records were removed: the app is now a tactical planner. Nothing else used the `matches`, `match_availability` and `match_checklist` tables, so:
 
@@ -51,23 +63,7 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 The new tactical features (zones, crossfires, round clocks, per-operator step actions, tactical roles, versions, favourites) live inside each strategy's document, so **no database change is needed** for them. Strategies saved by the previous version open as they are and are upgraded when they're next saved. Old `#/tactics/…` links redirect to `#/strategies/…`.
 
-**From a setup older than the roster and strategy library**, do these **in this order**:
-
-1. **Deploy the new app first** (merge to `main`; Vercel redeploys). It works with the old database: saving team strategies and roster details shows "Database update needed" until step 2.
-2. **Re-run `supabase/schema.sql`** in Supabase → SQL Editor. It only adds things; your data stays. It adds `player_details`, `strategies` and `strategy_assignments`, lets the website add players, hides the passcode hash behind `check_team_passcode()` / `team_passcode_is_set()`, and turns on Realtime for the new tables.
-
-Don't do step 2 before step 1: very old versions read the passcode hash directly and would show an error at the passcode screen until the new version is live. Your passcode doesn't change.
-
-## Security model (read first)
-
-This app has **no real authentication**, and that is by design:
-
-- The Supabase **anon key** is bundled into the website, as it is in every Supabase frontend. Anyone who has the site can extract it.
-- Row Level Security is **enabled**, but the policies in `supabase/schema.sql` deliberately allow the `anon` role to read and write the team tables. Everything is open to the team.
-- The **team passcode** is a *light gate*. The database checks it (`check_team_passcode()`), and the stored hash can't be read from the website, so it can't be guessed offline. But it only gates the app's screens: anyone who reads the anon key out of the site can still call the API and read and write the team tables.
-- The five profiles are just names. Picking "Samuel" doesn't prove you are Samuel.
-
-Fine for a friends' planning board. **Do not store anything private in it.** Never put the Supabase **service role** key in this project, in `.env`, or in Vercel.
+**From a setup older than the roster and strategy library**: follow **From the team passcode to logins** above. The final `schema.sql` run also adds `player_details`, `strategies` and `strategy_assignments` and turns on Realtime for them; your data stays.
 
 ---
 
@@ -82,24 +78,72 @@ Fine for a friends' planning board. **Do not store anything private in it.** Nev
 1. In the Supabase dashboard, open **SQL Editor → New query**.
 2. Paste the whole contents of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
 
-This creates the tables (`profiles`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `team_settings`, `player_details`, `strategies`, `strategy_assignments`), seeds the five profiles, enables RLS with the permissive team policies, adds the server-side passcode check, and turns on Realtime. The script is safe to run again.
+This creates the tables (`profiles`, `team_members`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `player_details`, `strategies`, `strategy_assignments`, and the Steam sign-in's private `steam_nonces` and `steam_auth_attempts`), seeds the five profiles, enables Row Level Security with **team-members-only** policies, takes every permission away from the anon key, and turns on Realtime. The script is safe to run again.
 
-## 3. Set the team passcode
+Then grab your keys from **Project Settings → API**: the **Project URL** and the **anon public** key. Don't use the `service_role` key anywhere in the website.
 
-Still in the SQL editor, run this **one statement**, replacing `YOUR-PASSCODE` with your team passcode:
+## 3. Logins and team members
+
+### 3.1 Supabase Auth settings
+
+In the Supabase dashboard:
+
+1. **Authentication → Sign In / Providers → Email**: enabled. Leave **Confirm email** on.
+2. **Authentication → Sign In / Providers**: turn **Allow new users to sign up** **off**. Only admins create logins; nobody can make their own account.
+3. **Authentication → URL Configuration**:
+   - **Site URL**: your website, e.g. `https://your-team.vercel.app`.
+   - **Redirect URLs**: add `https://your-team.vercel.app/` and, for local development, `http://localhost:5173/`. Password-reset emails come back to these.
+4. Don't turn on MFA: the app doesn't ask for a second factor.
+
+### 3.2 Create each player's login
+
+**Authentication → Users → Add user**:
+
+- **Create new user**: their email and a starting password, with **Auto Confirm User** ticked. Tell them the password; they can change it with **Forgot password?** on the login screen.
+- or **Send invitation**: they get an email and choose their own password.
+
+A player who only uses Steam doesn't need a login here: it's created on their first Steam sign-in.
+
+### 3.3 Fill `team_members`
+
+**Table Editor → team_members → Insert row**, one row per player:
+
+| Column | Value |
+| --- | --- |
+| `profile_id` | the player's row in `profiles` (pick it from the list) |
+| `email` | the same email as their login, **lowercase** (or empty for Steam only) |
+| `steam_id` | their **SteamID64**, 17 digits (or empty for email only) |
+
+Leave `user_id` empty: it's filled on their first sign-in. A member with both an email and a Steam ID signs into the **same** account either way.
+
+Or in the SQL editor:
 
 ```sql
-update public.team_settings
-set passcode_hash = encode(sha256(convert_to('r6tp:' || 'YOUR-PASSCODE', 'UTF8')), 'hex')
-where id = 1;
+insert into public.team_members (profile_id, email, steam_id)
+select id, 'samuel@example.com', '76561198000000001' from public.profiles where name = 'Samuel';
 ```
 
-- Only the hash is stored. The passcode itself never goes into the repo.
-- To change it, run the statement again with a new passcode.
-- Leading and trailing spaces in what people type are ignored.
-- A correct passcode is remembered for that browser tab session only. `localStorage` holds only the selected profile.
+**Finding a SteamID64:** in Steam, open your profile. If the address is `steamcommunity.com/profiles/7656119…`, that number is it. With a custom address (`steamcommunity.com/id/name`), open the Steam client → your name (top right) → **Account details**: the "Steam ID" shown there is the SteamID64.
 
-Then grab your keys from **Project Settings → API**: the **Project URL** and the **anon public** key. Don't use the `service_role` key.
+To remove someone, delete their `team_members` row (and their user under **Authentication → Users**). They're out at their next request.
+
+### 3.4 Steam sign-in (Edge Function)
+
+Steam uses OpenID 2.0, which Supabase Auth doesn't support, so a small Edge Function (`supabase/functions/steam-auth`) checks Steam's answer and signs the player in. Deploy it once with the [Supabase CLI](https://supabase.com/docs/guides/cli) (`npx supabase` works too):
+
+```bash
+npx supabase login
+npx supabase functions deploy steam-auth --no-verify-jwt --project-ref your-project-ref
+npx supabase secrets set --project-ref your-project-ref \
+  ALLOWED_RETURN_ORIGINS="https://your-team.vercel.app, http://localhost:5173, http://127.0.0.1"
+```
+
+- `--no-verify-jwt`: players aren't signed in yet when they call it.
+- `ALLOWED_RETURN_ORIGINS`: the addresses Steam may send players back to: your website, your local dev server, and `http://127.0.0.1` for the [in-game overlay](#in-game-overlay) (any port). Steam answers made for anything else are refused.
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided to the function by Supabase. Don't set them, and never copy the service role key anywhere else.
+- No Steam Web API key is needed. (If you add one later, e.g. for avatars, store it with `supabase secrets set`, never in the website.)
+
+Re-deploy the function after pulling changes to `supabase/functions/`.
 
 ## 4. Run locally
 
@@ -115,8 +159,9 @@ Edit `.env`:
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-public-key
-VITE_REQUIRE_PASSCODE=false   # set to true to test the passcode screen locally
 ```
+
+With Supabase settings you sign in like on the real site (add `http://localhost:5173/` to the redirect URLs and `ALLOWED_RETURN_ORIGINS`, step 3).
 
 ```bash
 npm run dev       # http://localhost:5173
@@ -149,14 +194,52 @@ Without a `.env`, the app shows a "Supabase isn't configured" screen with a **Tr
    | --- | --- |
    | `VITE_SUPABASE_URL` | your Project URL |
    | `VITE_SUPABASE_ANON_KEY` | your anon public key |
-   | `VITE_REQUIRE_PASSCODE` | `true` |
 
 5. Click **Deploy**. If you add or change variables after the first deploy, go to **Deployments → ⋯ → Redeploy**. `VITE_*` values are baked in at build time, so a redeploy is required.
-6. Share the URL and the passcode with the team.
+6. Put the site's address in Supabase (**Site URL** and **Redirect URLs**, step 3.1) and in `ALLOWED_RETURN_ORIGINS` (step 3.4), then share the URL with the team. Everyone signs in with their own login.
 
-No `vercel.json` is needed: the app is a single page with no client-side routes. There's no GitHub Pages or GitHub Actions setup; Vercel builds on every push.
+The app is a single page with no client-side routes; `vercel.json` only adds security headers. Vercel builds on every push (GitHub Actions only runs the tests).
 
-About `VITE_REQUIRE_PASSCODE`: `true` shows the passcode screen and `false` hides it. **If it's unset, it defaults to on for production builds and off for `npm run dev`.**
+### Security headers
+
+`vercel.json` sends these on every page:
+
+| Header | Value | Why |
+| --- | --- | --- |
+| `X-Content-Type-Options` | `nosniff` | files are only used as what they are |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | other sites see the domain, not the page |
+| `X-Frame-Options` | `DENY` | no other site can show the app in a frame (clickjacking) |
+| `Permissions-Policy` | camera, microphone, geolocation off | the app never needs them |
+| `Strict-Transport-Security` | 2 years | browsers always use https |
+| `Content-Security-Policy-Report-Only` | see `vercel.json` | allowed sources: the site, Google Fonts, `*.supabase.co`, images over https, Steam for sign-in |
+
+The content security policy starts in **report-only** mode: nothing is blocked, the browser only reports what *would* be. To switch it on:
+
+1. Use the deployed site for a while (sign in, open every screen, Steam sign-in) with the browser's DevTools console open.
+2. If you see `[Report Only] Refused to …` lines, add the reported source to the matching directive in `vercel.json` (common ones: a custom Supabase domain in `connect-src` with both `https://` and `wss://`, and your `VITE_STATS_API_URL` host in `connect-src`).
+3. When the console stays clean, rename `Content-Security-Policy-Report-Only` to `Content-Security-Policy` in `vercel.json` and deploy.
+
+`vite preview` sends the same headers, and the end-to-end tests fail if the app triggers a policy report.
+
+---
+
+## Backups
+
+Signed-in members can download **all team data** as one JSON file: click your name (account menu) → **Back up team data**. It holds every row of `profiles`, `player_details`, `owned_operators`, `preferred_operators`, `tactics`, `map_notes`, `team_state`, `strategies` and `strategy_assignments`. It doesn't include logins or `team_members`.
+
+Also turn on Supabase's own backups (**Database → Backups**; daily backups come with paid plans, and you can download a dump with `npx supabase db dump` any time).
+
+**Restoring a table from the JSON file**, in the SQL editor. Restore `profiles` first, then the others. For each table, paste that table's array from the file (`"strategies": [ … ]`, only the `[ … ]` part):
+
+```sql
+insert into public.strategies
+select * from jsonb_populate_recordset(null::public.strategies, $json$
+  [ ...paste the "strategies" array here... ]
+$json$::jsonb)
+on conflict do nothing;
+```
+
+Replace `strategies` (three times) with each table name. `on conflict do nothing` keeps rows that are still there and puts back the missing ones. To replace a table completely, empty it first with `delete from public.<table>;`.
 
 ---
 
@@ -178,7 +261,7 @@ The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, syn
 - tactic filtering by map, side and site, generic fallback, and maps with no sites
 - the fit check (one player per required role) and the minimal fit-aware re-roll
 - data integrity for `operators.json`, `maps.json` and `tactics.json`
-- passcode hashing, which matches the SQL formula
+- logins: the Steam sign-in checks (valid answer, bad signature, wrong endpoint, wrong account format, foreign return address, old or reused nonce, unknown Steam ID, attempt limit), the website's Steam state check, and that no database policy or grant gives the anon key anything
 - the strategy document (v2 normalisation, legacy types, versions), round clocks and the execute timeline, coach briefings and player views, comparison stats, board geometry, fitting a strategy to five operators, and synergies
 - every operator has a portrait file, and synergy pairs use real same-side operators
 - the in-game overlay: step navigation (stops at the first and last step), the player filter (only your slot's objects), saving and loading window settings, and the read-only guard
@@ -416,8 +499,9 @@ src/
                  strategyMatch.js, recommend.js, synergy.js, board.js (board geometry),
                  floorPlans.js (floor-plan assets), space.js (normalised coordinates),
                  roll.js, fit.js, tactics.js, diagram.js, roster.js (pure + tests),
-                 api.js (all Supabase calls), passcode.js, config.js, maps.js, operators.js
-  state/         useTeamData.js, useStrategyData.js, useHistory.js (undo/redo),
+                 api.js (all Supabase calls, sign-in, backup), steamLogin.js, config.js,
+                 maps.js, operators.js
+  state/         useAuth.js (sign-in and team membership), useTeamData.js, useStrategyData.js, useHistory.js (undo/redo),
                  useHashRoute.js, useSessionState.js, roster-context.js
   components/    Screens: CommandView, StrategyBuilder, StrategiesView (library, detail,
                  editor, CoachMode, PlayerMode, StrategyCompare), MapsView,
@@ -426,7 +510,10 @@ src/
   overlay/       the in-game overlay page (read-only; see "In-game overlay")
   styles.css, tactical.css
 overlay/         the overlay's Electron app: main.js, preload.cjs, settings.js, vite.config.js
-supabase/schema.sql
+supabase/schema.sql         the database (tables, team-members-only rules)
+supabase/members.sql        logins only: the additive first step of an upgrade
+supabase/functions/         steam-auth Edge Function + _shared/steam.js (tested)
+vercel.json                 security headers
 docs/DATA_REVIEW.md   data to verify by hand
 docs/MAP_ASSETS.md    adding and verifying real floor plans
 src/data/floorPlans.json  floor-plan manifest (empty until plans are added)
@@ -458,8 +545,9 @@ Run the installer (`R6 Tactical Overlay Setup <version>.exe`) or the portable `.
 
 ### Using it
 
-1. **Setup** (before the match, the only screen that takes clicks): team passcode (when `VITE_REQUIRE_PASSCODE` is on, checked with `check_team_passcode()` like the web app), then map → side → strategy → **Who are you playing?** The overlay remembers your choice; next launch goes straight to the round view. To pick again, use the tray menu → **Change strategy or operator**.
-2. **In the round** the window is **click-through**: mouse and keyboard go to the game.
+1. **Sign in** (once; the overlay stays signed in): your email + password, or **Sign in through Steam**. For Steam, the overlay opens Steam's login in your browser; after you sign in there, the tab says "You can close this tab and go back to the overlay" and the overlay is signed in. (Behind the scenes Steam sends you back to a one-shot server on `127.0.0.1` that only this computer can reach, on a random port, checking a random value, and closing after one answer or 5 minutes. `ALLOWED_RETURN_ORIGINS` must include `http://127.0.0.1`, step 3.4.) Forgot your password? Reset it on the website. To sign out: tray icon → **Log out**. If your login is removed or expires, the overlay asks you to sign in again.
+2. **Setup** (before the match, the only screen that takes clicks): map → side → strategy → **Who are you playing?** The overlay remembers your choice; next launch goes straight to the round view. To pick again, use the tray menu → **Change strategy or operator**.
+3. **In the round** the window is **click-through**: mouse and keyboard go to the game.
 
 | Hotkey | Does |
 | --- | --- |
@@ -473,11 +561,18 @@ The step only changes when you press a key. If another app already uses one of t
 
 ### How it's built
 
-- `overlay/main.js`: the Electron window (transparent, frameless, `setAlwaysOnTop(true, 'screen-saver')`, hidden from the taskbar), tray menu, global hotkeys and click-through. The page is served from `app://overlay/` with a content security policy.
-- `overlay/preload.cjs`: the only bridge. It exposes the hotkey and tray events, the screen phase and edit-mode resizing; no Node, file system or database access (`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`).
+- `overlay/main.js`: the Electron window (transparent, frameless, `setAlwaysOnTop(true, 'screen-saver')`, hidden from the taskbar), tray menu, global hotkeys and click-through. The page is served from `app://overlay/` with a content security policy; the built page narrows `connect-src` to your Supabase project only (`overlay/csp.js`).
+- `overlay/loopback.js`: the one-shot `127.0.0.1` server for Steam sign-in (tested in `overlay/loopback.test.js`).
+- `overlay/preload.cjs`: the only bridge. It exposes the hotkey and tray events, the screen phase, edit-mode resizing and the Steam sign-in; no Node, file system or database access (`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`).
 - `overlay/settings.js`: window position, size and opacity (tested in `overlay/settings.test.js`).
 - `src/overlay/`: the page. A separate Vite entry (`overlay/vite.config.js`) that reuses the read-only `TacticalBoard`, the "Who are you playing?" chooser and `src/lib` / `src/i18n`. The editor isn't in its bundle.
-- `src/overlay/noWrites.test.js` fails if overlay code calls `.insert` / `.update` / `.upsert` / `.delete`, imports any database function other than the read ones in `src/overlay/readApi.js`, or reaches the editor, builder or undo history.
+- `src/overlay/noWrites.test.js` fails if overlay code calls `.insert` / `.update` / `.upsert` / `.delete`, reaches the team's tables other than through the read functions in `src/overlay/readApi.js` (signing in goes through `src/state/useAuth.js`, sign-in calls only), or reaches the editor, builder or undo history.
+
+### Security of the app itself
+
+- **Electron fuses** are set when the `.exe` is built (`electronFuses` in `overlay/package.json`, applied by electron-builder with `@electron/fuses`): `RunAsNode` off, `NODE_OPTIONS` ignored, `--inspect` flags ignored, the app only loads from its `app.asar`, and that archive's integrity is checked at startup. Someone can't run the overlay as a plain Node.js or patch its files to run other code.
+- **Windows SmartScreen** warns ("Windows protected your PC") the first time, because the `.exe` isn't code-signed: click **More info → Run anyway**. To sign it later, get a code-signing certificate and add it to electron-builder's Windows settings (`win.signtoolOptions` with `certificateFile` / `certificatePassword` from environment variables, or Azure Trusted Signing); signed builds don't show the warning once the certificate has a reputation.
+- **Updates.** The overlay doesn't update itself. When Electron publishes security fixes (see [electronjs.org/releases](https://www.electronjs.org/docs/latest/tutorial/electron-timelines)), bump `electron` in `overlay/package.json`, run `npm run overlay:install` and `npm run overlay:build`, and hand out the new `.exe`.
 
 ---
 
@@ -488,9 +583,13 @@ The step only changes when you press a key. If another app already uses one of t
 | "Supabase isn't configured" | `.env` is missing values (local), or the Vercel env vars weren't set before the build: add them and redeploy. |
 | "Can't reach the database… project may be paused" | Check your connection. Free Supabase projects pause after inactivity; open the dashboard and click **Restore project**. |
 | "The database tables are missing" | Run `supabase/schema.sql`. |
-| "No team passcode has been set yet" | Run the passcode statement from step 3. |
+| "Wrong email or password" | Check the email; use **Forgot password?**. An admin can also set a new password under **Authentication → Users**. |
+| "Not on this team" | The login works but has no `team_members` row with that email or Steam ID (step 3.3). |
+| "This Steam account isn't on the team" | Put the player's SteamID64 in `team_members.steam_id` (step 3.3). |
+| "Steam sign-in isn't set up yet" / "Steam sign-in didn't work" | Deploy the `steam-auth` function and set `ALLOWED_RETURN_ORIGINS` to include the site's exact address (step 3.4). Check the function's logs in **Edge Functions → steam-auth → Logs**. |
+| Password-reset link says it expired or fails | Open the link in the same browser you asked from, within an hour, and check the site is in **Redirect URLs** (step 3.1). |
+| Everything is empty or every save fails after an upgrade | `schema.sql` ran before the logins were ready: finish [Upgrading](#upgrading-an-existing-setup) steps 2–4, then sign in. |
 | "Database update needed" when saving strategies or roster details | Re-run `supabase/schema.sql` (see [Upgrading](#upgrading-an-existing-setup)). |
 | "Adding players needs the latest database setup" | Same: re-run `supabase/schema.sql`. |
-| "Wrong passcode" | Re-run the statement from step 3 to reset it. |
 | Live dot says "Reconnecting…" | Realtime dropped. It reconnects automatically and catches up on missed changes. |
 | "Your change wasn't shared with the team" | The write failed (network or permissions). Your screen shows it; others don't see it yet. Retry once you're back online. |

@@ -1,7 +1,5 @@
 // Hand-written messages: the in-game overlay (src/overlay).
 export const en = {
-  'overlay.passcode.title': 'Team passcode',
-  'overlay.passcode.unlock': 'Unlock',
   'overlay.setup.back': '← Back',
   'overlay.setup.pickMap': 'Which map?',
   'overlay.setup.pickSide': 'Which side?',
@@ -13,6 +11,7 @@ export const en = {
   'overlay.round.place': 'Place',
   'overlay.round.crossfire': 'Crossfire',
   'overlay.round.nothingThisStep': 'Nothing for you this step. Hold your spot.',
+  'overlay.round.gone': 'This strategy or operator was removed in the web app. Tray icon → Change strategy or operator.',
   'overlay.anyMap': 'Any map',
   'overlay.retry': 'Try again',
   'overlay.edit.hint': 'Edit mode: drag to move, corner to resize',
@@ -22,8 +21,6 @@ export const en = {
 };
 
 export const fr = {
-  'overlay.passcode.title': 'Code de l’équipe',
-  'overlay.passcode.unlock': 'Déverrouiller',
   'overlay.setup.back': '← Retour',
   'overlay.setup.pickMap': 'Quelle carte ?',
   'overlay.setup.pickSide': 'Quel côté ?',
@@ -35,6 +32,7 @@ export const fr = {
   'overlay.round.place': 'Place',
   'overlay.round.crossfire': 'Tir croisé',
   'overlay.round.nothingThisStep': 'Rien pour toi à cette étape. Garde ta position.',
+  'overlay.round.gone': 'Cette stratégie ou cet opérateur a été retiré dans l’application web. Icône de la barre des tâches → Change strategy or operator.',
   'overlay.anyMap': 'Toutes les cartes',
   'overlay.retry': 'Réessayer',
   'overlay.edit.hint': 'Mode édition : glisse pour déplacer, le coin pour redimensionner',

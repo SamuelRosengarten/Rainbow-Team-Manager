@@ -1,6 +1,7 @@
 // Guards for the in-game overlay: it is a read-only viewer.
 //  1. No overlay file calls .insert / .update / .upsert / .delete.
-//  2. The database is reached only through readApi.js, which exports read functions only.
+//  2. The team's tables are reached only through readApi.js (read functions only);
+//     signing in goes through state/useAuth.js (sign-in calls only).
 //  3. Nothing reachable from the overlay entry imports the strategy editor or builder.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,7 +13,9 @@ import { walk } from '../../scripts/i18n-scan.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const rel = (f) => path.relative(ROOT, f).split(path.sep).join('/');
 
-const READ_ONLY_API = ['checkPasscodeOnServer', 'fetchProfiles', 'fetchStrategies', 'fetchStrategyAssignments', 'isConfigured', 'passcodeStatus', 'subscribe'];
+const READ_ONLY_API = ['fetchProfiles', 'fetchStrategies', 'fetchStrategyAssignments', 'isConfigured', 'subscribe'];
+// What state/useAuth.js may call: signing in and out, and the membership check.
+const AUTH_API = new Set(['claimMembership', 'onAuthChange', 'sendPasswordReset', 'signInWithPassword', 'signInWithSteam', 'signOut', 'updatePassword']);
 const EDITOR = /(^|\/)(BoardEditor|TacticEditor|StrategyEditor|StrategyBuilder|ObjectInspector|ToolRail|SubTools|TacticPanel|StrategyForms)\.jsx$|\/builder\/|editorTools\.js$|useHistory\.js$|useBuilderMode\.js$/;
 
 function filesIn(dir, test) {
@@ -50,6 +53,22 @@ function resolveImport(from, spec) {
   return [base, `${base}.js`, `${base}.jsx`].find((p) => fs.existsSync(p) && fs.statSync(p).isFile()) ?? null;
 }
 
+/** Every source file reachable from the overlay entry. */
+function overlayBundle() {
+  const seen = new Set();
+  const queue = [path.join(ROOT, 'src/overlay/main.jsx')];
+  while (queue.length) {
+    const f = queue.pop();
+    if (seen.has(f) || !/\.jsx?$/.test(f)) continue;
+    seen.add(f);
+    for (const spec of importsOf(f)) {
+      const next = resolveImport(f, spec);
+      if (next) queue.push(next);
+    }
+  }
+  return [...seen];
+}
+
 describe('overlay is read-only', () => {
   it('no overlay file calls .insert, .update, .upsert or .delete', () => {
     const hits = [];
@@ -70,19 +89,21 @@ describe('overlay is read-only', () => {
     expect(Object.keys(readApi).sort()).toEqual(READ_ONLY_API);
   });
 
+  it('in the whole overlay bundle, only readApi.js and the sign-in hook use the database', () => {
+    const users = overlayBundle()
+      .filter((f) => !f.endsWith(`${path.sep}lib${path.sep}api.js`) && importsOf(f).some((s) => /lib\/api(\.js)?$/.test(s)))
+      .map(rel)
+      .sort();
+    expect(users).toEqual(['src/overlay/readApi.js', 'src/state/useAuth.js']);
+    const calls = new Set();
+    walk(parse(path.join(ROOT, 'src/state/useAuth.js')), (n) => {
+      if (n.type === 'MemberExpression' && n.object.type === 'Identifier' && n.object.name === 'api') calls.add(n.property.name);
+    });
+    expect([...calls].filter((c) => !AUTH_API.has(c))).toEqual([]);
+  });
+
   it('the overlay bundle never reaches the editor, builder or undo history', () => {
-    const seen = new Set();
-    const queue = [path.join(ROOT, 'src/overlay/main.jsx')];
-    while (queue.length) {
-      const f = queue.pop();
-      if (seen.has(f) || !/\.jsx?$/.test(f)) continue;
-      seen.add(f);
-      for (const spec of importsOf(f)) {
-        const next = resolveImport(f, spec);
-        if (next) queue.push(next);
-      }
-    }
-    const reached = [...seen].map(rel);
+    const reached = overlayBundle().map(rel);
     expect(reached).toContain('src/components/TacticalBoard.jsx'); // the walk works
     expect(reached.filter((f) => EDITOR.test(f))).toEqual([]);
   });

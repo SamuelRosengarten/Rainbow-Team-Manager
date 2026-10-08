@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LOCALES, useI18n } from '../i18n/index.js';
 
 /**
- * English / Français switch for the header and the passcode screen: two real
+ * English / Français switch for the header and the sign-in screen: two real
  * buttons in a labelled group, the current one marked aria-pressed, changing
  * the language without a reload. The change is announced politely to screen readers.
  */

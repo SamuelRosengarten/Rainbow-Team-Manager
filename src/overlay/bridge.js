@@ -30,6 +30,24 @@ export function onStep(cb) {
 /** Tray menu "Change strategy". */
 export const onReset = (cb) => native()?.onReset(cb) ?? (() => {});
 
+/** Tray menu "Log out". */
+export const onSignOut = (cb) => native()?.onSignOut(cb) ?? (() => {});
+
+/**
+ * "Sign in through Steam": the desktop app opens Steam in the browser and
+ * resolves with Steam's openid.* answer. Rejects with Error('cancelled') when
+ * the player cancels on Steam, or when not running in the desktop app.
+ */
+export async function steamLogin() {
+  if (!native()) throw new Error('unavailable');
+  try {
+    return await native().steamLogin();
+  } catch (e) {
+    // Electron wraps errors from the main process: keep the reason only.
+    throw new Error(/cancelled/.test(e?.message) ? 'cancelled' : /timeout/.test(e?.message) ? 'timeout' : 'failed', { cause: e });
+  }
+}
+
 /** Tray menu "Edit mode" on/off: cb(boolean). */
 export const onEditMode = (cb) => native()?.onEditMode(cb) ?? (() => {});
 
