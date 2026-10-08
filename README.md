@@ -45,9 +45,10 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 1. **Run [`supabase/selfserve.sql`](supabase/selfserve.sql)** in Supabase → SQL Editor. It only adds things (captain/member roles, invite codes, the create / join / captain functions); nobody's access changes, and sign-ups stay off.
 2. **Set up email sending** (custom SMTP, see [Emails](#emails-confirmation-and-password-reset)): with sign-ups on, Supabase's built-in sender runs out after a few emails an hour.
 3. **Deploy the new website** (merge to `main`; Vercel redeploys).
-4. **Run [`supabase/schema.sql`](supabase/schema.sql) last.**
-5. **Then turn sign-ups on**: Authentication → Sign In / Providers → **Allow new users to sign up**, with **Confirm email** on (step 3.1).
-6. Check who's captain (Team → Settings). To change it by hand, see [Running several teams](#running-several-teams).
+4. **Using Steam sign-in?** Redeploy the function so a first Steam sign-in creates an account: `npx supabase functions deploy steam-auth --no-verify-jwt --project-ref your-project-ref`.
+5. **Run [`supabase/schema.sql`](supabase/schema.sql) last.**
+6. **Then turn sign-ups on**: Authentication → Sign In / Providers → **Allow new users to sign up**, with **Confirm email** on (step 3.1).
+7. Check who's captain (Team → Settings). To change it by hand, see [Running several teams](#running-several-teams).
 
 **From one team to several teams.** One website and one database can now hold several teams; each member only sees their own team. Your current data becomes the first team ("Team 1"). Do these **in this order**:
 
@@ -92,7 +93,7 @@ Only your team gets in, and the database itself enforces it:
 - **Teams are managed through checked functions only.** Creating, joining, invites, roles, removing members and deleting the team all go through database functions that check who's asking (captains for the team's settings). The website can't write `teams` or `team_members` directly, and members never see the invite code. Limits: 3 new teams per person per day, 20 members per team, 10 invite-code tries per person per 10 minutes (codes can't be guessed).
 - **Teams are isolated by the database.** Every row has a `team_id`, and every table's Row Level Security policy compares it with the signed-in member's team (`public.current_team_id()`). A member can't read, add, change or delete another team's rows, even by calling the API directly; the app never even sends `team_id` (the database fills it in). Rows can't move between teams, and can't point at another team's players. This is tested on a real Postgres in CI (`supabase/db/isolation.test.js`).
 - **The anon key** still ships inside the website (as in every Supabase frontend), but on its own it can't read or write anything.
-- **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and only signs in Steam accounts on `team_members`.
+- **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and creates an account the first time a Steam account signs in (it still needs a team, like any account).
 - **The service role key** exists only inside that Edge Function (Supabase provides it there). Never put it in this project, in `.env`, in Vercel or anywhere in the website; a test fails the build if it shows up in the bundle.
 - **Sessions** are normal Supabase sessions, kept in the browser and refreshed automatically. **Log out** is in the account menu (click your name).
 - **Headers.** The site is served with security headers (`vercel.json`), see [Security headers](#security-headers).
