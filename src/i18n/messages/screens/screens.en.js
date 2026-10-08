@@ -3,7 +3,7 @@ export default {
   "screens.canTLoadTheTeam": "Can't load the team",
   "screens.tryAgain": "Try again",
   "screens.continueOffline": "Continue offline",
-  "screens.offlineModeWorksOnThis": "Offline mode works on this device only. Nothing is saved or shared.",
+  "screens.offlineModeWorksOnThis": "Offline mode works on this device only. Changes are saved in this browser, not shared.",
   "screens.supabaseIsnTConfigured": "Supabase isn't configured",
   "screens.vercelAddBothVariablesUnder": "Vercel: add both variables under Project → Settings → Environment Variables, then redeploy.",
   "screens.tryItOffline": "Try it offline",

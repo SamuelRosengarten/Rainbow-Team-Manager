@@ -2,18 +2,13 @@ import { useState } from 'react';
 import OperatorIcon from './OperatorIcon.jsx';
 import Notice from './Notice.jsx';
 import OperatorProfile from './OperatorProfile.jsx';
+import PrefButtons from './PrefButtons.jsx';
 import { SIDES } from '../lib/constants.js';
 import { useRoster } from '../state/roster-context.js';
 import { OPERATORS_BY_ID, operatorsForSide } from '../lib/operators.js';
 import { ROLE_LABEL } from '../lib/fit.js';
 import { useI18n } from '../i18n/index.js';
 import { T } from '../i18n/Rich.jsx';
-
-const PREF_STATES = [
-  [null, '♡', 'none'],
-  ['favorite', '★', 'favorite'],
-  ['avoid', '🚫', 'avoid'],
-];
 
 /**
  * A profile's owned-operator checklist plus favorite / blocked marks. Blocked
@@ -138,24 +133,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                   <span key={r} className={`role role--${r}`}>{ROLE_LABEL[r]}</span>
                 ))}
               </span>
-              <span className="op-row__prefs" role="group" aria-label={t('opsPool.prefAria', { operator: op.name })}>
-                {PREF_STATES.map(([kind, glyph, label]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className={`pref-btn pref-btn--${kind ?? 'none'}`}
-                    aria-pressed={pref === kind}
-                    disabled={!canEdit}
-                    onClick={() => pref !== kind && setPreference(viewing, op.id, kind)}
-                    title={t(`opsPool.pref.${label}`)}
-                  >
-                    <span aria-hidden="true">{glyph}</span>
-                    <span className="visually-hidden">
-                      {t('opsPool.prefBtn', { label: t(`opsPool.pref.${label}`), operator: op.name })}
-                    </span>
-                  </button>
-                ))}
-              </span>
+              <PrefButtons operator={op} pref={pref} disabled={!canEdit} onSet={(kind) => setPreference(viewing, op.id, kind)} />
             </li>
           );
         })}

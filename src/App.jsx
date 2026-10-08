@@ -301,7 +301,7 @@ function TeamApp({ online, member = null, team = null, email = '', onSignOut, on
             />
           )}
           {view === 'maps' && <MapsView sub={sub} strategyData={strategyData} navigate={navigate} profile={profile} notes={data.notes} />}
-          {view === 'operators' && <OperatorLibraryView prefs={data.prefs} sub={sub} />}
+          {view === 'operators' && <OperatorLibraryView prefs={data.prefs} sub={sub} profile={profile} setPreference={data.setPreference} />}
           {view === 'plan' && (
             <PlanView
               team={data.team}

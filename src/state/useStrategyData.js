@@ -4,6 +4,7 @@ import { liveFromChannels } from '../lib/live.js';
 import { CodedError, errorMsg } from '../lib/errors.js';
 import { msg } from '../i18n/index.js';
 import { mergeStrategies, normalizeStrategy, strategyDoc } from '../lib/strategies.js';
+import { loadOffline, saveOffline } from '../lib/offlineStore.js';
 
 // The built-in library is ~160 kB of JSON, so it's loaded as its own file the
 // first time it's needed instead of being part of the startup bundle.
@@ -50,12 +51,19 @@ export function useStrategyData({ online, idByName, profile, rosterLoaded }) {
   const [reloadKey, setReloadKey] = useState(0);
   // Realtime status of the strategy channels: 'idle' until they exist.
   const [live, setLive] = useState('idle');
-  const [saved, setSaved] = useState([]);
-  const [assignmentRows, setAssignmentRows] = useState([]);
+  // Offline, saved strategies and assignments live in this browser (see offlineStore.js).
+  const [saved, setSaved] = useState(() => (online ? [] : validRows(loadOffline('strategies', []))));
+  const [assignmentRows, setAssignmentRows] = useState(() => (online ? [] : loadOffline('assignments', [])));
   const [builtins, setBuiltins] = useState(null);
   const [builtinError, setBuiltinError] = useState(null);
   const idsRef = useRef(idByName);
   const profileRef = useRef(profile);
+
+  useEffect(() => {
+    if (online) return;
+    saveOffline('strategies', saved);
+    saveOffline('assignments', assignmentRows);
+  }, [online, saved, assignmentRows]);
 
   useEffect(() => {
     idsRef.current = idByName;

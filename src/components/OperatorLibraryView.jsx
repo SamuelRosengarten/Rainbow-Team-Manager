@@ -14,7 +14,7 @@ import { useI18n } from '../i18n/index.js';
  * filterable by side and role; tap for the full profile and synergies. The
  * well-known pairs are listed below.
  */
-export default function OperatorLibraryView({ prefs, sub }) {
+export default function OperatorLibraryView({ prefs, sub, profile, setPreference }) {
   const { t } = useI18n();
   const [side, setSide] = useState(sub === 'defense' ? 'defend' : 'attack');
   const [role, setRole] = useState('');
@@ -36,6 +36,7 @@ export default function OperatorLibraryView({ prefs, sub }) {
             {t('operatorLibraryView.operators')}
           </h1>
           <p className="page__sub">{t('operatorLibraryView.rolesUtilityAndWhoWorks')}</p>
+          {setPreference && <p className="muted small">{t('opLib.markHint')}</p>}
         </div>
       </header>
 
@@ -75,6 +76,7 @@ export default function OperatorLibraryView({ prefs, sub }) {
             const p = operatorProfile(o.id);
             const owners = players.filter((n) => prefs[n]?.owned?.includes(o.id)).length;
             const fans = players.filter((n) => prefs[n]?.favorites?.includes(o.id)).length;
+            const mark = prefs[profile]?.favorites?.includes(o.id) ? 'favorite' : prefs[profile]?.avoid?.includes(o.id) ? 'blocked' : null;
             return (
               <li key={o.id}>
                 <button type="button" className={`op-card op-card--${o.side}`} onClick={() => setOpen(o.id)} aria-haspopup="dialog" title={p.ability || undefined}>
@@ -82,6 +84,11 @@ export default function OperatorLibraryView({ prefs, sub }) {
                     <OperatorIcon operator={o} size="xl" />
                   </span>
                   <span className="op-card__name">{o.name}</span>
+                  {mark && (
+                    <span className={`pref-badge pref-badge--${mark} op-card__mark`}>
+                      <span aria-hidden="true">{mark === 'favorite' ? '★' : '🚫'}</span> {t(mark === 'favorite' ? 'opLib.myFavourite' : 'opLib.myBlocked')}
+                    </span>
+                  )}
                   <span className="op-card__roles">
                     {o.roles.map((r) => (
                       <span key={r} className={`role role--${r}`}>
@@ -151,7 +158,7 @@ export default function OperatorLibraryView({ prefs, sub }) {
         </ul>
       </section>
 
-      {open && <OperatorProfile key={open} operator={OPERATORS_BY_ID[open]} prefs={prefs} onClose={() => setOpen(null)} />}
+      {open && <OperatorProfile key={open} operator={OPERATORS_BY_ID[open]} prefs={prefs} me={profile} setPreference={setPreference} onClose={() => setOpen(null)} />}
     </section>
   );
 }
