@@ -1,0 +1,43 @@
+{
+  "name": "r6-tactical-overlay",
+  "productName": "R6 Tactical Overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only in-game overlay for R6 Tactical Command: your part of the team strategy on top of Rainbow Six Siege.",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.r6tacticalcommand.overlay",
+    "productName": "R6 Tactical Overlay",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.cjs",
+      "settings.js",
+      "build/tray.png",
+      "dist/renderer/**"
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    }
+  }
+}

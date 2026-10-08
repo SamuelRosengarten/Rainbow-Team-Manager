@@ -10,7 +10,10 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "overlay:install": "npm --prefix overlay install",
+    "overlay:dev": "node overlay/scripts/dev.mjs",
+    "overlay:build": "vite build --config overlay/vite.config.js && npm --prefix overlay run dist"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

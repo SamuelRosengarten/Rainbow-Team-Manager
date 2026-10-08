@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.js'],
+    include: ['src/**/*.test.js', 'overlay/**/*.test.js'],
+    exclude: ['**/node_modules/**', 'overlay/dist/**', 'overlay/release/**'],
   },
 });
