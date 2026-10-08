@@ -3,11 +3,14 @@
 -- service_role roles, auth.users, auth.uid() and auth.jwt() (read from the
 -- request.jwt.claims setting, as PostgREST sets it), and the Realtime
 -- publication. Not used in production.
+-- Roles belong to the whole server, and the test files run in parallel: two
+-- of them can both see a role missing and both create it, so "already exists"
+-- (duplicate_object, or unique_violation when they race) is fine.
 do $$
 begin
-  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+  begin create role anon nologin; exception when duplicate_object or unique_violation then null; end;
+  begin create role authenticated nologin; exception when duplicate_object or unique_violation then null; end;
+  begin create role service_role nologin bypassrls; exception when duplicate_object or unique_violation then null; end;
 end $$;
 
 create schema if not exists auth;
