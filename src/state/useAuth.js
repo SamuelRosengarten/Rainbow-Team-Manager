@@ -18,7 +18,7 @@ const swapSteamOnce = (params) => (steamSwap ??= api.signInWithSteam(params));
  *   'checking'  signed in, looking up team membership
  *   'notMember' signed in, but not on team_members
  *   'error'     the membership lookup failed (retry)
- *   'ready'     a team member: `member` is their roster name
+ *   'ready'     a team member: `member` is their roster name, `team` their team ({ id, name })
  *
  * @param opts.steamReturn takeSteamReturn() result for this page load (website), or null
  * @param opts.enabled     false without Supabase settings (offline): nobody signs in, status is 'ready'
@@ -28,7 +28,7 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
   const [recovery, setRecovery] = useState(false);
   const [steamBusy, setSteamBusy] = useState(Boolean(steamReturn?.params));
   const [error, setError] = useState(steamReturn?.error ? msg('auth.error.steamFailed') : null);
-  const [membership, setMembership] = useState({ userId: null, name: undefined, error: null });
+  const [membership, setMembership] = useState({ userId: null, name: undefined, team: null, error: null });
   const [retryKey, setRetryKey] = useState(0);
 
   // Session changes: sign-in, sign-out (also when a refresh fails or the session
@@ -57,10 +57,15 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
   useEffect(() => {
     if (!userId) return undefined;
     let cancelled = false;
-    api
-      .claimMembership()
-      .then((name) => !cancelled && setMembership({ userId, name, error: null }))
-      .catch((e) => !cancelled && setMembership({ userId, name: undefined, error: errorMsg(e) }));
+    (async () => {
+      // Claim first: it links this login to its team_members row on first sign-in.
+      const name = await api.claimMembership();
+      const team = name ? await api.fetchMyTeam() : null;
+      api.setTeam(team);
+      return { name, team };
+    })()
+      .then(({ name, team }) => !cancelled && setMembership({ userId, name, team, error: null }))
+      .catch((e) => !cancelled && setMembership({ userId, name: undefined, team: null, error: errorMsg(e) }));
     return () => {
       cancelled = true;
     };
@@ -105,12 +110,14 @@ export function useAuth({ steamReturn = null, enabled = true } = {}) {
     } catch {
       // already signed out on the server, or offline: the local session is cleared anyway
     }
+    api.setTeam(null);
     setSession(null);
   }, []);
 
   return {
     status,
     member: membership.name ?? null,
+    team: membership.team,
     email: session?.user?.email ?? '',
     error: status === 'error' ? membership.error : error,
     setError,

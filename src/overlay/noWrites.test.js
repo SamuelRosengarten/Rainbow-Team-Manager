@@ -15,7 +15,7 @@ const rel = (f) => path.relative(ROOT, f).split(path.sep).join('/');
 
 const READ_ONLY_API = ['fetchProfiles', 'fetchStrategies', 'fetchStrategyAssignments', 'isConfigured', 'subscribe'];
 // What state/useAuth.js may call: signing in and out, and the membership check.
-const AUTH_API = new Set(['claimMembership', 'onAuthChange', 'sendPasswordReset', 'signInWithPassword', 'signInWithSteam', 'signOut', 'updatePassword']);
+const AUTH_API = new Set(['claimMembership', 'fetchMyTeam', 'onAuthChange', 'sendPasswordReset', 'setTeam', 'signInWithPassword', 'signInWithSteam', 'signOut', 'updatePassword']);
 const EDITOR = /(^|\/)(BoardEditor|TacticEditor|StrategyEditor|StrategyBuilder|ObjectInspector|ToolRail|SubTools|TacticPanel|StrategyForms)\.jsx$|\/builder\/|editorTools\.js$|useHistory\.js$|useBuilderMode\.js$/;
 
 function filesIn(dir, test) {

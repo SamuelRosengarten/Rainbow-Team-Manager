@@ -7,6 +7,7 @@ import { isConfigured } from './readApi.js';
 import { loadChoice, storeChoice } from './storage.js';
 import { useOverlayData } from './useOverlayData.js';
 import { useAuth } from '../state/useAuth.js';
+import { memberLabel } from '../lib/teamScope.js';
 import { tm, useI18n } from '../i18n/index.js';
 
 const CLEARED = { mapId: '', side: '', strategyId: '', slotKey: '' };
@@ -145,6 +146,7 @@ export default function OverlayApp() {
           )}
         </div>
       )}
+      {phase === 'setup' && auth.team && <p className="ov-team">{memberLabel(auth.member, auth.team)}</p>}
       <main className="ov__body">{body}</main>
       {phase === 'round' && !editing && !isDesktop() && <p className="ov-keys">{t('overlay.keysHint')}</p>}
       {editing && <ResizeGrip />}

@@ -70,9 +70,9 @@ const deps = {
     },
   },
   async findMember(steamId) {
-    const { data, error } = await admin.from('team_members').select('profile_id, user_id, email').eq('steam_id', steamId).maybeSingle();
+    const { data, error } = await admin.from('team_members').select('profile_id, user_id, email, team_id').eq('steam_id', steamId).maybeSingle();
     if (error) throw error;
-    return data ? { profileId: data.profile_id, userId: data.user_id, email: data.email } : null;
+    return data ? { profileId: data.profile_id, userId: data.user_id, email: data.email, teamId: data.team_id } : null;
   },
   async userEmail(userId) {
     const { data, error } = await admin.auth.admin.getUserById(userId);
