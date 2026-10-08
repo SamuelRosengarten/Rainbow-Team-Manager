@@ -15,6 +15,10 @@ create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique
 );
+-- Columns the Steam sign-in check reads (public.steam_account_check).
+alter table auth.users add column if not exists encrypted_password text;
+alter table auth.users add column if not exists email_confirmed_at timestamptz;
+alter table auth.users add column if not exists raw_app_meta_data jsonb not null default '{}';
 
 create or replace function auth.jwt() returns jsonb
 language sql stable

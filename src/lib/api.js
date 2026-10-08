@@ -146,6 +146,8 @@ export const updatePassword = (password) => auth(db().auth.updateUser({ password
  * @returns {Promise<{ alreadyRegistered: boolean, signedIn: boolean }>}
  */
 export async function signUp(email, password, redirectTo) {
+  // Steam-only accounts use made-up @users.invalid addresses; nobody signs up with one.
+  if (/@users\.invalid$/i.test(email.trim())) throw new ApiError('auth.error.reservedEmail');
   const data = await auth(db().auth.signUp({ email: email.trim().toLowerCase(), password, options: { emailRedirectTo: redirectTo } }));
   const identities = data?.user?.identities;
   return { alreadyRegistered: Array.isArray(identities) && identities.length === 0, signedIn: Boolean(data?.session) };
@@ -224,7 +226,7 @@ export async function fetchMyTeam() {
   }
 }
 
-const STEAM_ERRORS = { 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp' };
+const STEAM_ERRORS = { 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp', 'account-conflict': 'auth.error.steamAccountConflict' };
 
 /**
  * Finish "Sign in through Steam": the steam-auth Edge Function checks the

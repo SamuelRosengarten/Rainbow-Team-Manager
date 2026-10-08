@@ -64,3 +64,25 @@ describe('selfserve.sql', () => {
     expect(narrow).toBeGreaterThan(broad);
   });
 });
+
+describe('hardening.sql', () => {
+  const hardening = statements('./hardening.sql');
+  const schema = statements('./schema.sql');
+
+  it('is part of schema.sql, statement for statement', () => {
+    expect(hardening.length).toBeGreaterThan(15);
+    expect(hardening.filter((s) => !schema.includes(s))).toEqual([]);
+  });
+
+  it('changes no data and grants no new table access', () => {
+    expect(hardening.filter((s) => /^(insert|update|delete|alter table|drop table|truncate)\b/i.test(s))).toEqual([]);
+    expect(hardening.filter((s) => /^grant\b/i.test(s) && !/^grant execute/i.test(s))).toEqual([]);
+  });
+
+  it('comes after the self-serve section in schema.sql (it needs team_members.role)', () => {
+    const roles = schema.findIndex((s) => s.startsWith('alter table public.team_members add column if not exists role'));
+    const first = schema.indexOf(hardening[0]);
+    expect(roles).toBeGreaterThan(-1);
+    expect(first).toBeGreaterThan(roles);
+  });
+});

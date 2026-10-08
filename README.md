@@ -40,6 +40,13 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 
 ## Upgrading an existing setup
 
+**Hardening (safer Steam sign-in, players edit only their own details).** Do these **in this order**:
+
+1. **Run [`supabase/hardening.sql`](supabase/hardening.sql)** in Supabase → SQL Editor. It changes no data. From then on, a player edits only their own player details and operator pool; **captains** edit anyone's and are the only ones who add roster players. Everyone still sees everything in their team.
+2. **Deploy the Steam function again**: `supabase functions deploy steam-auth --no-verify-jwt` (it needs the function from step 1, so deploy it after; until then Steam sign-ins fail).
+3. **Deploy the new website** (merge to `main`).
+4. Keep **Confirm email** on (Authentication → Sign In / Providers → Email). With it off, anyone could create an account with an email you listed in `team_members` and get into that team without owning the inbox.
+
 **To self-serve accounts and teams.** Players create their own account (email + password or Steam), then create a team or join one with an invite link. Existing teams, members and data keep working; the earliest member of each team becomes its **captain**. Do these **in this order**:
 
 1. **Run [`supabase/selfserve.sql`](supabase/selfserve.sql)** in Supabase → SQL Editor. It only adds things (captain/member roles, invite codes, the create / join / captain functions); nobody's access changes, and sign-ups stay off.
@@ -90,9 +97,10 @@ Only your team gets in, and the database itself enforces it:
 - **Accounts.** Anyone can create an account: **email + password** (they must confirm their email first) or **Sign in through Steam** (the first Steam sign-in creates the account). There's no 2FA in the app; Steam Guard happens on Steam's own site.
 - **An account alone sees nothing.** It has to be in a team: it creates one (and becomes its captain) or joins one with the team's **invite code**. `public.team_members` records who's in which team, as which roster player ("Samuel" really is Samuel) and with which role. One login = one team.
 - **Teams are managed through checked functions only.** Creating, joining, invites, roles, removing members and deleting the team all go through database functions that check who's asking (captains for the team's settings). The website can't write `teams` or `team_members` directly, and members never see the invite code. Limits: 3 new teams per person per day, 20 members per team, 10 invite-code tries per person per 10 minutes (codes can't be guessed).
+- **Inside a team**, everyone reads everything; a player changes only their own player details and operator pool, and captains change anyone's and add roster players (`supabase/hardening.sql`). Strategies, tactics, map notes and the match plan stay editable by every member.
 - **Teams are isolated by the database.** Every row has a `team_id`, and every table's Row Level Security policy compares it with the signed-in member's team (`public.current_team_id()`). A member can't read, add, change or delete another team's rows, even by calling the API directly; the app never even sends `team_id` (the database fills it in). Rows can't move between teams, and can't point at another team's players. This is tested on a real Postgres in CI (`supabase/db/isolation.test.js`).
 - **The anon key** still ships inside the website (as in every Supabase frontend), but on its own it can't read or write anything.
-- **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and only signs in Steam accounts on `team_members`.
+- **Steam sign-in** runs in a Supabase Edge Function (`supabase/functions/steam-auth`). It checks Steam's answer with Steam itself, refuses replays and other sites' answers, limits attempts per IP, and never signs a Steam player into an account someone else registered first with a password (`public.steam_account_check`, callable only by the function).
 - **The service role key** exists only inside that Edge Function (Supabase provides it there). Never put it in this project, in `.env`, in Vercel or anywhere in the website; a test fails the build if it shows up in the bundle.
 - **Sessions** are normal Supabase sessions, kept in the browser and refreshed automatically. **Log out** is in the account menu (click your name).
 - **Headers.** The site is served with security headers (`vercel.json`), see [Security headers](#security-headers).
@@ -126,7 +134,7 @@ Then grab your keys from **Project Settings → API**: the **Project URL** and t
 
 In the Supabase dashboard:
 
-1. **Authentication → Sign In / Providers → Email**: enabled, with **Confirm email** **on** (people click a link in an email before they can sign in).
+1. **Authentication → Sign In / Providers → Email**: enabled, with **Confirm email** **on** (people click a link in an email before they can sign in). Don't turn it off to work around email trouble: emails you listed in `team_members` would then be claimable by anyone. Fix the sender instead ([Emails](#emails-confirmation-and-password-reset)).
 2. **Authentication → Sign In / Providers**: **Allow new users to sign up** **on** (self-serve). Upgrading? Turn this on last, see [Upgrading](#upgrading-an-existing-setup). Turn it off any time to stop new accounts; existing ones keep working.
 3. **Authentication → URL Configuration**:
    - **Site URL**: your website, e.g. `https://your-team.vercel.app`.

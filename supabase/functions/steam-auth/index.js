@@ -80,8 +80,15 @@ const deps = {
     if (error) return null;
     return data.user?.email ?? null;
   },
-  async createUser(email) {
-    const { error } = await admin.auth.admin.createUser({ email, email_confirm: true });
+  // public.steam_account_check (service role only): who already holds this address.
+  async findAccount(email) {
+    const { data, error } = await admin.rpc('steam_account_check', { account_email: email });
+    if (error) throw error;
+    return data ?? null;
+  },
+  async createUser(email, steamId) {
+    // app_metadata can only be set with the service role: it marks the account as made here.
+    const { error } = await admin.auth.admin.createUser({ email, email_confirm: true, app_metadata: { steam_id: steamId } });
     // A user with that email already exists (made by an admin): it's reused.
     if (error && error.status !== 422 && !/already|exists|registered/i.test(error.message)) throw error;
   },

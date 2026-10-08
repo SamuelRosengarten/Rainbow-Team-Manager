@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STEAM_LOGIN, handleSteamLogin, nonceTime, parseAllowedOrigins, pickOpenIdParams, returnToAllowed, steamEmail, steamLoginUrl, verifySteamAssertion } from './steam.js';
+import { STEAM_LOGIN, accountUsable, handleSteamLogin, nonceTime, parseAllowedOrigins, pickOpenIdParams, returnToAllowed, steamEmail, steamLoginUrl, verifySteamAssertion } from './steam.js';
 
 const NOW = Date.parse('2026-10-08T12:00:00Z');
 const STEAM_ID = '76561198000000001';
@@ -137,14 +137,18 @@ describe('verifying a Steam response', () => {
 
 describe('Steam login: team membership and accounts', () => {
   const deps = (over = {}) => {
-    const calls = { created: [], linked: [] };
+    const calls = { created: [], linked: [], steamIds: [] };
     return {
       calls,
       tooManyAttempts: async () => false,
       verify: opts(),
       findMember: async (id) => (id === STEAM_ID ? { profileId: 'p1', userId: null, email: null, teamId: 'team-a' } : null),
       userEmail: async () => 'samuel@example.com',
-      createUser: async (email) => calls.created.push(email),
+      findAccount: async () => null,
+      createUser: async (email, steamId) => {
+        calls.created.push(email);
+        calls.steamIds.push(steamId);
+      },
       magicLink: async (email) => ({ userId: email === 'samuel@example.com' ? 'u-existing' : 'u-new', tokenHash: 'hash-1' }),
       linkMember: async (p, u) => calls.linked.push([p, u]),
       ...over,
@@ -196,6 +200,56 @@ describe('Steam login: team membership and accounts', () => {
     expect(second).toEqual({ ok: true, tokenHash: 'hash-u-1' }); // same account
     expect([...users.keys()]).toEqual([steamEmail(STEAM_ID)]);
     expect(d.calls.linked).toEqual([]); // not on any team: they create or join one on the website
+  });
+
+  it('marks the accounts it creates with their Steam ID', async () => {
+    const d = deps({ findMember: async () => null });
+    expect((await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).ok).toBe(true);
+    expect(d.calls.steamIds).toEqual([STEAM_ID]);
+  });
+
+  it('reuses its own Steam account (marked, or older without a password) without creating it again', async () => {
+    for (const account of [{ hasPassword: false, confirmed: true, steamId: STEAM_ID }, { hasPassword: false, confirmed: true, steamId: null }]) {
+      const d = deps({ findMember: async () => null, findAccount: async () => account });
+      expect(await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).toEqual({ ok: true, tokenHash: 'hash-1' });
+      expect(d.calls.created).toEqual([]);
+    }
+  });
+
+  it('refuses a Steam address someone registered with a password (account pre-hijacking)', async () => {
+    const magic = [];
+    for (const findMember of [async () => null, async () => ({ profileId: 'p1', userId: null, email: null })]) {
+      const d = deps({
+        findMember,
+        findAccount: async (email) => (email === steamEmail(STEAM_ID) ? { hasPassword: true, confirmed: false, steamId: null } : null),
+        magicLink: async (email) => magic.push(email),
+      });
+      expect(await handleSteamLogin({ params: assertion(), ip: 'x' }, d)).toMatchObject({ ok: false, reason: 'account-conflict', status: 409 });
+      expect(d.calls.linked).toEqual([]);
+    }
+    expect(magic).toEqual([]); // no sign-in link is ever made for it
+  });
+
+  it('refuses a member’s email someone registered (password, never confirmed); accepts it once confirmed', async () => {
+    const member = async () => ({ profileId: 'p1', userId: null, email: 'samuel@example.com' });
+    const squatted = deps({ findMember: member, findAccount: async () => ({ hasPassword: true, confirmed: false, steamId: null }) });
+    expect(await handleSteamLogin({ params: assertion(), ip: 'x' }, squatted)).toMatchObject({ ok: false, reason: 'account-conflict' });
+    expect(squatted.calls.linked).toEqual([]);
+    const own = deps({ findMember: member, findAccount: async () => ({ hasPassword: true, confirmed: true, steamId: null }) });
+    expect((await handleSteamLogin({ params: assertion(), ip: 'x' }, own)).ok).toBe(true);
+    expect(own.calls.created).toEqual([]);
+    expect(own.calls.linked).toEqual([['p1', 'u-existing']]);
+  });
+
+  it('accountUsable', () => {
+    const steam = { steamId: STEAM_ID, steamAddress: true };
+    const mail = { steamId: STEAM_ID, steamAddress: false };
+    expect(accountUsable(null, steam)).toBe(true);
+    expect(accountUsable({ hasPassword: true, confirmed: true, steamId: STEAM_ID }, steam)).toBe(true);
+    expect(accountUsable({ hasPassword: true, confirmed: true, steamId: '76561198000000999' }, steam)).toBe(false);
+    expect(accountUsable({ hasPassword: true, confirmed: true, steamId: null }, steam)).toBe(false);
+    expect(accountUsable({ hasPassword: false, confirmed: false, steamId: null }, mail)).toBe(true);
+    expect(accountUsable({ hasPassword: true, confirmed: false, steamId: null }, mail)).toBe(false);
   });
 
   it('limits attempts per IP before doing anything else', async () => {

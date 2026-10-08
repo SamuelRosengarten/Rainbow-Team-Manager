@@ -22,12 +22,13 @@ const PREF_STATES = [
  */
 export default function OperatorsView({ profile, prefs, setOwned, setPreference }) {
   const { t } = useI18n();
-  const { players, ownedOnly } = useRoster();
+  const { players, ownedOnly, canEditPlayer } = useRoster();
   const [viewing, setViewing] = useState(profile);
   const [side, setSide] = useState('attack');
   const [filter, setFilter] = useState('');
   const [open, setOpen] = useState(null);
   const mine = viewing === profile;
+  const canEdit = canEditPlayer(viewing);
   const p = prefs[viewing] ?? { owned: [], favorites: [], avoid: [] };
   const owned = new Set(p.owned);
   const favorites = new Set(p.favorites);
@@ -59,7 +60,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
       <p className={`owned-status owned-status--${ownedOnly ? 'on' : 'off'}`} role="status">
         <T id={ownedOnly ? 'opsPool.status.on' : 'opsPool.status.off'} />
       </p>
-      {!mine && <Notice kind="info">{t('opsPool.viewing', { player: viewing })}</Notice>}
+      {!mine && <Notice kind="info">{t(canEdit ? 'opsPool.editingAsCaptain' : 'opsPool.viewing', { player: viewing })}</Notice>}
 
       <div className="tabs-row">
         <div className="segmented" role="group" aria-label={t('operatorsView.side')}>
@@ -78,7 +79,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
         <span className="count" aria-label={t('opsPool.ownedAria', { owned: ownedCount, total: sideIds.length })}>
           {t('opsPool.ownedCount', { owned: ownedCount, total: sideIds.length })}
         </span>
-        {mine && (
+        {canEdit && (
           <>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOwned(viewing, sideIds, true)}>
               {t('operatorsView.ownAll')}
@@ -111,7 +112,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                   <input
                     type="checkbox"
                     checked={isOwned}
-                    disabled={!mine}
+                    disabled={!canEdit}
                     onChange={(e) => setOwned(viewing, [op.id], e.target.checked)}
                   />
                   <span className="visually-hidden">{t('opsPool.ownA11y', { operator: op.name })}</span>
@@ -144,7 +145,7 @@ export default function OperatorsView({ profile, prefs, setOwned, setPreference 
                     type="button"
                     className={`pref-btn pref-btn--${kind ?? 'none'}`}
                     aria-pressed={pref === kind}
-                    disabled={!mine}
+                    disabled={!canEdit}
                     onClick={() => pref !== kind && setPreference(viewing, op.id, kind)}
                     title={t(`opsPool.pref.${label}`)}
                   >
