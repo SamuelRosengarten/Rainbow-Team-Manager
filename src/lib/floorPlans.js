@@ -184,6 +184,18 @@ export function planCoverage(mapId) {
   return { floors: floors.length, withPlan: plans.length, verified: plans.filter((p) => p.verified).length };
 }
 
+/**
+ * How far a map's floor plans are checked against the game, from each plan's
+ * own `verified` flag (Maps → map → Floor plans → Verify and export):
+ * 'verified' (every floor), 'partial' (some), 'unverified' (none), or null
+ * when the map has no plans.
+ */
+export function verifyState(cov) {
+  if (!cov.withPlan) return null;
+  if (cov.verified === cov.withPlan && cov.withPlan === cov.floors) return 'verified';
+  return cov.verified > 0 ? 'partial' : 'unverified';
+}
+
 const fold = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 /** Search callouts on every floor that has a plan: [{ mapId, floorId, ...callout }]. */

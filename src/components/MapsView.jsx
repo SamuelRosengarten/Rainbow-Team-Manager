@@ -8,7 +8,7 @@ import { EmptyState, Meter } from './ui.jsx';
 import { parseSite } from '../lib/diagram.js';
 import { MAPS, MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { allMapPreparation } from '../lib/readiness.js';
-import { missingFloorPlans, planCoverage } from '../lib/floorPlans.js';
+import { missingFloorPlans, planCoverage, verifyState } from '../lib/floorPlans.js';
 import { createStrategy, latestVersions } from '../lib/strategies.js';
 import { usePlans } from '../state/usePlans.js';
 import { T } from '../i18n/Rich.jsx';
@@ -16,6 +16,16 @@ import { useI18n } from '../i18n/index.js';
 
 const MAP_FILTERS = ['all', 'ready', 'partial', 'none'];
 const STATUS_TONE = { ready: 'ok', partial: 'accent', none: 'neutral', 'no-sites': 'neutral' };
+
+function VerifyState({ cov }) {
+  const { t } = useI18n();
+  const state = verifyState(cov);
+  return (
+    <span className={`map-card__verify map-card__verify--${state}`}>
+      <span aria-hidden="true">{state === 'verified' ? '✓' : '●'}</span> {t(`maps.verify.${state}`, { verified: cov.verified, total: cov.floors })}
+    </span>
+  );
+}
 
 function MapCard({ map, prep, navigate }) {
   const { t } = useI18n();
@@ -29,9 +39,10 @@ function MapCard({ map, prep, navigate }) {
       <span className="map-card__meta">
         {[
           prep.sites ? t('mapPicker.sites', { count: prep.sites }) : null,
-          cov.floors ? t('maps.floorsShort', { with: cov.withPlan, floors: cov.floors, verified: cov.verified }) : null,
+          cov.floors ? t('maps.floorsPlans', { with: cov.withPlan, floors: cov.floors }) : null,
         ].filter(Boolean).join(' · ')}
       </span>
+      {cov.withPlan > 0 && <VerifyState cov={cov} />}
       {prep.coverage === null ? (
         <span className="map-card__nosites">{t('maps.noSitesBody')}</span>
       ) : (
