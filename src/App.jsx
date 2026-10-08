@@ -5,12 +5,16 @@ import LanguageToggle from './components/LanguageToggle.jsx';
 import Notice from './components/Notice.jsx';
 import { PageLoading } from './components/ui.jsx';
 import {
+  AccountScreen,
   ConfigMissingScreen,
   ErrorScreen,
   LoadingScreen,
-  PasscodeScreen,
+  LoginScreen,
+  NotMemberScreen,
   ProfilePicker,
+  SetPasswordScreen,
 } from './components/Screens.jsx';
+import { useAuth } from './state/useAuth.js';
 import { useTeamData } from './state/useTeamData.js';
 import { useStrategyData } from './state/useStrategyData.js';
 import { useOnline } from './state/useOnline.js';
@@ -19,7 +23,8 @@ import { RosterContext } from './state/roster-context.js';
 import { combineLive } from './lib/live.js';
 import { isConfigured } from './lib/api.js';
 import { MAPS_BY_ID, allSites } from './lib/maps.js';
-import { REQUIRE_PASSCODE, loadProfile, markPasscodePassed, passcodePassed, storeProfile } from './lib/config.js';
+import { loadProfile, storeProfile } from './lib/config.js';
+import { takeSteamReturn } from './lib/steamLogin.js';
 import { activePlayers, lineupPlayers } from './lib/roster.js';
 import { rollableTactics } from './lib/tactics.js';
 import { useI18n } from './i18n/index.js';
@@ -31,6 +36,9 @@ const PlanView = lazy(() => import('./components/PlanView.jsx'));
 const StrategiesView = lazy(() => import('./components/StrategiesView.jsx'));
 const StrategyBuilder = lazy(() => import('./components/StrategyBuilder.jsx'));
 const TeamView = lazy(() => import('./components/TeamView.jsx'));
+
+// Back from Steam? Read (and clear) its answer once, when the app loads.
+const STEAM_RETURN = isConfigured ? takeSteamReturn() : null;
 
 const VIEWS = [
   { id: 'home', icon: 'crosshair' },
@@ -81,25 +89,32 @@ function LiveStatus({ live }) {
 
 export default function App() {
   const [mode, setMode] = useState(isConfigured ? 'online' : 'unconfigured');
-  const [passed, setPassed] = useState(() => !REQUIRE_PASSCODE || passcodePassed());
 
   if (mode === 'unconfigured') return <ConfigMissingScreen onOffline={() => setMode('offline')} />;
-  if (mode === 'online' && !passed) {
-    return (
-      <PasscodeScreen
-        onPass={() => {
-          markPasscodePassed();
-          setPassed(true);
-        }}
-      />
-    );
-  }
-  return <TeamApp key={mode} online={mode === 'online'} onOffline={() => setMode('offline')} />;
+  if (mode === 'online') return <SignedIn onOffline={() => setMode('offline')} />;
+  return <TeamApp key="offline" online={false} onOffline={() => setMode('offline')} />;
 }
 
-function TeamApp({ online, onOffline }) {
+/** Online: only signed-in team members get to the app. */
+function SignedIn({ onOffline }) {
   const { t } = useI18n();
-  const [storedProfile, setStoredProfile] = useState(() => loadProfile(null));
+  const auth = useAuth({ steamReturn: STEAM_RETURN });
+  if (auth.status === 'loading' || auth.status === 'checking') return <LoadingScreen label={t('auth.checking')} />;
+  if (auth.status === 'signedOut') return <LoginScreen auth={auth} />;
+  if (auth.status === 'recovery') return <SetPasswordScreen auth={auth} />;
+  if (auth.status === 'notMember') return <NotMemberScreen auth={auth} />;
+  if (auth.status === 'error') return <ErrorScreen message={auth.error} onRetry={auth.retry} onOffline={onOffline} />;
+  return <TeamApp key={auth.member} online member={auth.member} email={auth.email} onSignOut={auth.signOut} onOffline={onOffline} />;
+}
+
+/**
+ * The app. Online, `member` is the signed-in team member's roster name (their
+ * profile, fixed); offline, the profile is picked on this device.
+ */
+function TeamApp({ online, member = null, email = '', onSignOut, onOffline }) {
+  const { t } = useI18n();
+  const [pickedProfile, setStoredProfile] = useState(() => loadProfile(null));
+  const storedProfile = member ?? pickedProfile;
   const [picking, setPicking] = useState(false);
   const route = useHashRoute();
   const data = useTeamData({ online, profile: storedProfile });
@@ -128,7 +143,10 @@ function TeamApp({ online, onOffline }) {
   if (data.status === 'loading') return <LoadingScreen />;
   if (data.status === 'error') return <ErrorScreen message={data.loadError} onRetry={data.retry} onOffline={onOffline} />;
 
-  const profile = data.roster.some((p) => p.name === storedProfile) ? storedProfile : null;
+  const profile = member ?? (data.roster.some((p) => p.name === storedProfile) ? storedProfile : null);
+  if (member && picking) {
+    return <AccountScreen name={member} email={email} onSignOut={onSignOut} onCancel={() => setPicking(false)} />;
+  }
   if (!profile || picking) {
     return (
       <ProfilePicker
@@ -188,7 +206,7 @@ function TeamApp({ online, onOffline }) {
                   <span className="visually-hidden">{t('app.signedInAs')} </span>
                   {profile}
                 </span>
-                <span className="whoami__hint">{t('app.switchProfile')}</span>
+                <span className="whoami__hint">{member ? t('app.account') : t('app.switchProfile')}</span>
               </span>
               <Icon name="chevron" size={16} />
             </button>

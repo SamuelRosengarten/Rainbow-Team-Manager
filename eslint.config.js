@@ -21,6 +21,11 @@ export default [
     },
   },
   {
+    // Supabase Edge Functions run on Deno.
+    files: ['supabase/functions/**/*.js'],
+    languageOptions: { globals: { Deno: 'readonly' } },
+  },
+  {
     files: ['**/*.cjs'],
     languageOptions: { sourceType: 'commonjs', globals: globals.node },
   },

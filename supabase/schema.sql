@@ -2,12 +2,16 @@
 -- Paste this whole file into Supabase -> SQL Editor -> New query, and run it.
 -- It is safe to run again: everything uses IF NOT EXISTS / ON CONFLICT.
 --
--- SECURITY MODEL (read this):
--- There is no authentication. Every table below is readable AND writable by
--- anyone who has your project URL + anon key (which ship inside the website).
--- That is deliberate: the app is a shared whiteboard for five friends.
--- The team passcode is a light gate in the UI, not real security.
--- Do not store anything private here.
+-- SECURITY MODEL (read this, and "Security model" in the README):
+-- Only team members can read or write anything. A team member is a row in
+-- public.team_members (filled by an admin from the Supabase dashboard) linked
+-- to a Supabase Auth user who signed in with email + password or through
+-- Steam. The anon key (shipped inside the website) can do nothing on its own:
+-- every table policy requires public.is_team_member().
+--
+-- ORDER MATTERS when upgrading an existing setup: create the users and
+-- team_members rows and deploy the new website FIRST, then run this file.
+-- Running it first locks the old website (which has no login) out.
 
 -- ---------------------------------------------------------------------------
 -- Profiles: five fixed teammates
@@ -21,6 +25,69 @@ create table if not exists public.profiles (
 insert into public.profiles (name)
 values ('Samuel'), ('Anthony'), ('Xavier'), ('Mathis'), ('William')
 on conflict (name) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Team members: who may sign in, and which roster player each login is.
+-- Admins fill this from the Supabase dashboard (Table Editor); the website
+-- can't read or change it. Give each member an email (email + password login),
+-- a steam_id (SteamID64, 17 digits, for "Sign in through Steam"), or both.
+-- user_id is filled automatically on their first login.
+-- ---------------------------------------------------------------------------
+create table if not exists public.team_members (
+  profile_id uuid primary key references public.profiles (id) on delete cascade,
+  user_id uuid unique references auth.users (id) on delete set null,
+  email text unique check (email is null or email = lower(btrim(email))),
+  steam_id text unique check (steam_id is null or steam_id ~ '^[0-9]{17}$'),
+  created_at timestamptz not null default now(),
+  check (email is not null or steam_id is not null)
+);
+
+alter table public.team_members enable row level security;
+revoke all on public.team_members from anon, authenticated;
+
+-- True when the signed-in user is on the team. Every table policy uses it.
+create or replace function public.is_team_member()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.team_members where user_id = auth.uid());
+$$;
+
+-- Called by the app right after sign-in: links the user to their member row
+-- by email on the first login, and returns their roster name (null when this
+-- account isn't on the team).
+create or replace function public.claim_membership()
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = public
+as $$
+declare
+  me uuid := auth.uid();
+  mail text := lower(btrim(coalesce(auth.jwt() ->> 'email', '')));
+  who text;
+begin
+  if me is null then
+    return null;
+  end if;
+  if not exists (select 1 from public.team_members where user_id = me) and mail <> '' then
+    update public.team_members set user_id = me where email = mail and user_id is null;
+  end if;
+  select p.name into who
+  from public.team_members m join public.profiles p on p.id = m.profile_id
+  where m.user_id = me;
+  return who;
+end;
+$$;
+
+revoke all on function public.is_team_member() from public, anon;
+revoke all on function public.claim_membership() from public, anon;
+grant execute on function public.is_team_member() to authenticated;
+grant execute on function public.claim_membership() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Owned and preferred operators (operator ids match src/data/operators.json)
@@ -97,19 +164,7 @@ create table if not exists public.team_state (
 insert into public.team_state (id) values (1) on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
--- Team settings: exactly one row holding the passcode hash.
--- Set the passcode with the statement in the README (never commit it).
--- ---------------------------------------------------------------------------
-create table if not exists public.team_settings (
-  id int primary key default 1 check (id = 1),
-  passcode_hash text
-);
-
-insert into public.team_settings (id) values (1) on conflict (id) do nothing;
-
--- ---------------------------------------------------------------------------
--- Row Level Security: enabled, with permissive policies for the anon role.
--- Open to the team by design (see the README).
+-- Row Level Security: team members only (public.is_team_member()).
 -- ---------------------------------------------------------------------------
 alter table public.profiles enable row level security;
 alter table public.owned_operators enable row level security;
@@ -117,47 +172,40 @@ alter table public.preferred_operators enable row level security;
 alter table public.tactics enable row level security;
 alter table public.map_notes enable row level security;
 alter table public.team_state enable row level security;
-alter table public.team_settings enable row level security;
 
 drop policy if exists "team read profiles" on public.profiles;
 create policy "team read profiles" on public.profiles
-  for select to anon, authenticated using (true);
+  for select to authenticated using (public.is_team_member());
 
 drop policy if exists "team all owned_operators" on public.owned_operators;
 create policy "team all owned_operators" on public.owned_operators
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
 drop policy if exists "team all preferred_operators" on public.preferred_operators;
 create policy "team all preferred_operators" on public.preferred_operators
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
 drop policy if exists "team all tactics" on public.tactics;
 create policy "team all tactics" on public.tactics
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
 drop policy if exists "team all map_notes" on public.map_notes;
 create policy "team all map_notes" on public.map_notes
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
 drop policy if exists "team read team_state" on public.team_state;
 create policy "team read team_state" on public.team_state
-  for select to anon, authenticated using (true);
+  for select to authenticated using (public.is_team_member());
 drop policy if exists "team update team_state" on public.team_state;
 create policy "team update team_state" on public.team_state
-  for update to anon, authenticated using (id = 1) with check (id = 1);
+  for update to authenticated using (id = 1 and public.is_team_member()) with check (id = 1 and public.is_team_member());
 
--- The passcode hash is NOT readable from the website. The app checks a
--- passcode through check_team_passcode() below, which runs on the server.
--- Set the passcode from the SQL editor (see the README).
-drop policy if exists "team read team_settings" on public.team_settings;
-revoke all on public.team_settings from anon, authenticated;
-
-grant usage on schema public to anon, authenticated;
-grant select on public.profiles to anon, authenticated;
-grant select, update on public.team_state to anon, authenticated;
+grant usage on schema public to authenticated;
+grant select on public.profiles to authenticated;
+grant select, update on public.team_state to authenticated;
 grant select, insert, update, delete on
   public.owned_operators, public.preferred_operators, public.tactics, public.map_notes
-  to anon, authenticated;
+  to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Realtime: live updates for team state and shared data.
@@ -182,50 +230,17 @@ alter table public.owned_operators replica identity full;
 alter table public.preferred_operators replica identity full;
 
 -- ===========================================================================
--- Roster details and the server-side passcode check (added later).
+-- Roster details (added later).
 -- Additive only: nothing above is renamed or removed. Safe to run again.
 -- ===========================================================================
-
--- Passcode check on the server, so the hash never reaches the browser.
-create or replace function public.team_passcode_is_set()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1 from public.team_settings
-    where id = 1 and coalesce(btrim(passcode_hash), '') <> ''
-  );
-$$;
-
-create or replace function public.check_team_passcode(attempt text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select coalesce((
-    select lower(btrim(passcode_hash)) = encode(sha256(convert_to('r6tp:' || btrim(attempt), 'UTF8')), 'hex')
-    from public.team_settings
-    where id = 1 and coalesce(btrim(passcode_hash), '') <> ''
-  ), false);
-$$;
-
-revoke all on function public.team_passcode_is_set() from public;
-revoke all on function public.check_team_passcode(text) from public;
-grant execute on function public.team_passcode_is_set() to anon, authenticated;
-grant execute on function public.check_team_passcode(text) to anon, authenticated;
 
 -- Adding players from the Roster screen. Names are the player's identity in
 -- the app, so they can be added but not renamed or deleted from the website.
 drop policy if exists "team add profiles" on public.profiles;
 create policy "team add profiles" on public.profiles
-  for insert to anon, authenticated
-  with check (char_length(btrim(name)) between 1 and 24);
-grant insert on public.profiles to anon, authenticated;
+  for insert to authenticated
+  with check (public.is_team_member() and char_length(btrim(name)) between 1 and 24);
+grant insert on public.profiles to authenticated;
 
 -- Per-player details. A profile without a row here is a starter.
 create table if not exists public.player_details (
@@ -257,9 +272,9 @@ alter table public.player_details enable row level security;
 
 drop policy if exists "team all player_details" on public.player_details;
 create policy "team all player_details" on public.player_details
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
-grant select, insert, update, delete on public.player_details to anon, authenticated;
+grant select, insert, update, delete on public.player_details to authenticated;
 
 do $$
 declare
@@ -331,13 +346,13 @@ alter table public.strategy_assignments enable row level security;
 
 drop policy if exists "team all strategies" on public.strategies;
 create policy "team all strategies" on public.strategies
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
 drop policy if exists "team all strategy_assignments" on public.strategy_assignments;
 create policy "team all strategy_assignments" on public.strategy_assignments
-  for all to anon, authenticated using (true) with check (true);
+  for all to authenticated using (public.is_team_member()) with check (public.is_team_member());
 
-grant select, insert, update, delete on public.strategies, public.strategy_assignments to anon, authenticated;
+grant select, insert, update, delete on public.strategies, public.strategy_assignments to authenticated;
 
 do $$
 declare
@@ -355,3 +370,54 @@ begin
 end $$;
 
 alter table public.strategy_assignments replica identity full;
+
+
+-- ===========================================================================
+-- Security hardening (added later). Additive; safe to run again.
+-- ===========================================================================
+
+-- Text limits matching what the app already allows. NOT VALID: older rows
+-- aren't rechecked, so re-running this file never fails on existing data.
+alter table public.tactics drop constraint if exists tactics_name_length;
+alter table public.tactics add constraint tactics_name_length check (char_length(name) <= 120) not valid;
+alter table public.tactics drop constraint if exists tactics_description_length;
+alter table public.tactics add constraint tactics_description_length check (char_length(description) <= 4000) not valid;
+alter table public.map_notes drop constraint if exists map_notes_notes_length;
+alter table public.map_notes add constraint map_notes_notes_length check (char_length(notes) <= 5000) not valid;
+
+-- Private tables of the steam-auth Edge Function (it uses the service role,
+-- which bypasses RLS). Nobody else can read or write them.
+create table if not exists public.steam_nonces (
+  nonce text primary key check (char_length(nonce) <= 255),
+  used_at timestamptz not null default now()
+);
+create table if not exists public.steam_auth_attempts (
+  ip text not null check (char_length(ip) <= 64),
+  at timestamptz not null default now()
+);
+create index if not exists steam_auth_attempts_ip_at_idx on public.steam_auth_attempts (ip, at);
+alter table public.steam_nonces enable row level security;
+alter table public.steam_auth_attempts enable row level security;
+revoke all on public.steam_nonces, public.steam_auth_attempts from anon, authenticated;
+
+-- Steam nonces only matter for 5 minutes; older ones are removed now and then.
+delete from public.steam_nonces where used_at < now() - interval '1 day';
+
+-- The anon key can do nothing: no table, view, sequence or function in this
+-- schema is open to it (older setups granted it everything, including the
+-- removed match tables). Tables the website uses are granted to
+-- authenticated above, and their policies require is_team_member().
+revoke all on all tables in schema public from anon;
+revoke all on all sequences in schema public from anon;
+revoke execute on all functions in schema public from anon;
+alter default privileges in schema public revoke all on tables from anon;
+alter default privileges in schema public revoke all on sequences from anon;
+alter default privileges in schema public revoke execute on functions from anon;
+
+-- ---------------------------------------------------------------------------
+-- OPT-IN: remove the old team passcode (setups made before logins existed).
+-- Nothing uses it any more. Uncomment and run these three lines once.
+-- ---------------------------------------------------------------------------
+-- drop function if exists public.check_team_passcode(text);
+-- drop function if exists public.team_passcode_is_set();
+-- drop table if exists public.team_settings;

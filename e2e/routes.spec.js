@@ -19,7 +19,7 @@ for (const lang of ['en', 'fr']) {
         });
         const problems = [];
 
-        // The first screen (offline / passcode choice) before entering.
+        // The first screen (the offline choice) before entering.
         await page.addInitScript((l) => localStorage.setItem('r6tp.lang', l), lang);
         await page.goto('/');
         problems.push(...(await axeViolations(page)).map((v) => `start screen ${v}`));

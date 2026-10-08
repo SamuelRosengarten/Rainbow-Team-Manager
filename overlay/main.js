@@ -8,10 +8,11 @@
 // The window is click-through during the round (mouse and keyboard go to the
 // game) and takes clicks only on the setup screen or in edit mode (tray menu).
 // Hotkeys: F7 show/hide, F8 next step, F6 previous step.
-import { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, protocol, screen } from 'electron';
+import { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, nativeImage, protocol, screen, shell } from 'electron';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { STEAM_LOGIN, startSteamLoopback, steamLoginUrl } from './loopback.js';
 import { OPACITY_STEPS, cleanOpacity, cleanSize, fitToDisplays, loadSettings, saveSettings, settingsFile } from './settings.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -39,7 +40,10 @@ const MIME = {
   '.woff2': 'font/woff2',
 };
 
-// Network: reads from the team's Supabase project (https + realtime wss) and Google Fonts.
+// Network: the team's Supabase project (https + realtime wss) and Google Fonts.
+// connect-src is narrowed further to the Supabase project by a <meta> policy
+// in the built page (overlay/vite.config.js knows the project URL at build
+// time); the browser applies both policies, so the stricter one wins.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
@@ -141,6 +145,7 @@ function refreshTray() {
       submenu: OPACITY_STEPS.map((v) => ({ label: `${Math.round(v * 100)}%`, type: 'radio', checked: Math.abs(settings.opacity - v) < 0.01, click: () => setOpacity(v) })),
     },
     { label: 'Change strategy or operator', click: changeStrategy },
+    { label: 'Log out', click: () => win?.webContents.send('overlay:sign-out') },
     { type: 'separator' },
     { label: `Next step: ${HOTKEYS.next} · Previous step: ${HOTKEYS.prev}`, enabled: false },
     { type: 'separator' },
@@ -213,6 +218,24 @@ ipcMain.on('overlay:phase', (e, next) => {
   applyInteractivity();
 });
 
+// "Sign in through Steam": Steam opens in the player's browser and comes back
+// to a one-shot server on 127.0.0.1 (loopback.js). One attempt at a time.
+let steamAttempt = null;
+ipcMain.handle('overlay:steam-login', async (e) => {
+  if (!fromOverlay(e)) throw new Error('denied');
+  steamAttempt?.cancel();
+  const attempt = await startSteamLoopback();
+  steamAttempt = attempt;
+  const url = steamLoginUrl({ returnTo: attempt.returnTo, realm: attempt.realm });
+  if (!url.startsWith(`${STEAM_LOGIN}?`)) throw new Error('denied');
+  await shell.openExternal(url);
+  try {
+    return await attempt.result;
+  } finally {
+    if (steamAttempt === attempt) steamAttempt = null;
+  }
+});
+
 ipcMain.on('overlay:resize-by', (e, dw, dh) => {
   if (!fromOverlay(e) || !editMode || !Number.isFinite(dw) || !Number.isFinite(dh)) return;
   const b = win.getBounds();
@@ -234,6 +257,9 @@ if (!app.requestSingleInstanceLock()) {
     screen.on('display-removed', keepOnScreen);
     screen.on('display-metrics-changed', keepOnScreen);
   });
-  app.on('will-quit', () => globalShortcut.unregisterAll());
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
+    steamAttempt?.cancel();
+  });
   app.on('window-all-closed', () => app.quit());
 }

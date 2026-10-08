@@ -187,9 +187,10 @@ describe('picking a strategy', () => {
     const store = new Map();
     const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
     storeChoice({ passcodeOk: true, mapId: 'clubhouse', side: 'attack', strategyId: 'p1', slotKey: 'a', extra: 'x' }, storage);
-    expect(loadChoice(storage)).toEqual({ passcodeOk: true, mapId: 'clubhouse', side: 'attack', strategyId: 'p1', slotKey: 'a' });
+    // Old versions remembered the passcode forever; that flag is dropped.
+    expect(loadChoice(storage)).toEqual({ mapId: 'clubhouse', side: 'attack', strategyId: 'p1', slotKey: 'a' });
     store.set('r6tp.overlay', '{broken');
     expect(loadChoice(storage).strategyId).toBe('');
-    expect(cleanChoice({ side: 'middle', passcodeOk: 'yes' })).toMatchObject({ side: '', passcodeOk: false });
+    expect(cleanChoice({ side: 'middle' })).toMatchObject({ side: '' });
   });
 });

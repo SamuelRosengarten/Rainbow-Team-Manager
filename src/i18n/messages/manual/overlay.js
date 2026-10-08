@@ -1,7 +1,5 @@
 // Hand-written messages: the in-game overlay (src/overlay).
 export const en = {
-  'overlay.passcode.title': 'Team passcode',
-  'overlay.passcode.unlock': 'Unlock',
   'overlay.setup.back': '← Back',
   'overlay.setup.pickMap': 'Which map?',
   'overlay.setup.pickSide': 'Which side?',
@@ -23,8 +21,6 @@ export const en = {
 };
 
 export const fr = {
-  'overlay.passcode.title': 'Code de l’équipe',
-  'overlay.passcode.unlock': 'Déverrouiller',
   'overlay.setup.back': '← Retour',
   'overlay.setup.pickMap': 'Quelle carte ?',
   'overlay.setup.pickSide': 'Quel côté ?',

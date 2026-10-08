@@ -1,6 +1,6 @@
-// The only bridge between the overlay page and Electron: hotkey / tray events
-// in, and the screen phase and edit-mode resizing out. Nothing else (no file
-// system, no Node, no database access) is exposed to the page.
+// The only bridge between the overlay page and Electron: hotkey and tray
+// events in; the screen phase, edit-mode resizing and the Steam sign-in out.
+// Nothing else (no file system, no Node, no database access) is exposed.
 const { contextBridge, ipcRenderer } = require('electron');
 
 const listen = (channel) => (cb) => {
@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('overlay', {
   onStep: listen('overlay:step'),
   /** Tray menu "Change strategy or operator". */
   onReset: listen('overlay:reset'),
+  /** Tray menu "Log out". */
+  onSignOut: listen('overlay:sign-out'),
+  /** "Sign in through Steam": opens Steam in the browser; resolves with Steam's openid.* answer. */
+  steamLogin: () => ipcRenderer.invoke('overlay:steam-login'),
   /** Tray menu "Edit mode": cb(true | false). */
   onEditMode: listen('overlay:edit-mode'),
   /** 'setup' (takes clicks) or 'round' (click-through). */
