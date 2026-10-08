@@ -1,6 +1,6 @@
 // Strings extracted from components/OperatorProfile.jsx (English).
 export default {
-  "operatorProfile.seeTheIntroVideo": "See the intro video.",
+  "operatorProfile.seeTheIntroVideo": "Not confirmed yet.",
   "operatorProfile.attacker": "Attacker",
   "operatorProfile.defender": "Defender",
   "operatorProfile.closeProfile": "Close profile",
@@ -9,6 +9,6 @@ export default {
   "operatorProfile.worksWellWith": "Works well with",
   "operatorProfile.primary": "Primary",
   "operatorProfile.secondary": "Secondary",
-  "operatorProfile.someDetailsForThisOperator": "Some details for this operator still need checking (see docs/DATA_REVIEW.md).",
+  "operatorProfile.someDetailsForThisOperator": "Some details for this operator aren’t confirmed yet.",
   "operatorProfile.opensInANewTab": "(opens in a new tab)",
 };

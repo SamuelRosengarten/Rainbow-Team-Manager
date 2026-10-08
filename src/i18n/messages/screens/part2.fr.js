@@ -36,7 +36,7 @@ export default {
   'operatorLibraryView.noOperatorsMatch': 'Aucun opérateur ne correspond.',
 
   // operatorProfile
-  'operatorProfile.seeTheIntroVideo': 'Voir la vidéo de présentation.',
+  'operatorProfile.seeTheIntroVideo': 'Pas encore confirmé.',
   'operatorProfile.attacker': 'Attaquant',
   'operatorProfile.defender': 'Défenseur',
   'operatorProfile.closeProfile': 'Fermer le profil',
@@ -45,7 +45,7 @@ export default {
   'operatorProfile.worksWellWith': 'Fonctionne bien avec',
   'operatorProfile.primary': 'Arme principale',
   'operatorProfile.secondary': 'Arme secondaire',
-  'operatorProfile.someDetailsForThisOperator': 'Certains détails de cet opérateur restent à vérifier (voir docs/DATA_REVIEW.md).',
+  'operatorProfile.someDetailsForThisOperator': 'Certains détails de cet opérateur ne sont pas encore confirmés.',
   'operatorProfile.opensInANewTab': '(s’ouvre dans un nouvel onglet)',
 
   // operatorsView
