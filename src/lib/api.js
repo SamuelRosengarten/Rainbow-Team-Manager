@@ -108,6 +108,8 @@ function authError(error) {
   if (code === 'user_already_exists' || code === 'email_exists') return new ApiError('auth.error.alreadyRegistered', error);
   if (code === 'signup_disabled' || raw.includes('signups not allowed')) return new ApiError('auth.error.signupDisabled', error);
   if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || error?.status === 429) return new ApiError('auth.error.tooManyAttempts', error);
+  // Supabase couldn't hand the email to the SMTP server (README, "Emails").
+  if (raw.includes('error sending')) return new ApiError('auth.error.emailFailed', error);
   if (code === 'same_password') return new ApiError('auth.error.samePassword', error);
   if (code === 'weak_password' || raw.includes('password should be')) return new ApiError('auth.error.weakPassword', error);
   if (code === 'otp_expired' || raw.includes('expired')) return new ApiError('auth.error.linkExpired', error);
