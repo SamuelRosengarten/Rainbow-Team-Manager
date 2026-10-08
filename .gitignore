@@ -11,3 +11,4 @@ coverage
 npm-debug.log*
 playwright-report/
 test-results/
+overlay/release/

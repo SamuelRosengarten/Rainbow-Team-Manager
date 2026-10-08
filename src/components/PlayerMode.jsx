@@ -9,8 +9,8 @@ import { t as translate, useI18n } from '../i18n/index.js';
 
 const opName = (id) => OPERATORS_BY_ID[id]?.name ?? translate('card.anyOperator');
 
-/** "Who are you?" grid of the strategy's operators. */
-function Chooser({ strategy, assigned, profile, onPick }) {
+/** "Who are you?" grid of the strategy's operators (also the overlay's slot picker). */
+export function Chooser({ strategy, assigned, profile, onPick }) {
   const { t } = useI18n();
   return (
     <section className="panel" aria-labelledby="pick-title">

@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import { reactRefresh } from 'eslint-plugin-react-refresh';
 
 export default [
-  { ignores: ['dist', 'node_modules'] },
+  { ignores: ['dist', 'node_modules', 'overlay/dist', 'overlay/release', 'overlay/node_modules'] },
   js.configs.recommended,
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.vite(),
@@ -19,5 +19,9 @@ export default [
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
     },
+  },
+  {
+    files: ['**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
   },
 ];

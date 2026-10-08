@@ -1,0 +1,262 @@
+/* ===========================================================================
+   In-game overlay (src/overlay). A transparent always-on-top window: the page
+   itself is see-through, the panel is a dark translucent card, text is large
+   enough to read at a glance. Builds on theme.css tokens.
+   =========================================================================== */
+
+:root {
+  --ov-alpha: 0.82;
+  --ov-panel: rgba(8, 10, 12, var(--ov-alpha));
+}
+
+html,
+body {
+  background: transparent;
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  min-height: 0;
+  font-size: 17px;
+}
+#root {
+  height: 100%;
+}
+
+.ov {
+  position: relative;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--ov-panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.ov__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+}
+
+/* Setup and edit mode fill the window (edit mode shows its edges); in-round
+   the card is only as tall as its content, the rest stays see-through. */
+.ov--setup,
+.ov--editing {
+  height: 100%;
+}
+
+/* In-round: nothing can be clicked (the window is click-through too). */
+.ov--round .ov__body,
+.ov--round .ov__body * {
+  pointer-events: none;
+}
+.ov--round .ov__body {
+  overflow: hidden;
+}
+
+/* Edit mode: the whole window drags; the bar and grip stay usable. */
+.ov--editing {
+  border: 2px dashed var(--accent);
+  -webkit-app-region: drag;
+  app-region: drag;
+  cursor: move;
+}
+.ov--editing button,
+.ov--editing input,
+.ov--editing .ov-grip {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+.ov-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ov-grip {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 22px;
+  height: 22px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--accent) 50%);
+  border-radius: 0 0 var(--radius-lg) 0;
+  touch-action: none;
+}
+
+.ov-status {
+  margin: 0;
+  color: var(--muted);
+}
+.ov-keys {
+  margin: 0;
+  padding: 4px 14px 8px;
+  color: var(--subtle);
+  font-size: 0.8rem;
+}
+
+/* ---------- Setup ---------- */
+.ov-setup__body {
+  display: grid;
+  gap: 12px;
+}
+.ov-setup__title {
+  font-size: 1.25rem;
+}
+.ov-setup__nav {
+  display: flex;
+}
+.ov-choices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.ov-choice {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+}
+.ov-choice:hover,
+.ov-choice:focus-visible {
+  border-color: var(--accent);
+}
+.ov-choice--attack {
+  border-top: 3px solid var(--attack);
+}
+.ov-choice--defend {
+  border-top: 3px solid var(--defend);
+}
+.ov-choice__name {
+  font-weight: 700;
+}
+.ov-choice__sub {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.ov .who-grid {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+
+/* ---------- In-round ---------- */
+.ov-round {
+  display: grid;
+  gap: 10px;
+}
+.ov-round__where {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ov-me {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 10px;
+  border-left: 4px solid var(--slot);
+}
+.ov-me__who {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-width: 0;
+}
+.ov-me__op {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+.ov-me__step {
+  margin-left: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ov-now {
+  display: grid;
+  gap: 6px;
+}
+.ov-now__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.ov-now__clock {
+  font-family: var(--font-mono, monospace);
+  color: var(--accent);
+}
+.ov-bullets {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+.ov-bullets--util {
+  list-style: none;
+  padding-left: 0;
+  font-size: 1rem;
+}
+.ov-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--slot);
+  color: #06090d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+.ov-now__idle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.ov-map {
+  position: relative;
+  margin: 0;
+}
+.ov-map__floor {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  z-index: 1;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.ov-map__board {
+  box-shadow: none;
+}
+/* Floor-plan review notices aren't needed mid-round (and get cut off when zoomed). */
+.ov-map .ml-approx,
+.ov-map .ml-unverified {
+  display: none;
+}

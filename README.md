@@ -13,6 +13,7 @@ Screens (bottom tab bar on phones, top bar on desktop; each has its own link, e.
 - **Maps**: every map and bomb site, the **floor plans** you've added (with calibrated callouts and a list of missing ones), the plans for each site and side, and the team's map notes.
 - **Operators**: every operator with their portrait, roles and gadget, and the well-known pairs (Thermite + Thatcher, Smoke + Mute…).
 - **Team**: the roster and everyone's operator pools. The old lineup roller is still there (**Lineup roller**).
+- **In-game overlay** (Windows desktop app, optional): your part of the chosen strategy on top of Siege while you play, one step at a time with hotkeys. Read-only. See [In-game overlay](#in-game-overlay).
 
 The **tactical map** supports players (with operator portraits), enemies, spawns, waypoints, drones and drone routes, cameras, operator-specific utility and general gadgets, traps, hard/soft/vertical breaches, reinforcements, rotation holes, plant spots, objectives, movement / entry / clearing / rotation routes, hold, contest, danger, no-entry, watch and enemy-likely areas (draw, move, resize, label), crossfires (player A + player B → an engagement area), and notes attached to a player, marker, location or step. Every object can carry a purpose, timing and instructions. Undo/redo, keyboard shortcuts and a grouped toolbar included.
 
@@ -31,7 +32,8 @@ Stack: Vite + React (JavaScript), Supabase (Postgres + Realtime), Vitest. It dep
 7. [Adding operators, portraits and maps](#adding-operators) (and [operator profiles](#operator-profiles-and-intro-videos))
 8. [Strategy library](#strategy-library) and [quick tactics](#tactics-quick-tactics)
 9. [How rolling works](#how-rolling-works)
-10. [Troubleshooting](#troubleshooting)
+10. [In-game overlay](#in-game-overlay)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -179,6 +181,7 @@ The pure logic lives in `src/lib/` (tactical, strategies, strategy matching, syn
 - passcode hashing, which matches the SQL formula
 - the strategy document (v2 normalisation, legacy types, versions), round clocks and the execute timeline, coach briefings and player views, comparison stats, board geometry, fitting a strategy to five operators, and synergies
 - every operator has a portrait file, and synergy pairs use real same-side operators
+- the in-game overlay: step navigation (stops at the first and last step), the player filter (only your slot's objects), saving and loading window settings, and the read-only guard
 
 ---
 
@@ -420,7 +423,9 @@ src/
                  editor, CoachMode, PlayerMode, StrategyCompare), MapsView,
                  OperatorLibraryView, TeamView, PlanView (lineup roller).
                  Board: TacticalBoard, MapLayer, BoardEditor, ObjectInspector, FloorPlanPanel.
+  overlay/       the in-game overlay page (read-only; see "In-game overlay")
   styles.css, tactical.css
+overlay/         the overlay's Electron app: main.js, preload.cjs, settings.js, vite.config.js
 supabase/schema.sql
 docs/DATA_REVIEW.md   data to verify by hand
 docs/MAP_ASSETS.md    adding and verifying real floor plans
@@ -428,6 +433,53 @@ src/data/floorPlans.json  floor-plan manifest (empty until plans are added)
 public/maps/          floor-plan images (<map>/<floor>.webp)
 public/operators/     operator portraits (<id>.svg)
 ```
+
+## In-game overlay
+
+A small Windows app (`overlay/`, Electron) that shows **only your part** of a strategy in a see-through window on top of Rainbow Six Siege. It's a **read-only viewer**: it can't change tactics, and it never saves, deletes or assigns anything in the database.
+
+**What you see during a round:** map · site · side · strategy on one line, your operator and tactical role, `STEP 3 / 7`, your instructions for that step as short bullets, utility to place and crossfires you hold now, and a mini-map zoomed to **your** positions, routes, utility and crossfires only. Nothing about other players, no coach notes, no timer.
+
+**Safe with BattlEye.** The overlay is a separate always-on-top window. It doesn't touch the game: no injection, no reading game memory, no DirectX hooks, no screen capture.
+
+**Siege must run in Borderless windowed mode** (Options → Display → Display mode). In exclusive full screen, Windows draws the game over every other window, so the overlay can't show.
+
+### Install and run
+
+On Windows, from the repository root (with your `.env` filled in, so the overlay can reach your team's strategies):
+
+```bash
+npm ci
+npm run overlay:install   # Electron and electron-builder, into overlay/node_modules
+npm run overlay:build     # installer + portable .exe in overlay/release/
+```
+
+Run the installer (`R6 Tactical Overlay Setup <version>.exe`) or the portable `.exe`. While working on it, `npm run overlay:dev` opens the overlay with hot reload. Build on Windows: electron-builder needs Windows (or Wine) for the Windows targets. Without Supabase settings the overlay shows the built-in strategies only.
+
+### Using it
+
+1. **Setup** (before the match, the only screen that takes clicks): team passcode (when `VITE_REQUIRE_PASSCODE` is on, checked with `check_team_passcode()` like the web app), then map → side → strategy → **Who are you playing?** The overlay remembers your choice; next launch goes straight to the round view. To pick again, use the tray menu → **Change strategy or operator**.
+2. **In the round** the window is **click-through**: mouse and keyboard go to the game.
+
+| Hotkey | Does |
+| --- | --- |
+| **F7** | show / hide the overlay |
+| **F8** | next step |
+| **F6** | previous step |
+
+The step only changes when you press a key. If another app already uses one of these keys, the tray icon's tooltip says which.
+
+**Edit mode** (tray icon → **Edit mode**): drag the window to move it, drag the bottom-right corner to resize. This only moves the window; it never edits tactics. Turn edit mode off and the window is click-through again. **Opacity** is in the tray menu (40–100%). Position, size and opacity are saved (`overlay-settings.json` in the app's user data folder) and restored on launch. If the monitor it was on is gone, the overlay comes back on your main screen.
+
+### How it's built
+
+- `overlay/main.js`: the Electron window (transparent, frameless, `setAlwaysOnTop(true, 'screen-saver')`, hidden from the taskbar), tray menu, global hotkeys and click-through. The page is served from `app://overlay/` with a content security policy.
+- `overlay/preload.cjs`: the only bridge. It exposes the hotkey and tray events, the screen phase and edit-mode resizing; no Node, file system or database access (`contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`).
+- `overlay/settings.js`: window position, size and opacity (tested in `overlay/settings.test.js`).
+- `src/overlay/`: the page. A separate Vite entry (`overlay/vite.config.js`) that reuses the read-only `TacticalBoard`, the "Who are you playing?" chooser and `src/lib` / `src/i18n`. The editor isn't in its bundle.
+- `src/overlay/noWrites.test.js` fails if overlay code calls `.insert` / `.update` / `.upsert` / `.delete`, imports any database function other than the read ones in `src/overlay/readApi.js`, or reaches the editor, builder or undo history.
+
+---
 
 ## Troubleshooting
 
