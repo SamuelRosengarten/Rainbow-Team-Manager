@@ -16,8 +16,8 @@ Roles are a judgement call. Most of the classic operators are well established. 
 
 | Operator | Side | Assigned | Why unsure |
 | --- | --- | --- | --- |
-| Solid Snake | attack | intel | I couldn't confirm the kit in detail |
-| Rauora | attack | support | Placed as a line-of-sight / doorway utility op |
+| Solid Snake | attack | intel | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Solid_Snake) (Oct 2026); secondary weapons not listed there |
+| Rauora | attack | support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Rauora) (Oct 2026) |
 | Deimos | attack | intel | Tracking-style kit; could also be a fragger/roamer-hunter |
 | Brava | attack | support | Gadget hijack; could also be intel |
 | Ram | attack | soft-breacher | Could also count as support (utility clear) |
@@ -27,7 +27,7 @@ Roles are a judgement call. Most of the classic operators are well established. 
 | Nøkk | attack | support | Flanker; no exact role fits |
 | Glaz | attack | support | Sniper; no exact role fits |
 | Noor | defend | anchor, support | New in Y11S3; shield counter / plant denial |
-| Denari | defend | support | I couldn't confirm the kit in detail |
+| Denari | defend | anchor, support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Denari) (Oct 2026; Glaive-12 from its patch notes). Ubisoft lists Anti-Entry / Crowd Control: a site trapper like Frost or Thorn |
 | Skopós | defend | roamer, intel | Two-body robot kit |
 | Sentry | defend | anchor, support | Flexible "pick your gadgets" operator |
 | Tubarão | defend | support | Gadget-freezing utility |
@@ -41,7 +41,7 @@ Written from memory, **not** checked against the current season. Ubisoft changes
 
 - **Health / speed** for everyone. Values are 1 to 3 (Siege X health and speed ratings).
 - **Weapons**. Lists hold the main options only; secondary gadgets are left out on purpose.
-- **Marked `"check": true`** (the profile shows a "needs checking" note): Deimos, Striker, Rauora, Solid Snake, Sentry, Skopós, Denari, Noor. Rauora, Solid Snake, Denari and Noor have no weapons listed and only a rough ability description.
+- **Marked `"check": true`** (the profile shows a "needs checking" note): Deimos, Striker, Solid Snake, Sentry, Skopós, Noor. Noor has no weapons listed (no Liquipedia page yet) and Solid Snake no secondary weapons. Rauora and Denari were filled in from Liquipedia in October 2026.
 - **Intro videos**: every profile links to a YouTube search. Add a `"video"` URL to pin the exact video.
 
 ## Floor plans (`src/data/floorPlans.json`)
