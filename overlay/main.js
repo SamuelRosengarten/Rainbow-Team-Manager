@@ -83,11 +83,16 @@ function persist() {
   }, 400);
 }
 
-/** Click-through unless the setup screen shows or edit mode is on. */
+/**
+ * Click-through unless the setup screen shows or edit mode is on. Mouse moves
+ * are not forwarded to the page ({ forward: true }): nothing in the round view
+ * reacts to the mouse, and on Windows forwarding installs a system-wide
+ * low-level mouse hook that every mouse event in the game would go through.
+ */
 function applyInteractivity() {
   if (!win) return;
   const interactive = phase === 'setup' || editMode;
-  win.setIgnoreMouseEvents(!interactive, interactive ? undefined : { forward: true });
+  win.setIgnoreMouseEvents(!interactive);
   win.setFocusable(interactive);
   if (!interactive && win.isFocused()) win.blur();
 }

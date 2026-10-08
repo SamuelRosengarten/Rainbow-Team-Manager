@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chooser } from '../components/PlayerMode.jsx';
 import { checkPasscode } from '../lib/passcode.js';
 import { errorMsg } from '../lib/errors.js';
@@ -13,6 +13,17 @@ export function PasscodeStep({ onPass }) {
   const [wrong, setWrong] = useState(false);
   const [error, setError] = useState(null);
   const [checking, setChecking] = useState(false);
+
+  // No passcode set for the team: nothing to ask.
+  useEffect(() => {
+    let cancelled = false;
+    passcodeStatus()
+      .then((gate) => !cancelled && !gate.set && onPass())
+      .catch(() => {}); // the form stays; submitting shows the error
+    return () => {
+      cancelled = true;
+    };
+  }, [onPass]);
 
   async function submit(e) {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import RoundView from './RoundView.jsx';
 import Setup, { PasscodeStep } from './Setup.jsx';
 import { isDesktop, onEditMode, onReset, onStep, resizeBy, setPhase } from './bridge.js';
@@ -50,14 +50,18 @@ export default function OverlayApp() {
   const locked = REQUIRE_PASSCODE && isConfigured && !choice.passcodeOk;
   const data = useOverlayData(!locked);
 
-  const update = (patch) =>
-    setChoice((c) => {
-      const next = { ...c, ...patch };
-      storeChoice(next);
-      return next;
-    });
+  const update = useCallback(
+    (patch) =>
+      setChoice((c) => {
+        const next = { ...c, ...patch };
+        storeChoice(next);
+        return next;
+      }),
+    [],
+  );
+  const unlock = useCallback(() => update({ passcodeOk: true }), [update]);
 
-  useEffect(() => onReset(() => update(CLEARED)), []);
+  useEffect(() => onReset(() => update(CLEARED)), [update]);
   useEffect(() => onEditMode(setEditing), []);
 
   const strategy = data.strategies.find((s) => s.id === choice.strategyId) ?? null;
@@ -69,14 +73,18 @@ export default function OverlayApp() {
 
   useEffect(() => onStep((delta) => setStep((s) => ({ key: stepKey, index: moveStep(s.key === stepKey ? s.index : 0, delta, count) }))), [stepKey, count]);
 
+  // A strategy and operator were picked but are gone now (deleted or changed in
+  // the web app, maybe mid-match): say so without taking clicks over the game.
+  const gone = !locked && data.status === 'ready' && !ready && Boolean(choice.strategyId && choice.slotKey);
+
   // Setup and errors take clicks; loading and the round view are click-through.
-  const phase = ready || (!locked && data.status === 'loading') ? 'round' : 'setup';
+  const phase = ready || gone || (!locked && data.status === 'loading') ? 'round' : 'setup';
   useEffect(() => {
     setPhase(phase);
   }, [phase]);
 
   let body;
-  if (locked) body = <PasscodeStep onPass={() => update({ passcodeOk: true })} />;
+  if (locked) body = <PasscodeStep onPass={unlock} />;
   else if (data.status === 'loading') body = <p className="ov-status">{t('screens.connecting')}</p>;
   else if (data.status === 'error') {
     body = (
@@ -90,6 +98,7 @@ export default function OverlayApp() {
       </div>
     );
   } else if (ready) body = <RoundView strategy={strategy} slotKey={choice.slotKey} stepIndex={stepIndex} />;
+  else if (gone) body = <p className="ov-status">{t('overlay.round.gone')}</p>;
   else {
     body = (
       <Setup

@@ -59,6 +59,8 @@ describe('step navigation (F8 / F6)', () => {
     expect(moveStep(0, 1, 3)).toBe(1);
     expect(moveStep(0, -1, 3)).toBe(0);
     expect(moveStep(5, 0, 3)).toBe(2);
+    // the strategy lost steps since the index was stored: F6 still goes back one
+    expect(moveStep(5, -1, 3)).toBe(1);
   });
 
   it('a strategy without steps is one "whole round" page', () => {
