@@ -70,7 +70,7 @@ jobs:
           retention-days: 7
 
   database:
-    name: Team isolation on a real Postgres
+    name: Team isolation and self-serve on a real Postgres
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -96,7 +96,8 @@ jobs:
       - run: npm ci
 
       # Builds throwaway databases from supabase/schema.sql (and an upgrade from
-      # the schema before teams) and checks every team only reaches its own rows.
+      # the schemas before teams and self-serve), checks every team only reaches its
+      # own rows, and exercises create/join/captain/leave and their limits.
       - name: Database isolation tests
         run: npm run test:db
         env:

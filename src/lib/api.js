@@ -53,6 +53,9 @@ export function isMissingSchema(error) {
  * { id, values }; the screen translates it. (The database never sends text we show.)
  */
 export function friendlyError(error) {
+  // The self-serve team functions say why they refused: "r6:<reason>".
+  const own = /^r6:([a-z-]+)$/.exec(`${error?.message ?? ''}`.trim());
+  if (own) return { id: `team.error.${own[1]}` };
   const raw = `${error?.message ?? ''} ${error?.details ?? ''} ${error?.hint ?? ''}`.toLowerCase();
   const code = error?.code ?? '';
   if (
@@ -101,6 +104,9 @@ function authError(error) {
   const raw = `${error?.message ?? ''}`.toLowerCase();
   if (error instanceof TypeError || raw.includes('failed to fetch') || raw.includes('network')) return new ApiError('error.db.unreachable', error);
   if (code === 'invalid_credentials' || raw.includes('invalid login credentials')) return new ApiError('auth.error.wrongPassword', error);
+  if (code === 'email_not_confirmed' || raw.includes('email not confirmed')) return new ApiError('auth.error.notConfirmed', error);
+  if (code === 'user_already_exists' || code === 'email_exists') return new ApiError('auth.error.alreadyRegistered', error);
+  if (code === 'signup_disabled' || raw.includes('signups not allowed')) return new ApiError('auth.error.signupDisabled', error);
   if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || error?.status === 429) return new ApiError('auth.error.tooManyAttempts', error);
   if (code === 'same_password') return new ApiError('auth.error.samePassword', error);
   if (code === 'weak_password' || raw.includes('password should be')) return new ApiError('auth.error.weakPassword', error);
@@ -132,6 +138,22 @@ export const sendPasswordReset = (email, redirectTo) => auth(db().auth.resetPass
 
 export const updatePassword = (password) => auth(db().auth.updateUser({ password }));
 
+/**
+ * Create an account (email + password). Supabase emails a confirmation link
+ * that comes back to `redirectTo`. For an email that's already registered,
+ * Supabase answers the same way without sending anything (so nobody can
+ * test which emails exist): that's `alreadyRegistered`.
+ * @returns {Promise<{ alreadyRegistered: boolean, signedIn: boolean }>}
+ */
+export async function signUp(email, password, redirectTo) {
+  const data = await auth(db().auth.signUp({ email: email.trim().toLowerCase(), password, options: { emailRedirectTo: redirectTo } }));
+  const identities = data?.user?.identities;
+  return { alreadyRegistered: Array.isArray(identities) && identities.length === 0, signedIn: Boolean(data?.session) };
+}
+
+/** Send the confirmation email again. */
+export const resendConfirmation = (email, redirectTo) => auth(db().auth.resend({ type: 'signup', email: email.trim().toLowerCase(), options: { emailRedirectTo: redirectTo } }));
+
 /** Sign out on this device (this session's refresh token is revoked on the server). */
 export const signOut = () => auth(db().auth.signOut({ scope: 'local' }));
 
@@ -154,6 +176,44 @@ export function setTeam(next) {
 
 export const currentTeam = () => team;
 
+// ---------------------------------------------------------------------------
+// Self-serve teams (supabase/selfserve.sql). Create and join answer
+// { ok, reason }; captain actions fail with "r6:<reason>" (friendlyError).
+// ---------------------------------------------------------------------------
+
+/** Create a team; the caller becomes its captain. @returns {Promise<{ ok: true, team } | { ok: false, reason }>} */
+export async function createMyTeam(teamName, playerName) {
+  const r = await run(db().rpc('create_my_team', { team_name: teamName.trim(), player_name: playerName.trim() }));
+  return r?.ok ? { ok: true, team: cleanTeam(r.team) } : { ok: false, reason: String(r?.reason ?? 'unknown') };
+}
+
+/** The team behind an invite code and its players without a login. @returns {Promise<{ ok: true, team: { name }, players: { id, name }[] } | { ok: false, reason }>} */
+export async function peekInvite(code) {
+  const r = await run(db().rpc('peek_invite', { code }));
+  if (!r?.ok) return { ok: false, reason: String(r?.reason ?? 'unknown') };
+  return { ok: true, team: { name: String(r.team?.name ?? '') }, players: (r.players ?? []).map((p) => ({ id: String(p.id), name: String(p.name) })) };
+}
+
+/** Join with an invite code, as a new player or as `existingProfileId`. @returns {Promise<{ ok: true, team } | { ok: false, reason }>} */
+export async function joinTeam(code, playerName, existingProfileId = null) {
+  const r = await run(db().rpc('join_team', { code, player_name: (playerName ?? '').trim(), existing_profile_id: existingProfileId }));
+  return r?.ok ? { ok: true, team: cleanTeam(r.team) } : { ok: false, reason: String(r?.reason ?? 'unknown') };
+}
+
+/** @returns {Promise<{ profileId, player, role, isMe }[]>} */
+export async function fetchTeamMembers() {
+  const rows = await run(db().rpc('my_team_members'));
+  return (rows ?? []).map((r) => ({ profileId: r.profile_id, player: r.player, role: r.role === 'captain' ? 'captain' : 'member', isMe: Boolean(r.is_me) }));
+}
+
+export const regenerateInvite = () => run(db().rpc('regenerate_invite'));
+export const setInviteEnabled = (enabled) => run(db().rpc('set_invite_enabled', { enabled: Boolean(enabled) }));
+export const renameTeam = (name) => run(db().rpc('rename_team', { new_name: name.trim() }));
+export const removeMember = (profileId) => run(db().rpc('remove_member', { member_profile_id: profileId }));
+export const setRole = (profileId, role) => run(db().rpc('set_role', { member_profile_id: profileId, new_role: role }));
+export const deleteTeam = (confirmName) => run(db().rpc('delete_team', { confirm_name: confirmName }));
+export const leaveTeam = () => run(db().rpc('leave_team'));
+
 /** The signed-in member's team, or null (a database without teams yet). */
 export async function fetchMyTeam() {
   try {
@@ -164,7 +224,7 @@ export async function fetchMyTeam() {
   }
 }
 
-const STEAM_ERRORS = { 'not-member': 'auth.error.notMember', 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp' };
+const STEAM_ERRORS = { 'rate-limited': 'auth.error.tooManyAttempts', 'not-configured': 'auth.error.steamNotSetUp' };
 
 /**
  * Finish "Sign in through Steam": the steam-auth Edge Function checks the

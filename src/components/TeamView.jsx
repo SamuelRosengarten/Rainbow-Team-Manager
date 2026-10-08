@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TeamSettings from './TeamSettings.jsx';
 import Icon from './Icon.jsx';
 import OperatorIcon from './OperatorIcon.jsx';
 import OperatorsView from './OperatorsView.jsx';
@@ -161,9 +162,10 @@ function Roster({ profile, prefs, addPlayer, updatePlayer, refreshStats }) {
 }
 
 /** Players: the roster (roles, notes) plus everyone's operator pools. */
-export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, refreshStats, setOwned, setPreference }) {
+export default function TeamView({ sub, navigate, profile, prefs, addPlayer, updatePlayer, refreshStats, setOwned, setPreference, team = null, onTeamChanged }) {
   const { t } = useI18n();
-  const tab = sub === 'operators' ? 'operators' : 'roster';
+  // Team settings exist online, for a signed-in member's team.
+  const tab = sub === 'operators' ? 'operators' : sub === 'settings' && team ? 'settings' : 'roster';
   return (
     <section className="page" aria-labelledby="team-title">
       <header className="page__head">
@@ -188,12 +190,15 @@ export default function TeamView({ sub, navigate, profile, prefs, addPlayer, upd
         >
           <Icon name="shield" size={16} /> {t('teamView.operatorPools')}
         </button>
+        {team && (
+          <button type="button" className="tabs__btn" aria-pressed={tab === 'settings'} onClick={() => navigate('team/settings')}>
+            <Icon name="list" size={16} /> {t('teamSettings.tab')}
+          </button>
+        )}
       </div>
-      {tab === 'roster' ? (
-        <Roster profile={profile} prefs={prefs} addPlayer={addPlayer} updatePlayer={updatePlayer} refreshStats={refreshStats} />
-      ) : (
-        <OperatorsView key={profile} profile={profile} prefs={prefs} setOwned={setOwned} setPreference={setPreference} />
-      )}
+      {tab === 'roster' && <Roster profile={profile} prefs={prefs} addPlayer={addPlayer} updatePlayer={updatePlayer} refreshStats={refreshStats} />}
+      {tab === 'operators' && <OperatorsView key={profile} profile={profile} prefs={prefs} setOwned={setOwned} setPreference={setPreference} />}
+      {tab === 'settings' && <TeamSettings team={team} onChanged={onTeamChanged} />}
     </section>
   );
 }

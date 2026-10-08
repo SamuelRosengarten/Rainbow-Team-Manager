@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { backupDocument, channelName, cleanTeam, memberLabel, realtimeBindings, teamStateKey } from './teamScope.js';
+import { backupDocument, channelName, cleanTeam, isCaptain, memberLabel, realtimeBindings, teamStateKey } from './teamScope.js';
 
 const TEAM = { id: '6f1c2d3e-4a5b-4c6d-8e7f-901234567890', name: 'Team Alpha' };
 
 describe('team scope', () => {
   it('reads my_team() and ignores anything else', () => {
-    expect(cleanTeam(TEAM)).toEqual(TEAM);
-    expect(cleanTeam({ id: TEAM.id, name: '  ' + 'x'.repeat(60) })).toEqual({ id: TEAM.id, name: 'x'.repeat(40) });
+    expect(cleanTeam(TEAM)).toEqual({ ...TEAM, role: 'member' });
+    expect(cleanTeam({ id: TEAM.id, name: '  ' + 'x'.repeat(60) })).toEqual({ id: TEAM.id, name: 'x'.repeat(40), role: 'member' });
+    expect(cleanTeam({ ...TEAM, role: 'captain', player: 'Sam', inviteCode: 'ABCDEFGH23', inviteEnabled: false })).toEqual({ ...TEAM, role: 'captain', player: 'Sam', inviteCode: 'ABCDEFGH23', inviteEnabled: false });
+    // A member's team never carries an invite code, even if one were sent.
+    expect(cleanTeam({ ...TEAM, role: 'member', inviteCode: 'ABCDEFGH23' })).not.toHaveProperty('inviteCode');
+    expect(isCaptain(cleanTeam({ ...TEAM, role: 'captain' }))).toBe(true);
+    expect(isCaptain(cleanTeam({ ...TEAM, role: 'boss' }))).toBe(false);
     for (const bad of [null, undefined, {}, { id: 'not-a-uuid', name: 'x' }, { id: 42 }]) expect(cleanTeam(bad)).toBeNull();
   });
 

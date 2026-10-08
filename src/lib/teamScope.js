@@ -4,12 +4,25 @@
 // what the app asks for, as a second line of defence and to keep Realtime
 // quiet: pure functions, tested in teamScope.test.js.
 
-/** { id, name } from my_team(), or null (not a member, or a database without teams yet). */
+/**
+ * The member's team from my_team(), or null (not in a team, or a database
+ * without teams yet): { id, name, role: 'captain' | 'member', player } plus,
+ * for captains only, { inviteCode, inviteEnabled }.
+ */
 export function cleanTeam(raw) {
   const id = typeof raw?.id === 'string' ? raw.id.trim() : '';
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  return { id, name: String(raw.name ?? '').trim().slice(0, 40) };
+  const team = { id, name: String(raw.name ?? '').trim().slice(0, 40), role: raw.role === 'captain' ? 'captain' : 'member' };
+  if (typeof raw.player === 'string') team.player = raw.player.slice(0, 24);
+  if (team.role === 'captain' && typeof raw.inviteCode === 'string') {
+    team.inviteCode = raw.inviteCode.slice(0, 10);
+    team.inviteEnabled = raw.inviteEnabled !== false;
+  }
+  return team;
 }
+
+/** Captains manage the team (invites, members, name). */
+export const isCaptain = (team) => team?.role === 'captain';
 
 /**
  * Which team_state row to update: the member's team's, or the single row of a

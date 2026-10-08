@@ -1458,6 +1458,99 @@ fieldset.field > legend {
   display: grid;
   gap: var(--sp-3);
 }
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.start-grid {
+  display: grid;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+}
+.start-card {
+  padding: var(--sp-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.start-card__title {
+  font-size: 1.1rem;
+}
+.start-pick {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.start-pick__opt {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  cursor: pointer;
+}
+.team-settings {
+  display: grid;
+  gap: var(--sp-4);
+}
+.ts-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3);
+}
+.ts-invite {
+  display: grid;
+  gap: 4px;
+  margin: var(--sp-3) 0;
+}
+.ts-invite__link {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.ts-invite__code {
+  color: var(--muted);
+}
+.ts-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+.ts-member {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.ts-member__name {
+  flex: 1;
+  min-width: 8rem;
+  font-weight: 600;
+}
+.ts-member__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1, 4px);
+}
+.role-tag--captain {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+.ts-danger {
+  border-color: var(--danger-soft);
+}
 .auth-or {
   display: flex;
   align-items: center;

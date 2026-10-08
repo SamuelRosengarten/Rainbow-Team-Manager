@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { exportTeamData } from '../lib/api.js';
+import { createMyTeam, exportTeamData, joinTeam, peekInvite } from '../lib/api.js';
+import { cleanInviteCode, isInviteCode, rememberInvite, validPlayerName, validTeamName } from '../lib/invite.js';
 import { errorMsg } from '../lib/errors.js';
 import { steamLoginHref } from '../lib/steamLogin.js';
 import LanguageToggle from './LanguageToggle.jsx';
@@ -82,12 +83,188 @@ export function ConfigMissingScreen({ onOffline }) {
   );
 }
 
-/** Signed out: email + password, or Steam. */
-export function LoginScreen({ auth }) {
+/** Signed out: sign in or create an account (email + password), or Steam. */
+export function LoginScreen({ auth, linkError = null, joining = false }) {
   const { t } = useI18n();
   return (
     <Shell title={t('auth.title')}>
-      <LoginForm auth={auth} onSteam={() => location.assign(steamLoginHref())} />
+      {joining && <p className="notice">{t('start.signInToJoin')}</p>}
+      <LoginForm auth={auth} allowSignUp linkError={linkError} onSteam={() => location.assign(steamLoginHref())} />
+    </Shell>
+  );
+}
+
+/** Create a team: its name and your player name. You become its captain. */
+function CreateTeam({ onDone }) {
+  const { t } = useI18n();
+  const [team, setTeam] = useState('');
+  const [player, setPlayer] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await createMyTeam(team, player);
+      if (r.ok) await onDone();
+      else setError(t(`start.error.${r.reason}`));
+    } catch (err) {
+      setError(tm(errorMsg(err)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="auth-form start-card" onSubmit={submit} aria-labelledby="start-create">
+      <h2 id="start-create" className="start-card__title">{t('start.create.title')}</h2>
+      <p className="muted small">{t('start.create.body')}</p>
+      <label className="field">
+        <span className="field__label">{t('start.teamName')}</span>
+        <input className="input" maxLength={40} value={team} onChange={(e) => setTeam(e.target.value)} required />
+      </label>
+      <label className="field">
+        <span className="field__label">{t('start.yourPlayerName')}</span>
+        <input className="input" maxLength={24} value={player} onChange={(e) => setPlayer(e.target.value)} required />
+      </label>
+      {error && (
+        <p className="notice notice--error" role="alert">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="btn btn--primary btn--block" disabled={busy || !validTeamName(team) || !validPlayerName(player)}>
+        {t('start.create.submit')}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * Join with an invite code: check the code (shows the team and its players
+ * who have no login yet), then join as one of them or as a new player.
+ */
+function JoinTeam({ initialCode, onDone }) {
+  const { t } = useI18n();
+  const [code, setCode] = useState(initialCode ?? '');
+  const [invite, setInvite] = useState(null); // peekInvite() result once the code checks out
+  const [pick, setPick] = useState('new'); // 'new' or a profile id
+  const [player, setPlayer] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function guard(fn) {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+    } catch (err) {
+      setError(tm(errorMsg(err)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const check = (e) => {
+    e?.preventDefault();
+    return guard(async () => {
+      const r = await peekInvite(cleanInviteCode(code));
+      if (r.ok) {
+        setInvite(r);
+        setPick('new');
+      } else setError(t(`start.error.${r.reason}`));
+    });
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    return guard(async () => {
+      const r = await joinTeam(cleanInviteCode(code), pick === 'new' ? player : '', pick === 'new' ? null : pick);
+      if (r.ok) {
+        rememberInvite(null);
+        await onDone();
+      } else setError(t(`start.error.${r.reason}`));
+    });
+  };
+
+  return (
+    <form className="auth-form start-card" onSubmit={invite ? submit : check} aria-labelledby="start-join">
+      <h2 id="start-join" className="start-card__title">{t('start.join.title')}</h2>
+      <p className="muted small">{t('start.join.body')}</p>
+      <label className="field">
+        <span className="field__label">{t('start.inviteCode')}</span>
+        <input
+          className="input input--mono"
+          value={code}
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(e) => {
+            setCode(e.target.value);
+            setInvite(null);
+          }}
+          required
+        />
+      </label>
+      {invite && (
+        <fieldset className="start-pick">
+          <legend className="field__label">{t('start.join.who', { team: invite.team.name })}</legend>
+          <label className="start-pick__opt">
+            <input type="radio" name="join-as" checked={pick === 'new'} onChange={() => setPick('new')} /> {t('start.join.newPlayer')}
+          </label>
+          {pick === 'new' && (
+            <label className="field">
+              <span className="field__label">{t('start.yourPlayerName')}</span>
+              <input className="input" maxLength={24} value={player} onChange={(e) => setPlayer(e.target.value)} />
+            </label>
+          )}
+          {invite.players.map((p) => (
+            <label key={p.id} className="start-pick__opt">
+              <input type="radio" name="join-as" checked={pick === p.id} onChange={() => setPick(p.id)} /> {t('start.join.iAm', { player: p.name })}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      {error && (
+        <p className="notice notice--error" role="alert">
+          {error}
+        </p>
+      )}
+      {invite ? (
+        <button type="submit" className="btn btn--primary btn--block" disabled={busy || (pick === 'new' && !validPlayerName(player))}>
+          {t('start.join.submit', { team: invite.team.name })}
+        </button>
+      ) : (
+        <button type="submit" className="btn btn--secondary btn--block" disabled={busy || !isInviteCode(code)}>
+          {t('start.join.check')}
+        </button>
+      )}
+    </form>
+  );
+}
+
+/** Signed in but not in a team yet: create one, or join one with an invite code. */
+export function GetStartedScreen({ auth, inviteCode = null }) {
+  const { t } = useI18n();
+  const done = async () => {
+    rememberInvite(null);
+    if (location.hash.startsWith('#/join')) location.hash = '#/';
+    await auth.refresh();
+  };
+  const who = auth.email && !auth.email.endsWith('@users.invalid') ? auth.email : t('auth.notMember.steamAccount');
+  return (
+    <Shell title={t('start.title')}>
+      <p>{t('start.body', { who })}</p>
+      <div className="start-grid">
+        <JoinTeam initialCode={inviteCode} onDone={done} />
+        <CreateTeam onDone={done} />
+      </div>
+      <div className="actions">
+        <button type="button" className="btn btn--ghost" onClick={auth.signOut}>
+          {t('auth.signOut')}
+        </button>
+      </div>
     </Shell>
   );
 }
@@ -137,21 +314,6 @@ export function SetPasswordScreen({ auth }) {
           {t('auth.newPassword.save')}
         </button>
       </form>
-    </Shell>
-  );
-}
-
-/** Signed in, but the account isn't on team_members. */
-export function NotMemberScreen({ auth }) {
-  const { t } = useI18n();
-  return (
-    <Shell title={t('auth.notMember.title')}>
-      <p>{t('auth.notMember.body', { who: auth.email || t('auth.notMember.steamAccount') })}</p>
-      <div className="actions">
-        <button type="button" className="btn btn--primary" onClick={auth.signOut}>
-          {t('auth.signOut')}
-        </button>
-      </div>
     </Shell>
   );
 }

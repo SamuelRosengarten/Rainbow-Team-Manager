@@ -132,10 +132,12 @@ export const steamEmail = (steamId) => `steam-${steamId}@users.invalid`;
 /**
  * The whole Steam login, with every database and Steam call passed in so it
  * can be tested without a server:
- *   1. per-IP attempt limit, 2. verify the Steam response, 3. the Steam
- *   account must be on team_members, 4. the member's auth user is created on
- *   first login (or reused: a member with email and Steam signs into the same
- *   user), 5. a one-time magic-link token the browser swaps for a session.
+ *   1. per-IP attempt limit, 2. verify the Steam response, 3. find the
+ *   account: a team member listed with this Steam ID signs into their user
+ *   (a member with email and Steam signs into the same user); anyone else gets
+ *   their own Steam account, created on the first sign-in and reused after
+ *   (they then create or join a team on the website), 4. a one-time
+ *   magic-link token the browser swaps for a session.
  *
  * @param input.params  openid.* parameters
  * @param input.ip      caller's IP (for the attempt limit)
@@ -155,9 +157,12 @@ export async function handleSteamLogin({ params, ip }, deps) {
   const v = await verifySteamAssertion(params, deps.verify);
   if (!v.ok) return v;
   const member = await deps.findMember(v.steamId);
-  if (!member) return fail('not-member', 403);
   let email;
-  if (member.userId) {
+  if (!member) {
+    // Not listed by an admin: their own account (self sign-up), no team yet.
+    email = steamEmail(v.steamId);
+    await deps.createUser(email);
+  } else if (member.userId) {
     email = await deps.userEmail(member.userId);
     if (!email) return fail('server', 500);
   } else {
@@ -166,7 +171,7 @@ export async function handleSteamLogin({ params, ip }, deps) {
   }
   const link = await deps.magicLink(email);
   if (!link?.tokenHash || !link.userId) return fail('server', 500);
-  if (member.userId && link.userId !== member.userId) return fail('server', 500);
-  if (!member.userId) await deps.linkMember(member.profileId, link.userId);
+  if (member?.userId && link.userId !== member.userId) return fail('server', 500);
+  if (member && !member.userId) await deps.linkMember(member.profileId, link.userId);
   return { ok: true, tokenHash: link.tokenHash };
 }

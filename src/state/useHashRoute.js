@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-export const ROUTES = ['home', 'build', 'strategies', 'maps', 'operators', 'team', 'plan'];
+export const ROUTES = ['home', 'build', 'strategies', 'maps', 'operators', 'team', 'plan', 'join'];
 
 // Old links keep working: the Tactics screen is now Strategies.
 const ALIASES = { tactics: 'strategies' };

@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import { reactRefresh } from 'eslint-plugin-react-refresh';
 
 export default [
-  { ignores: ['dist', 'node_modules', 'overlay/dist', 'overlay/release', 'overlay/node_modules'] },
+  { ignores: ['dist', 'dist-e2e-online', 'node_modules', 'overlay/dist', 'overlay/release', 'overlay/node_modules'] },
   js.configs.recommended,
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.vite(),

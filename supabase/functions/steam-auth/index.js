@@ -3,7 +3,8 @@
 //   POST { params: { "openid.*": "..." } }  ->  200 { token_hash }  or  4xx/5xx { error }
 //
 // The website (or overlay) posts what Steam sent back. This function checks
-// it with Steam, checks that the Steam account is on public.team_members, and
+// it with Steam, finds or creates the account (a member listed in
+// public.team_members, or the player's own Steam account: self sign-up), and
 // returns a one-time token the browser swaps for a normal Supabase session
 // (supabase.auth.verifyOtp). The logic lives in ../_shared/steam.js (tested
 // with Vitest); this file only wires it to the database.
