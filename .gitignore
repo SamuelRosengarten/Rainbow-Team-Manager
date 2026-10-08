@@ -13,3 +13,7 @@ playwright-report/
 test-results/
 overlay/release/
 dist-e2e-online/
+
+# Supabase CLI cache
+supabase/.temp/
+supabase/.branches/
