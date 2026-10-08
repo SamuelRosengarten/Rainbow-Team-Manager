@@ -5,9 +5,9 @@
 // exactly one player (a small max-weight matching over players x jobs). It
 // reuses the strategy engine's preference rules (recommend.js) and adds the
 // players. Priority, strongest first:
-//   1. BANNED operators and operators every player blocked never appear, and an
-//      operator a player blocked is never THEIR operator (a block is personal).
-//      This is a filter on candidates, not a score, so nothing outweighs it.
+//   1. BANNED operators and operators any player blocked never appear (a block
+//      is team-wide). This is a filter on candidates, not a score, so nothing
+//      outweighs it.
 //   2. FAVORITES: a player's own favorite that can do the job beats every
 //      statistic (the weights below guarantee it; see tests). A favorite only
 //      counts for the player who favorited it.
@@ -32,12 +32,14 @@ import { parseSite } from './diagram.js';
 import { TACTICAL_ROLES, defaultTacticalRole } from './tactical.js';
 import { formatNumber, formatPercent, msg } from '../i18n/index.js';
 
-// Extra weight on top of W (exact 3, listed 2, role 1). A favorite (6) plus
-// the weakest fit (1) is 7; the best non-favorite is exact (3) plus at most
-// STRENGTH + ROLE + MAP = 3.9, so a favorite can't be outscored by stats.
+// Extra weight on top of W (exact 3, listed 2, role 1). A favorite (15) plus
+// the weakest fit (1) is 16; the best non-favorite is exact (3) plus at most
+// STRENGTH + ROLE + MAP = 3.9 plus the synergy pairs it keeps (4 x 2 = 8),
+// 14.9, so a favorite can't be outscored by stats or synergy. W.breakKey (-20)
+// still outweighs it, so a favorite never breaks a key slot.
 // Another player's favorite is worth nothing to a different player: it is
 // that player's to play (a shared favorite goes to whoever fits best).
-const B = { ownFavorite: 6, teamFavorite: 2, strength: 2.5, weak: 1, role: 1, map: 0.4, noPlayer: -100 };
+const B = { ownFavorite: 15, teamFavorite: 2, missingNeed: -3, strength: 2.5, weak: 1, role: 1, map: 0.4, noPlayer: -100 };
 const CANDIDATES_PER_CELL = 4;
 
 /** Job ids the lineup card can show (labels live in the message files: lineup.job.<id>). */
@@ -72,17 +74,16 @@ const name = (id) => OPERATORS_BY_ID[id]?.name ?? '';
 const jobOf = (slot) => (TACTICAL_ROLES[slot.tacticalRole] ? slot.tacticalRole : defaultTacticalRole(slot.role));
 
 /** Scored candidates for one (slot, player) pair, best first. Never contains an operator this player can't play. */
-function cell({ slot, side, player, pref, ownFavs, ownBlocked = [], stats, owned, ownedOnly, map, pickedOps, keyTag = null }) {
+function cell({ slot, side, player, pref, ownFavs, stats, owned, ownedOnly, map, pickedOps, keyTag = null }) {
   const out = [];
   for (const op of OPERATORS) {
-    if (op.side !== side || !isUsable(pref, op.id)) continue; // 1. banned / blocked by everyone = absolute exclusion
-    if (player && ownBlocked.includes(op.id)) continue; // a block is personal: never this player's operator
+    if (op.side !== side || !isUsable(pref, op.id)) continue; // 1. banned / blocked = absolute exclusion
     if (player && ownedOnly && owned.length && !owned.includes(op.id)) continue;
     const kind = fitKind(slot, op.id);
     if (!kind) continue;
     let w = W[kind];
     // A generic job with a utility need: anyone in the role can fill it, but one with the utility first.
-    if (slot.needs && !slot.operatorId) w += hasNeed(op.id, slot.needs) ? W.listed : W.breakKey / 3;
+    if (slot.needs && !slot.operatorId) w += hasNeed(op.id, slot.needs) ? W.listed : B.missingNeed;
     if (breaksKey(keyTag, kind, op.id)) w += W.breakKey;
     const own = ownFavs.includes(op.id);
     // With no player (fewer players than jobs) any lineup favorite counts a little.
@@ -120,12 +121,12 @@ function mapNudge(stats, mapId, job) {
  * @param strategy  a strategy (its slots are the jobs) or null for the standard jobs of the side
  * @param players   roster entries to assign: { name, stats?, mainRole? }
  * @param prefs     { [name]: { favorites, avoid, owned } } (the team's operator preferences)
- * @param pref      combined preferenceSet (bans, operators every player blocked)
+ * @param pref      combined preferenceSet (bans, operators any player blocked)
  * @param picks     {player, operatorId}[] operators already chosen (kept when they fit)
  * @returns {{ slots: Slot[], usedStrategy: boolean, notes: msg[], unownedPicks: {player, operatorId}[],
  *   favoritePlayers: number, favoriteMax: number }}
  *   Slot: { slotKey, player, operatorId, original, job, kind, favorite (own), selected, conflict: names[],
- *           alternative, whyParts: msg[], jobNote: msg, blockedBy: names[] }
+ *           alternative, whyParts: msg[], jobNote: msg }
  *   favoritePlayers: players on one of their own favorites; favoriteMax: players who have any usable
  *   favorite on this side (the most that could be).
  */
@@ -137,7 +138,6 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
     p,
     stats: p.stats ?? null,
     ownFavs: prefs[p.name]?.favorites ?? [],
-    ownBlocked: prefs[p.name]?.avoid ?? [],
     owned: prefs[p.name]?.owned ?? [],
   }));
 
@@ -153,7 +153,7 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
   const planPairs = pairsAmong(slots.map((s) => s.operatorId).filter(Boolean));
   const cells = slots.map((slot) =>
     [
-      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, ownBlocked: x.ownBlocked, stats: x.stats, owned: x.owned, ownedOnly, map: mapId, pickedOps, keyTag: keys.get(slot.key) })),
+      ...info.map((x) => cell({ slot, side, player: x.p, pref, ownFavs: x.ownFavs, stats: x.stats, owned: x.owned, ownedOnly, map: mapId, pickedOps, keyTag: keys.get(slot.key) })),
       cell({ slot, side, player: null, pref, ownFavs: [], stats: null, owned: [], ownedOnly: false, map: mapId, pickedOps, keyTag: keys.get(slot.key) }),
     ].map((c, i) => ({ ...c, who: i < info.length ? i : null })),
   );
@@ -191,18 +191,16 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
     const job = jobOf(slot);
     const base = { slotKey: slot.key, original: slot.operatorId ?? null, job };
     if (!pick) {
-      return { ...base, player: null, operatorId: null, kind: null, favorite: false, selected: false, conflict: [], alternative: null, blockedBy: [], whyParts: [msg('lineup.why.none')], jobNote: msg(`lineup.jobNote.${job}.open`) };
+      return { ...base, player: null, operatorId: null, kind: null, favorite: false, selected: false, conflict: [], alternative: null, whyParts: [msg('lineup.why.none')], jobNote: msg(`lineup.jobNote.${job}.open`) };
     }
     const { c, choice } = pick;
     const who = c.who === null ? null : info[c.who];
     const alt = c.list.find((x) => x.id !== choice.id && !taken.has(x.id)) ?? null;
     // Reported, not resolved: who gets a shared favorite is decided above by fit.
     const favoredBy = info.filter((x) => x.ownFavs.includes(choice.id)).map((x) => x.p.name);
-    const blockers = (pref.blocked.get(choice.id) ?? []).filter((n) => n !== who?.p.name);
 
     const parts = [];
     if (slot.operatorId && !isUsable(pref, slot.operatorId)) parts.push(msg('lineup.why.replacedAll', { original: name(slot.operatorId), operator: name(choice.id) }));
-    if (who && blockers.length) parts.push(msg('lineup.why.personalBlock', { blockers, count: blockers.length, operator: name(choice.id), player: who.p.name }));
     if (who && choice.own) parts.push(msg('lineup.why.ownFavorite', { player: who.p.name, operator: name(choice.id) }));
     else if (choice.team) parts.push(msg('lineup.why.teamFavorite', { operator: name(choice.id) }));
     if (who && choice.strength !== null && choice.strength >= 0.6) {
@@ -230,7 +228,6 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
       selected: pickedOps.has(choice.id),
       conflict: favoredBy.length > 1 ? favoredBy : [],
       alternative: alt?.id ?? null,
-      blockedBy: blockers,
       whyParts: parts.slice(0, 2),
       jobNote,
     };
@@ -243,7 +240,7 @@ export function recommendLineup({ strategy = null, side, mapId = '', site = '', 
   // Favorite match is counted in players: how many are on one of their own favorites, out of
   // the players who have a favorite they could play on this side at all.
   const favoritePlayers = out.filter((s) => s.favorite).length;
-  const favoriteMax = info.filter((x) => x.ownFavs.some((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id) && !x.ownBlocked.includes(id) && !(ownedOnly && x.owned.length && !x.owned.includes(id)))).length;
+  const favoriteMax = info.filter((x) => x.ownFavs.some((id) => OPERATORS_BY_ID[id]?.side === side && isUsable(pref, id) && !(ownedOnly && x.owned.length && !x.owned.includes(id)))).length;
   return {
     slots: out,
     usedStrategy: Boolean(strategy?.slots?.length),

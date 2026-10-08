@@ -1705,3 +1705,30 @@ html.is-fullscreen-editor body {
 .cmd-more[open] > .cmd-grid {
   margin-top: 8px;
 }
+
+/* Tactical board on touch screens: 44px controls and finger-sized hit areas.
+   Desktop (fine pointer) keeps the compact sizes. Last in the cascade on purpose. */
+.tb-marker__hit {
+  display: none;
+  fill: transparent;
+}
+@media (pointer: coarse) {
+  .ctx-chip,
+  .subtool,
+  .obj-list__btn,
+  .tbar__btn,
+  .floor-tab {
+    min-height: var(--tap);
+  }
+  .floor-tab,
+  .tbar__btn {
+    min-width: var(--tap);
+  }
+  .tb-marker__hit {
+    display: inline;
+    pointer-events: all;
+  }
+  .tb-path__hit {
+    stroke-width: 5;
+  }
+}

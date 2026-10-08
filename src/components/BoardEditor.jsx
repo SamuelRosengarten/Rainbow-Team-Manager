@@ -58,7 +58,10 @@ export default function BoardEditor({ draft, history, mapName, inBuilder = false
   const [xf, setXf] = useState(null); // { a, slotA, b, slotB }
   const [gadget, setGadget] = useState('ability');
   const [breachType, setBreachType] = useState('hard');
-  const [floorId, setFloorId] = useState(draft.floorId);
+  // The floor being edited, for this map only: a map change starts on the new map's own floor.
+  const [floorPick, setFloorPick] = useState({ mapId: draft.mapId, floorId: draft.floorId });
+  const floorId = floorPick.mapId === draft.mapId ? floorPick.floorId : draft.floorId;
+  const setFloorId = (f) => setFloorPick({ mapId: draft.mapId, floorId: f });
   const [hidden, setHidden] = useState(() => new Set());
   const [reviewing, setReviewing] = useState(false);
   const [dragging, setDragging] = useState(false);

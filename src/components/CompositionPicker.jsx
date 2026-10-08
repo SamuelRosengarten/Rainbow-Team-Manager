@@ -16,6 +16,8 @@ export default function CompositionPicker({ side, picks, players, onChange, fixe
   const banned = new Set(bans);
   const ops = operatorsForSide(side);
   const set = (i, patch) => onChange(picks.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  // A block is team-wide: an operator any player in this composition blocked is off for every row.
+  const blockers = (id) => picks.map((x) => x.player).filter((name, j, all) => name && all.indexOf(name) === j && (prefs[name]?.avoid ?? []).includes(id));
   return (
     <ol className="comp">
       {picks.map((p, i) => {
@@ -23,11 +25,10 @@ export default function CompositionPicker({ side, picks, players, onChange, fixe
         const takenOps = new Set(picks.filter((_, j) => j !== i).map((x) => x.operatorId));
         const takenPlayers = new Set(picks.filter((_, j) => j !== i).map((x) => x.player));
         const favs = new Set(prefs[p.player]?.favorites ?? []);
-        const blocked = new Set(prefs[p.player]?.avoid ?? []);
         // Owned-only: this player's list is limited to what they own (when they've marked any).
         const owned = new Set(prefs[p.player]?.owned ?? []);
         const limited = ownedOnly && owned.size > 0;
-        const isBlocked = op && (blocked.has(op.id) || banned.has(op.id));
+        const isBlocked = op && (blockers(op.id).length > 0 || banned.has(op.id));
         const fixOp = OPERATORS_BY_ID[fixes[p.player]];
         return (
           <li key={i} className={`comp__row${isBlocked ? ' comp__row--blocked' : ''}`}>
@@ -51,7 +52,7 @@ export default function CompositionPicker({ side, picks, players, onChange, fixe
                   .filter((o) => !limited || owned.has(o.id) || o.id === p.operatorId)
                   .sort((a, b) => Number(favs.has(b.id)) - Number(favs.has(a.id)))
                   .map((o) => {
-                    const no = blocked.has(o.id) || banned.has(o.id);
+                    const no = blockers(o.id).length > 0 || banned.has(o.id);
                     const note = no ? t(banned.has(o.id) ? 'comp.banned' : 'comp.blocked') : limited && !owned.has(o.id) ? t('comp.notOwned') : '';
                     return (
                       <option key={o.id} value={o.id} disabled={takenOps.has(o.id) || no}>
@@ -76,7 +77,7 @@ export default function CompositionPicker({ side, picks, players, onChange, fixe
                 )}
               </span>
             )}
-            {isBlocked && <span className="comp__warn">🚫 {p.player ? t('comp.playerBlocked', { player: p.player, operator: op.name }) : t('comp.bannedWarn')}</span>}
+            {isBlocked && <span className="comp__warn">🚫 {banned.has(op.id) ? t('comp.bannedWarn') : t('comp.playerBlocked', { player: blockers(op.id), count: blockers(op.id).length, operator: op.name })}</span>}
           </li>
         );
       })}

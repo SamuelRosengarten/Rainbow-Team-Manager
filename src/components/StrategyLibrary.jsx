@@ -21,11 +21,10 @@ function PreferenceSummary({ pref, side }) {
   const { t, tm } = useI18n();
   const favs = sideFavorites(pref, side);
   const blocked = [...new Set([...pref.blocked.keys(), ...pref.banned])].filter((id) => OPERATORS_BY_ID[id]?.side === side);
-  // A block is personal: say whose, and whether it removes the operator from the whole lineup.
+  // Say whose block it is: any block removes the operator from every recommendation.
   const blockNote = (id) => {
     if (pref.banned.has(id)) return t('library.block.ban');
-    if (pref.blockedForAll.has(id)) return t('library.block.all');
-    return t('library.block.some', { by: pref.blocked.get(id) ?? [], count: (pref.blocked.get(id) ?? []).length });
+    return t('library.block.all', { by: pref.blocked.get(id) ?? [], count: (pref.blocked.get(id) ?? []).length });
   };
   return (
     <div className="pref-summary" aria-label={t('library.prefs.aria')}>

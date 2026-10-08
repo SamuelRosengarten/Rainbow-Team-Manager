@@ -40,10 +40,9 @@ describe('recommendLineup: blocked operators are never recommended', () => {
         const r = recommendLineup({ strategy, side, mapId: strategy.mapId, site: strategy.site, players, prefs, pref });
         for (const s of r.slots) {
           for (const id of [s.operatorId, s.alternative].filter(Boolean)) {
-            // Banned or blocked by the whole lineup: nobody plays it. Otherwise a block is personal:
-            // the player it is recommended for must not be one of the blockers.
+            // Banned or blocked by anyone in the lineup: nobody plays it.
             expect(pref.banned.has(id) || pref.blockedForAll.has(id), `${strategy.id}: ${id}`).toBe(false);
-            if (s.player) expect(prefs[s.player].avoid, `${strategy.id}: ${s.player} blocked ${id}`).not.toContain(id);
+            for (const n of NAMES) expect(prefs[n]?.avoid ?? [], `${strategy.id}: ${n} blocked ${id}`).not.toContain(id);
             checked += 1;
           }
         }
@@ -52,12 +51,13 @@ describe('recommendLineup: blocked operators are never recommended', () => {
     expect(checked).toBeGreaterThan(100);
   });
 
-  it("a block is personal: Anthony's block keeps Thermite off Anthony, not off Samuel who favourites it", () => {
+  it("a block is team-wide: Anthony's block keeps Thermite off everyone, even Samuel who favourites it", () => {
     const prefs = { Samuel: { favorites: ['thermite'] }, Anthony: { avoid: ['thermite', 'hibana'] } };
     const r = run({ prefs });
-    expect(r.slots.find((x) => x.player === 'Samuel').operatorId).toBe('thermite');
-    for (const slot of r.slots.filter((x) => x.player === 'Anthony')) expect(['thermite', 'hibana']).not.toContain(slot.operatorId);
-    expect(ids(r).filter((id) => id === 'thermite')).toHaveLength(1);
+    expect(ids(r)).not.toContain('thermite');
+    expect(ids(r)).not.toContain('hibana');
+    expect(r.slots.map((s) => s.alternative)).not.toContain('thermite');
+    expect(r.slots.every((s) => s.operatorId)).toBe(true); // still a full lineup
   });
 
   it('nobody plays an operator every player blocked, or the team banned', () => {

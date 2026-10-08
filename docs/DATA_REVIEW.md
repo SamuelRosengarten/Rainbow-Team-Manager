@@ -16,20 +16,20 @@ Roles are a judgement call. Most of the classic operators are well established. 
 
 | Operator | Side | Assigned | Why unsure |
 | --- | --- | --- | --- |
-| Solid Snake | attack | intel | I couldn't confirm the kit in detail |
-| Rauora | attack | support | Placed as a line-of-sight / doorway utility op |
-| Deimos | attack | intel | Tracking-style kit; could also be a fragger/roamer-hunter |
+| Solid Snake | attack | intel | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Solid_Snake) (Oct 2026); secondary weapons not listed there |
+| Rauora | attack | support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Rauora) (Oct 2026) |
+| Deimos | attack | intel | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Deimos) (Oct 2026; Ubisoft: Intel, Map Control) |
 | Brava | attack | support | Gadget hijack; could also be intel |
 | Ram | attack | soft-breacher | Could also count as support (utility clear) |
-| Striker | attack | support | Flexible "pick your gadgets" operator |
+| Striker | attack | support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Striker) (Oct 2026); picks any two gadgets |
 | Fuze | attack | support, soft-breacher | Soft-breacher tag is debatable |
 | Kali | attack | support | Her lance helps hard-breachers; not a breacher herself |
 | Nøkk | attack | support | Flanker; no exact role fits |
 | Glaz | attack | support | Sniper; no exact role fits |
-| Noor | defend | anchor, support | New in Y11S3; shield counter / plant denial |
-| Denari | defend | support | I couldn't confirm the kit in detail |
-| Skopós | defend | roamer, intel | Two-body robot kit |
-| Sentry | defend | anchor, support | Flexible "pick your gadgets" operator |
+| Noor | defend | anchor, support | Kit from [SiegeGG](https://siege.gg/news/rainbow-six-siege-operator-guide-noor), matching Mobalytics and Sportskeeda (Oct 2026; no Liquipedia page yet) |
+| Denari | defend | anchor, support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Denari) (Oct 2026; Glaive-12 from its patch notes). Ubisoft lists Anti-Entry / Crowd Control: a site trapper like Frost or Thorn |
+| Skopós | defend | roamer, intel | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Skop%C3%B3s) (Oct 2026; light and fast since Silent Hunt; Ubisoft: Intel, Support) |
+| Sentry | defend | anchor, support | Kit from [Liquipedia](https://liquipedia.net/rainbowsix/Sentry) (Oct 2026); picks any two gadgets |
 | Tubarão | defend | support | Gadget-freezing utility |
 | Fenrir | defend | anchor, support | Could also be a roamer |
 | Kapkan | defend | support | Trapper; some teams count him as anchor |
@@ -41,7 +41,8 @@ Written from memory, **not** checked against the current season. Ubisoft changes
 
 - **Health / speed** for everyone. Values are 1 to 3 (Siege X health and speed ratings).
 - **Weapons**. Lists hold the main options only; secondary gadgets are left out on purpose.
-- **Marked `"check": true`** (the profile shows a "needs checking" note): Deimos, Striker, Rauora, Solid Snake, Sentry, Skopós, Denari, Noor. Rauora, Solid Snake, Denari and Noor have no weapons listed and only a rough ability description.
+- **Marked `"check": true`** (the profile shows a "needs checking" note): Solid Snake only. Liquipedia lists no secondary weapons for him yet, so his profile shows "see the intro video" there. Every other operator has a sourced kit (Deimos, Striker, Sentry, Skopós, Rauora, Denari and Noor were filled in or corrected in October 2026).
+- **Role taxonomy:** the app's roles are hard breacher, soft breacher, intel, anchor, roamer and support. There is no Entry or Flex role, so entry/flex attackers such as Amaru (Ubisoft: Front Line, Map Control), Nøkk and Flores stay **support**. Adding a role would change every recommendation, so it is not done in a data fix.
 - **Intro videos**: every profile links to a YouTube search. Add a `"video"` URL to pin the exact video.
 
 ## Floor plans (`src/data/floorPlans.json`)

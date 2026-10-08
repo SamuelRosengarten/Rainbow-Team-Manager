@@ -32,7 +32,7 @@ import { parseSite } from './diagram.js';
 import { CodedError } from './errors.js';
 import { labelTable, labelled, msg, t } from '../i18n/index.js';
 import { FLOOR_LABEL, floorIdFromSite } from './floorPlans.js';
-import { defaultLayout } from './space.js';
+import { defaultLayout, primaryFloor } from './space.js';
 import {
   BREACH_TYPES,
   GADGETS,
@@ -243,6 +243,13 @@ export function normalizeStrategy(raw) {
   const legacy = !(Number(raw.schemaVersion) >= 3);
   const sc = legacy ? LEGACY : UNIT;
   const layout = !legacy && LAYOUTS[raw.layout] ? raw.layout : 'schematic';
+  // The strategy's floor is its site's floor. Older edits could change the site
+  // and leave the floor behind (the board then opened on the wrong floor):
+  // items drawn on that old floor are pinned to it so they stay where they were.
+  const siteFloor = floorIdFromSite(site) || null;
+  const storedFloor = floorRef(raw.floorId);
+  const staleFloor = storedFloor && siteFloor && storedFloor !== siteFloor ? storedFloor : null;
+  const pin = (item) => (staleFloor && item && !item.floorId ? { ...item, floorId: staleFloor } : item);
   return {
     id,
     schemaVersion: SCHEMA_VERSION,
@@ -251,7 +258,7 @@ export function normalizeStrategy(raw) {
     mapId: str(raw.mapId, 40) || 'any',
     site,
     floor: str(raw.floor, 20) || parseSite(site).floor,
-    floorId: floorRef(raw.floorId) ?? (floorIdFromSite(site) || null),
+    floorId: siteFloor ?? storedFloor,
     layout,
     side: raw.side,
     type: normalizeType(raw.type, raw.side),
@@ -276,13 +283,30 @@ export function normalizeStrategy(raw) {
     favorite: Boolean(raw.favorite),
     slots,
     steps,
-    markers: list(raw.markers).map((m) => normalizeMarker(m, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.markers),
-    paths: list(raw.paths).map((p) => normalizePath(p, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.paths),
-    zones: list(raw.zones).map((z) => normalizeZone(z, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.zones),
-    crossfires: list(raw.crossfires).map((c) => normalizeCrossfire(c, stepIds, keys, sc)).filter(Boolean).slice(0, LIMITS.crossfires),
+    markers: list(raw.markers).map((m) => pin(normalizeMarker(m, stepIds, keys, sc))).filter(Boolean).slice(0, LIMITS.markers),
+    paths: list(raw.paths).map((p) => pin(normalizePath(p, stepIds, keys, sc))).filter(Boolean).slice(0, LIMITS.paths),
+    zones: list(raw.zones).map((z) => pin(normalizeZone(z, stepIds, keys, sc))).filter(Boolean).slice(0, LIMITS.zones),
+    crossfires: list(raw.crossfires).map((c) => pin(normalizeCrossfire(c, stepIds, keys, sc))).filter(Boolean).slice(0, LIMITS.crossfires),
     updatedAt: raw.updatedAt ?? null,
     updatedBy: raw.updatedBy ?? null,
   };
+}
+
+const ITEM_KEYS = ['markers', 'paths', 'zones', 'crossfires'];
+
+/**
+ * Patch that moves a strategy to another map and/or site. Its floor follows the
+ * new site. On the same map, items drawn on the old main floor are pinned to
+ * that floor so they don't jump to the new one.
+ */
+export function relocatePatch(draft, { mapId = draft.mapId, site = '' } = {}) {
+  const floorId = (mapId && mapId !== 'any' && floorIdFromSite(site)) || null;
+  const patch = { mapId, site, floor: '', floorId };
+  const before = primaryFloor(draft);
+  if (mapId === draft.mapId && before && before !== primaryFloor({ mapId, floorId })) {
+    for (const k of ITEM_KEYS) patch[k] = (draft[k] ?? []).map((it) => (it.floorId ? it : { ...it, floorId: before }));
+  }
+  return patch;
 }
 
 /**

@@ -198,7 +198,10 @@ export default function TacticalBoard({
   fresh = null,
 }) {
   usePlans();
-  const [ownFloor, setOwnFloor] = useState(null);
+  // The floor picked with the tabs, for this map only: another map starts on its own floor.
+  const [picked, setPicked] = useState(null);
+  const ownFloor = picked?.mapId === source.mapId ? picked.floorId : null;
+  const setOwnFloor = (f) => setPicked({ mapId: source.mapId, floorId: f });
   const { t } = useI18n();
   const floorId = floorProp ?? ownFloor ?? source.floorId;
   const space = boardSpace(source, floorId);
@@ -450,6 +453,8 @@ export default function TacticalBoard({
                 {...handlers('marker', m)}
               >
                 <title>{[op?.name, m.label].filter(Boolean).join(': ') || m.kind}</title>
+                {/* A bigger, invisible tap area on touch screens (tactical.css). */}
+                {clickable && <circle r="4.2" className="tb-marker__hit" />}
                 {sel && <circle r="3.8" className="tb-sel-ring" />}
                 {fresh === m.id && <circle r="3.4" className="tb-ripple" stroke={color} />}
                 <g className="tb-glyph">

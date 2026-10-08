@@ -75,6 +75,6 @@
   {"id":"tubarao","name":"Tubarão","side":"defend","roles":["support"]},
   {"id":"sentry","name":"Sentry","side":"defend","roles":["anchor","support"]},
   {"id":"skopos","name":"Skopós","side":"defend","roles":["roamer","intel"]},
-  {"id":"denari","name":"Denari","side":"defend","roles":["support"]},
+  {"id":"denari","name":"Denari","side":"defend","roles":["anchor","support"]},
   {"id":"noor","name":"Noor","side":"defend","roles":["anchor","support"]}
 ]

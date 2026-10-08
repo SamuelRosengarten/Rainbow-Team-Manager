@@ -13,6 +13,7 @@ import { MAPS_BY_ID, allSites } from '../lib/maps.js';
 import { OPERATORS, OPERATORS_BY_ID } from '../lib/operators.js';
 import { rollLineup } from '../lib/roll.js';
 import { cleanDraft, createStrategy, duplicateStrategy, filterStrategies, newId, normalizeStrategy } from '../lib/strategies.js';
+import { floorIdFromSite } from '../lib/floorPlans.js';
 import { prefState, recommendStrategies } from '../lib/recommend.js';
 import { fitToComposition } from '../lib/strategyMatch.js';
 import { recommendLineup } from '../lib/lineup.js';
@@ -154,6 +155,8 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
         title: base.origin === 'team' ? t('strategy.copyTitle', { title: base.title }) : base.title,
         mapId: w.mapId || copy.mapId,
         site: w.site || copy.site,
+        // The board opens on our site's floor, not the library plan's.
+        floorId: floorIdFromSite(w.site || copy.site) || null,
         slots: [...copy.slots, ...extras.map((id) => ({ key: newId('s'), operatorId: id, role: OPERATORS_BY_ID[id].roles[0] }))].slice(0, 6),
       });
     } else {
@@ -181,11 +184,19 @@ export default function StrategyBuilder({ profile, strategyData, navigate, prese
     try {
       const clean = cleanDraft(draft);
       await strategyData.saveStrategy({ ...clean, owner: profile });
-      await Promise.all(
+      // Player assignments are saved separately: a failure must not be lost silently.
+      const results = await Promise.allSettled(
         clean.slots
           .filter((s) => w.players[s.operatorId])
-          .map((s) => strategyData.setAssignment(clean.id, s.key, w.players[s.operatorId]).catch(() => null)),
+          .map((s) => strategyData.setAssignment(clean.id, s.key, w.players[s.operatorId])),
       );
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length) {
+        // The strategy is saved; saving again retries the assignments.
+        setError(t('builder.assignNotSaved', { count: failed.length, detail: failed[0].reason?.message ?? '' }));
+        setSaving(false);
+        return;
+      }
       setW(fresh());
       navigate(`strategies/s/${clean.id}`);
     } catch (e) {

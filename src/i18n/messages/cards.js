@@ -66,8 +66,7 @@ export const en = {
   'library.prefs.blocked': '🚫 Blocked (personal)',
   'library.prefs.from': 'From: {players, list}',
   'library.block.ban': 'team ban: nobody can play it',
-  'library.block.all': 'everyone blocked it',
-  'library.block.some': '{by, list} only: teammates can still play it',
+  'library.block.all': 'blocked by {by, list}: never recommended',
 
   'comp.player': 'Player {n}',
   'comp.playerPlaceholder': 'Player…',
@@ -77,7 +76,7 @@ export const en = {
   'comp.blocked': 'blocked',
   'comp.notOwned': 'not owned',
   'comp.unownedWarn': '{player} doesn’t own {operator}: it isn’t counted while owned operators only is on',
-  'comp.playerBlocked': '{player} blocked {operator}',
+  'comp.playerBlocked': '{player, list} {count, plural, other {blocked}} {operator}: pick another operator',
   'comp.bannedWarn': 'Banned',
 
   'owned.toggle.on': 'Owned operators only: <strong>ON</strong>',
@@ -168,8 +167,7 @@ export const fr = {
   'library.prefs.blocked': '🚫 Bloqués (personnels)',
   'library.prefs.from': 'D’après : {players, list}',
   'library.block.ban': 'banni par l’équipe : personne ne peut le jouer',
-  'library.block.all': 'tout le monde l’a bloqué',
-  'library.block.some': '{by, list} seulement : les autres peuvent encore le jouer',
+  'library.block.all': 'bloqué par {by, list} : jamais recommandé',
 
   'comp.player': 'Joueur {n}',
   'comp.playerPlaceholder': 'Joueur…',
@@ -179,7 +177,7 @@ export const fr = {
   'comp.blocked': 'bloqué',
   'comp.notOwned': 'non possédé',
   'comp.unownedWarn': '{player} ne possède pas {operator} : il n’est pas compté tant que « opérateurs possédés seulement » est activé',
-  'comp.playerBlocked': '{player} a bloqué {operator}',
+  'comp.playerBlocked': '{player, list} {count, plural, one {a bloqué} other {ont bloqué}} {operator} : choisis un autre opérateur',
   'comp.bannedWarn': 'Banni',
 
   'owned.toggle.on': 'Opérateurs possédés seulement : <strong>OUI</strong>',

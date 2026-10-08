@@ -9,7 +9,6 @@ export const en = {
   'finder.favPlayers': '{used} of {total, plural, one {# player} other {# players}} on a favourite',
   'finder.favPlayers.none': 'No player has a favourite for this side',
   'finder.reason.favPlayers': '{used} of {total, plural, one {# player is} other {# players are}} on one of their own favourites',
-  'finder.reason.personalBlock': '{blockers, list} {count, plural, other {blocked}} {operator}, so {player} plays it',
 
   'finder.warn.unownedPick': '{player} doesn’t own {operator}, and owned operators only is on.',
   'finder.warn.useOperator': 'Use {operator} for {player}',
@@ -47,7 +46,6 @@ export const fr = {
   'finder.favPlayers': '{used} sur {total, plural, one {# joueur} other {# joueurs}} avec un favori',
   'finder.favPlayers.none': 'Aucun joueur n’a de favori pour ce côté',
   'finder.reason.favPlayers': '{used} sur {total, plural, one {# joueur joue} other {# joueurs jouent}} un de leurs propres favoris',
-  'finder.reason.personalBlock': '{blockers, list} {count, plural, one {a bloqué} other {ont bloqué}} {operator}, alors {player} le joue',
 
   'finder.warn.unownedPick': '{player} ne possède pas {operator}, et « opérateurs possédés seulement » est activé.',
   'finder.warn.useOperator': 'Mettre {operator} pour {player}',

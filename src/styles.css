@@ -318,6 +318,16 @@
   text-transform: uppercase;
   color: var(--subtle);
 }
+.map-card__verify {
+  font-size: 0.75rem;
+  color: var(--subtle);
+}
+.map-card__verify--verified {
+  color: var(--ok);
+}
+.map-card__verify--partial {
+  color: var(--warn);
+}
 .map-card__coverage {
   display: grid;
   gap: 6px;
